@@ -67,4 +67,35 @@ def verify_email_with_shopify(email):
     
     return email.endswith('@polyverse.com') or email.endswith('@polyverse.io')
 
+#function to validate that the request came from a github logged in user or we are running on localhost
+#or that the session token is valid github oauth token for a subscribed email
+def validate_request(request):
+
+    print('request objec tis ')
+    print(request.context["identity"]['sourceIp'])
+
+    #otherwise check to see if we have a valid github session token
+    #parse the request body as json
+    try:
+        json_data = request.json_body
+        #extract the code from the json data
+        session = json_data.get('session')   
+        if validate_github_session(session):
+            return True, None
+    except ValueError:
+        #don't do anything if the json is invalid
+        pass
+
+    #last chance, check the ip address
+    
+    #if we don't have a rapid api key, check the origin
+    ip = request.context["identity"]["sourceIp"]
+    print("got client ip: " + ip)
+    #if the ip starts with 127, it's local
+    if ip.startswith("127"):
+        return True, None
+    
+    #if we got here, we failed, return an error
+    return False, {"errortype": "auth", "errortext": "Error: please login to github to use this service"}
+
 

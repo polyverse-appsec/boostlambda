@@ -1,23 +1,20 @@
 from chalice import Chalice
 from chalicelib.convert import *
-from chalicelib.auth import validate_github_session
+from chalicelib.auth import validate_request
 import json
 
 app = Chalice(app_name='boost')
 
-
-@app.route('/')
-def index():
-    return {'hello': 'world'}
 
 @app.route('/explain', methods=['POST'])
 def explain():
     # This is the JSON body the user sent in their POST request.
     json_data = app.current_request.json_body
 
+    is_valid, error = validate_request(app.current_request)
 
-#    if not validate_request(request):
-#        return Response("Error: you are not authorized to use this API, please visit https://polyverse.com to sign up")
+    if not is_valid:
+        return error
 
     #extract the code from the json data
     code = json_data.get('code')
@@ -39,8 +36,10 @@ def explain():
 @app.route('/generate/{language}', methods=['POST'])
 def generate(language):
 
-#    if not validate_request(request):
-#        return Response("Error: you are not authorized to use this API, please visit https://polyverse.com to sign up")
+    is_valid, error = validate_request(app.current_request)
+
+    if not is_valid:
+        return error
 
     json_data = app.current_request.json_body
     #parse the request body as json
@@ -72,22 +71,4 @@ def generate(language):
     json_obj["code"] = code
     #now return the json object in the response
     return json_obj
-# The view function above will return {"hello": "world"}
-# whenever you make an HTTP GET request to '/'.
-#
-# Here are a few more examples:
-#
-# @app.route('/hello/{name}')
-# def hello_name(name):
-#    # '/hello/james' -> {"hello": "james"}
-#    return {'hello': name}
-#
-# @app.route('/users', methods=['POST'])
-# def create_user():
-#     # This is the JSON body the user sent in their POST request.
-#     user_as_json = app.current_request.json_body
-#     # We'll echo the json body back to the user in a 'user' key.
-#     return {'user': user_as_json}
-#
-# See the README documentation for more examples.
-#
+
