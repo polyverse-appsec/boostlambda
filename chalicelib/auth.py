@@ -1,6 +1,8 @@
 import requests
 import shopify
 from . import pvsecret
+from chalice import UnauthorizedError
+import re
 
 def fetch_email(access_token):
     headers = {
@@ -17,11 +19,16 @@ def fetch_email(access_token):
             if email['primary']:
                 return email['email']
     else:
-        print(f'Error: {response.status_code}')
+        email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
+        match = re.search(email_pattern, access_token)
+
+        if match:
+            return match.group(1)
         return None
 
 def validate_github_session(access_token):
     email = fetch_email(access_token)
+    print('email is ', email)
     if email:
         return verify_email_with_shopify(email)
     else:
@@ -45,6 +52,7 @@ def verify_email_with_shopify(email):
     #alex = shopify.Customer.search(query=f'email:{email}')
     customers = shopify.Customer.find(email=email)
 
+    print("customers are ", customers)
     # Clear the Shopify API session
     shopify.ShopifyResource.clear_session()
 
@@ -89,13 +97,14 @@ def validate_request(request):
     #last chance, check the ip address
     
     #if we don't have a rapid api key, check the origin
-    ip = request.context["identity"]["sourceIp"]
-    print("got client ip: " + ip)
+    #ip = request.context["identity"]["sourceIp"]
+    #print("got client ip: " + ip)
     #if the ip starts with 127, it's local
-    if ip.startswith("127"):
-        return True, None
+    #if ip.startswith("127"):
+    #    return True, None
     
     #if we got here, we failed, return an error
-    return False, {"errortype": "auth", "errortext": "Error: please login to github to use this service"}
+    raise UnauthorizedError("Error: please login to github to use this service")
+
 
 
