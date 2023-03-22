@@ -6,7 +6,7 @@ def test_explain():
     with Client(app) as client:
         request_body = {
             'code': 'print("Hello, World!")',
-            'session': 'testemail: alex@gounares.com'
+            'session': 'testemail: alex@darklight.ai'
         }
         response = client.http.post('/explain', headers={'Content-Type': 'application/json'}, body=json.dumps(request_body))
         assert response.status_code == 200
@@ -18,7 +18,7 @@ def test_generate_outputlanguage():
         request_body = {
             'explanation': 'This is a simple program that prints "Hello, World!" to the console.',
             'originalCode': 'print("Hello, World!")',
-            'session': 'testemail: alex@gounares.com'
+            'session': 'testemail: alex@darklight.ai'
         }
         response = client.http.post(f'/generate/{output_language}', headers={'Content-Type': 'application/json'}, body=json.dumps(request_body))
         assert response.status_code == 200
@@ -46,7 +46,7 @@ def test_auth():
         #print the response json
         print(response.json_body)
         assert response.status_code == 401
-        
+
         # now test with an email of jkthecjer@gmail.com
         request_body = {
             'session': 'testemail: jkthecjer@gmail.com',
@@ -68,4 +68,22 @@ def test_auth():
         assert response.status_code == 200
 
 
-    
+def test_testgen():
+    with Client(app) as client:
+        output_language = 'python'  # Replace this with the desired output language
+        framework = 'pytest'
+        request_body = {
+            'code': 'print("Hello, World!")',
+            'session': 'testemail: alex@darklight.ai'
+        }
+        response = client.http.post(f'/testgen/{output_language}/{framework}', headers={'Content-Type': 'application/json'}, body=json.dumps(request_body))
+        assert response.status_code == 200 
+
+def test_analyze():
+    with Client(app) as client:
+        request_body = {
+            'code': 'print("Hello, World!")',
+            'session': 'testemail: alex@darklight.ai'
+        }
+        response = client.http.post('/analyze', headers={'Content-Type': 'application/json'}, body=json.dumps(request_body))
+        assert response.status_code == 200

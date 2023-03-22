@@ -1,1 +1,1 @@
-__all__ = ["convert", "pvsecret", "auth"]
+__all__ = ["convert", "pvsecret", "auth", "testgen", "analyze"]
