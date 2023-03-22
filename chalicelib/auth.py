@@ -49,8 +49,13 @@ def verify_email_with_shopify(email):
     shopify.ShopifyResource.set_site(shop_url)
 
     # Fetch the customer information using the email address
-    #alex = shopify.Customer.search(query=f'email:{email}')
-    customers = shopify.Customer.find(email=email)
+    #first see if the email is in a valid domain
+    domain = get_domain(email)
+    print('domain is ', domain)
+    if is_valid_domain(domain):
+        customers = shopify.Customer.search(query=f'email:*@{domain}')
+    else:
+        customers = shopify.Customer.find(email=email)
 
     print("customers are ", customers)
     # Clear the Shopify API session
@@ -106,5 +111,26 @@ def validate_request(request):
     #if we got here, we failed, return an error
     raise UnauthorizedError("Error: please login to github to use this service")
 
+def get_domain(email):
+    return email.split('@')[-1].lower()
 
+
+def is_valid_domain(domain):
+    major_email_providers = {
+        'gmail.com',
+        'yahoo.com',
+        'hotmail.com',
+        'aol.com',
+        'outlook.com',
+        'msn.com',
+        'live.com',
+        'icloud.com',
+        'mail.com',
+        'comcast.net',
+        'verizon.net',
+        'sbcglobal.net',
+        'ymail.com',
+        'me.com'
+    }
+    return domain not in major_email_providers
 

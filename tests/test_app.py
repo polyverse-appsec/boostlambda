@@ -37,4 +37,35 @@ def test_auth():
         print(response.json_body)
         assert response.status_code == 401
 
+        # now test with an email of alexgo@gmail.com
+        request_body = {
+            'session': 'testemail: alexgo@gmail.com',
+            'code': 'print("Hello, World!")'
+        }  
+        response = client.http.post('/explain', headers={'Content-Type': 'application/json'}, body=json.dumps(request_body))
+        #print the response json
+        print(response.json_body)
+        assert response.status_code == 401
+        
+        # now test with an email of jkthecjer@gmail.com
+        request_body = {
+            'session': 'testemail: jkthecjer@gmail.com',
+            'code': 'print("Hello, World!")'
+        }  
+        response = client.http.post('/explain', headers={'Content-Type': 'application/json'}, body=json.dumps(request_body))
+        #print the response json
+        print(response.json_body)
+        assert response.status_code == 200
+
+        # now test with an email of alex@darklight.ai
+        request_body = {
+            'session': 'testemail: alex@darklight.ai',
+            'code': 'print("Hello, World!")'
+        }  
+        response = client.http.post('/explain', headers={'Content-Type': 'application/json'}, body=json.dumps(request_body))
+        #print the response json
+        print(response.json_body)
+        assert response.status_code == 200
+
+
     
