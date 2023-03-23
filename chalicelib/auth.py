@@ -28,7 +28,7 @@ def fetch_email(access_token):
 
 def validate_github_session(access_token):
     email = fetch_email(access_token)
-    print('email is ', email)
+    print('BOOST_USAGE: email is ', email)
     if email:
         return verify_email_with_shopify(email)
     else:
@@ -110,6 +110,35 @@ def validate_request(request):
     
     #if we got here, we failed, return an error
     raise UnauthorizedError("Error: please login to github to use this service")
+
+#function to validate that the request came from a github logged in user or we are running on localhost
+#or that the session token is valid github oauth token for a subscribed email. This version is for the
+#raw lambda function and so has the session key passed in as a string
+def validate_request_lambda(session): 
+    print('session is ', session)
+
+    #otherwise check to see if we have a valid github session token
+    #parse the request body as json
+    try:
+        #extract the code from the json data
+        if validate_github_session(session):
+            return True
+    except ValueError:
+        #don't do anything if the json is invalid
+        pass
+
+    #last chance, check the ip address
+    
+    #if we don't have a rapid api key, check the origin
+    #ip = request.context["identity"]["sourceIp"]
+    #print("got client ip: " + ip)
+    #if the ip starts with 127, it's local
+    #if ip.startswith("127"):
+    #    return True, None
+    
+    #if we got here, we failed, return an error
+    raise UnauthorizedError("Error: please login to github to use this service")
+
 
 def get_domain(email):
     return email.split('@')[-1].lower()
