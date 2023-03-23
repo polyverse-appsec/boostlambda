@@ -15,10 +15,14 @@ def explain(event, context):
     #print the event and context objects
     print("event is: " + str(event))
     print("context is: " + str(context))
-    
+
     try:
         # Extract parameters from the event object
-        json_data = event
+        #if the event object has a body, use that, otherwise use the event object itself
+        if 'body' in event:
+            json_data = json.loads(event['body'])        
+        else:
+            json_data = event
 
         validate_request_lambda(json_data['session'])
 
@@ -61,7 +65,10 @@ def explain(event, context):
 def generate(event, context):
     try:
         # Extract parameters from the event object
-        json_data = event
+        if 'body' in event:
+            json_data = json.loads(event['body'])        
+        else:
+            json_data = event
 
         validate_request_lambda(json_data['session'])
 
@@ -111,7 +118,10 @@ def testgen(event, context):
     try:
         # Extract parameters from the event object
    
-        json_data = event
+        if 'body' in event:            #event body is a string, so parse it as JSON
+            json_data = json.loads(event['body'])        
+        else:
+            json_data = event
 
         validate_request_lambda(json_data['session'])
 
@@ -155,7 +165,11 @@ def testgen(event, context):
 def analyze(event, context):
     try:
         # Extract parameters from the event object
-        json_data = event
+        if 'body' in event:
+            #event body is a string, so parse it as JSON
+            json_data = json.loads(event['body'])
+        else:
+            json_data = event
 
         validate_request_lambda(json_data['session'])
 
