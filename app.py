@@ -12,6 +12,10 @@ app = Chalice(app_name='boost')
 
 @app.lambda_function(name='explain')
 def explain(event, context):
+    #print the event and context objects
+    print("event is: " + str(event))
+    print("context is: " + str(context))
+    
     try:
         # Extract parameters from the event object
         json_data = event
