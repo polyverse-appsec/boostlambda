@@ -72,3 +72,38 @@ Here are some resources to learn more about AWS Lambda:
 - Getting Started with AWS Lambda: https://aws.amazon.com/getting-started/hands-on/run-serverless-code/
 
 If you're a new Lambda developer, I recommend going through the Getting Started with AWS Lambda tutorial which will guide you through creating your first Lambda function, configuring its triggers, and testing it. The tutorial is available in multiple programming languages including Node.js, Python, and Java.
+
+## Chalice Setup and Usage
+
+To run Chalice on your macOS laptop, you can follow these general steps:
+
+### Running Chalice on a macOS Laptop
+
+Chalice is a Python microframework for building serverless applications on AWS Lambda and Amazon API Gateway. It simplifies the process of building and deploying serverless applications by allowing you to focus on writing your application code rather than dealing with infrastructure and deployment concerns.
+
+Here's how you can run Chalice on your macOS laptop:
+
+1. Install Python: Chalice requires Python 3.6 or later. You can download and install the latest version of Python from the official website: https://www.python.org/downloads/
+
+2. Install the AWS CLI: Chalice uses the AWS CLI to interact with AWS services. You can install the AWS CLI by following the instructions on the AWS documentation page: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-mac.html
+
+3. Install Chalice: You can install Chalice using pip, the Python package manager. Open a terminal window and run the following command:
+
+```pip install chalice```
+
+4. Configure AWS credentials: Chalice needs AWS credentials to access AWS services. You can configure your AWS credentials by running the following command and following the prompts:
+
+``` aws configure ```
+
+This will prompt you to enter your AWS Access Key ID and Secret Access Key, as well as your default region and output format.
+Create a new Chalice project: You can create a new Chalice project by running the following command:
+``` arduino ```
+
+5. chalice new-project myapp
+This will create a new Chalice project in a directory named myapp.
+Run the Chalice application: You can run the Chalice application by navigating to the project directory and running the following command:
+``` bash ```
+``` chalice local ```
+
+This will start a local development server on your laptop that you can use to test your Chalice application.
+Once you have your Chalice application running, you can modify the app.py file in your project directory to define your application logic. You can also deploy your application to AWS Lambda and Amazon API Gateway by running the chalice deploy command.
