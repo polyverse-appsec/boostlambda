@@ -30,11 +30,9 @@ analyze
 https://iyn66vkb6lmlcb4log6d3ah7d40axgqu.lambda-url.us-west-2.on.aws/
 
 testgen
-
 https://gylbelpkobvont6vpxp4ihw5fm0iwnto.lambda-url.us-west-2.on.aws/
 
 generate:
-
 https://ukkqda6zl22nd752blcqlv3rum0ziwnq.lambda-url.us-west-2.on.aws/
 
 Also, ensure that the IAM permissions are set to allow access to secrets manager:
@@ -46,3 +44,20 @@ Click on "Roles" in the left sidebar.
 Find and click on the role associated with your Lambda function. In your case, it seems to be boost-dev.
 Click on "Add inline policy" on the right side of the page.
 Choose the "Secrets Manager" service.
+
+# AWS Lambda
+
+AWS Lambda is a serverless computing service provided by Amazon Web Services (AWS) that allows you to run your code in response to events and automatically manages the compute resources required to run that code.
+
+With Lambda, you can run code in response to various events such as changes to data in an Amazon S3 bucket, updates to a DynamoDB table, or incoming API requests to an API Gateway endpoint. You can also use Lambda to build custom backend logic for mobile and web applications or automate infrastructure tasks.
+
+Lambda supports a variety of programming languages including Node.js, Python, Java, Go, Ruby, and .NET Core, allowing you to write your code in the language you're most comfortable with.
+
+Here are some resources to learn more about AWS Lambda:
+
+- AWS Lambda Product Page: https://aws.amazon.com/lambda/
+- AWS Lambda Developer Guide: https://docs.aws.amazon.com/lambda/latest/dg/welcome.html
+- AWS Lambda FAQs: https://aws.amazon.com/lambda/faqs/
+- Getting Started with AWS Lambda: https://aws.amazon.com/getting-started/hands-on/run-serverless-code/
+
+If you're a new Lambda developer, I recommend going through the Getting Started with AWS Lambda tutorial which will guide you through creating your first Lambda function, configuring its triggers, and testing it. The tutorial is available in multiple programming languages including Node.js, Python, and Java.
