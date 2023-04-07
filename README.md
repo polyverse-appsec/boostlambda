@@ -27,7 +27,7 @@ run eval "$(pyenv init -)" to install pyenv into your shell as a shell function,
 You may run eval "$(pyenv init --path)" instead to just enable shims, without shell integration
 The below setup should work for the vast majority of users for common use cases. See Advanced configuration for details and more configuration options.
 
-#lambda manual config
+# lambda manual config
 
 for right now, the lambda function urls must be set manually for each api. this is what it is currently set to.
 
@@ -55,7 +55,7 @@ Choose the "Secrets Manager" service.
 
 #Background Material
 
-##AWS Lambda
+## AWS Lambda
 __*ChatGPT Prompt to generate following:* "describe AWS Lambda, provide links to more information about it, and a tutorial for a new Lambda developer"__
 
 AWS Lambda is a serverless computing service provided by Amazon Web Services (AWS) that allows you to run your code in response to events and automatically manages the compute resources required to run that code.
