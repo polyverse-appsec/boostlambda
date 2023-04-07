@@ -1,10 +1,18 @@
 # boostlambda
-Lambda functions for the back end of Boost
 
+## Overview
+Lambda functions for the back end of Boost - see more info on Lambda at bottom of this page
+
+Boost Cloud Service is hosted in AWS - and implemented as an event-driven Lambda service
+https://polyverse.awsapps.com/start#/ Polyverse portal on AWS
+
+Implementation of Boost Service: https://github.com/polyverse-appsec/boostlambda
+
+## Testing
 to test this:
 chalice local
 
-
+## Dev Environment Setup
 to setup the environment on MacOS, Python 3.9 is needed.
 
 https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv
@@ -45,7 +53,10 @@ Find and click on the role associated with your Lambda function. In your case, i
 Click on "Add inline policy" on the right side of the page.
 Choose the "Secrets Manager" service.
 
-# AWS Lambda
+#Background Material
+
+##AWS Lambda
+__*ChatGPT Prompt to generate following:* "describe AWS Lambda, provide links to more information about it, and a tutorial for a new Lambda developer"__
 
 AWS Lambda is a serverless computing service provided by Amazon Web Services (AWS) that allows you to run your code in response to events and automatically manages the compute resources required to run that code.
 
