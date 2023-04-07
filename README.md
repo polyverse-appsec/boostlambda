@@ -97,12 +97,10 @@ Here's how you can run Chalice on your macOS laptop:
 
 This will prompt you to enter your AWS Access Key ID and Secret Access Key, as well as your default region and output format.
 Create a new Chalice project: You can create a new Chalice project by running the following command:
-``` arduino ```
+``` chalice new-project myapp ```
 
-5. chalice new-project myapp
 This will create a new Chalice project in a directory named myapp.
 Run the Chalice application: You can run the Chalice application by navigating to the project directory and running the following command:
-``` bash ```
 ``` chalice local ```
 
 This will start a local development server on your laptop that you can use to test your Chalice application.
