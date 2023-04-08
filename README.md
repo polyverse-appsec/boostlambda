@@ -14,6 +14,7 @@ chalice local
 
 ## Dev Environment Setup
 to setup the environment on MacOS, Python 3.9 is needed.
+Note that newer installs of Python3 - may install 3.11 or higher, which are not supported in Lambda (or may not work correctly)
 
 https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv
 
@@ -89,7 +90,7 @@ Here's how you can run Chalice on your macOS laptop:
 
 3. Install Chalice: You can install Chalice using pip, the Python package manager. Open a terminal window and run the following command:
 
-```pip install chalice```
+``` pip install chalice ```
 
 4. Configure AWS credentials: Chalice needs AWS credentials to access AWS services. You can configure your AWS credentials by running the following command and following the prompts:
 
@@ -105,3 +106,167 @@ Run the Chalice application: You can run the Chalice application by navigating t
 
 This will start a local development server on your laptop that you can use to test your Chalice application.
 Once you have your Chalice application running, you can modify the app.py file in your project directory to define your application logic. You can also deploy your application to AWS Lambda and Amazon API Gateway by running the chalice deploy command.
+
+## Troubleshooting Tips
+
+__ Missing Dependencies: openai, boto3 __
+Error message will look something like this:
+
+```
+Exception in thread Thread-1:
+Traceback (most recent call last):
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/threading.py", line 973, in _bootstrap_inner
+    self.run()
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/chalice/local.py", line 730, in run
+    self._server = self._server_factory()
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/chalice/cli/__init__.py", line 144, in create_local_server
+    app_obj = config.chalice_app
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/chalice/config.py", line 136, in chalice_app
+    app = v()
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/chalice/cli/factory.py", line 314, in load_chalice_app
+    app = importlib.import_module('app')
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/Users/stephenfisher/development/github-vs-boost/boostlambda/app.py", line 2, in <module>
+    from chalicelib.convert import *
+  File "/Users/stephenfisher/development/github-vs-boost/boostlambda/chalicelib/convert.py", line 1, in <module>
+    import openai
+```
+Fix is to:
+```
+pip install boto3
+```
+and
+```pip install openai```
+
+__ Missing AWS Credentials ___
+
+```
+Exception in thread Thread-1:
+Traceback (most recent call last):
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/threading.py", line 973, in _bootstrap_inner
+    self.run()
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/chalice/local.py", line 730, in run
+    self._server = self._server_factory()
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/chalice/cli/__init__.py", line 144, in create_local_server
+    app_obj = config.chalice_app
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/chalice/config.py", line 136, in chalice_app
+    app = v()
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/chalice/cli/factory.py", line 314, in load_chalice_app
+    app = importlib.import_module('app')
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/Users/stephenfisher/development/github-vs-boost/boostlambda/app.py", line 2, in <module>
+    from chalicelib.convert import *
+  File "/Users/stephenfisher/development/github-vs-boost/boostlambda/chalicelib/convert.py", line 4, in <module>
+    secret_json = pvsecret.get_secrets()
+  File "/Users/stephenfisher/development/github-vs-boost/boostlambda/chalicelib/pvsecret.py", line 23, in get_secrets
+    get_secret_value_response = client.get_secret_value(
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/client.py", line 530, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/client.py", line 943, in _make_api_call
+    http, parsed_response = self._make_request(
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/client.py", line 966, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/endpoint.py", line 198, in _send_request
+    request = self.create_request(request_dict, operation_model)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/endpoint.py", line 134, in create_request
+    self._event_emitter.emit(
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/signers.py", line 105, in handler
+    return self.sign(operation_name, request)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/signers.py", line 189, in sign
+    auth.add_auth(request)
+  File "/Users/stephenfisher/Library/Python/3.9/lib/python/site-packages/botocore/auth.py", line 418, in add_auth
+    raise NoCredentialsError()
+botocore.exceptions.NoCredentialsError: Unable to locate credentials
+```
+
+Resolution - suggested by OpenAI, prompted from "how do I store credentials":
+This error occurs when the code is unable to locate valid AWS credentials to access the resource being requested. AWS credentials can be stored in various ways, such as in environment variables, configuration files, or IAM roles. To store your credentials, you can follow these steps:
+
+Create an IAM user in the AWS console with the required permissions for your application.
+Store the access key ID and secret access key for the IAM user in a secure location.
+Set environment variables for the access key ID and secret access key, or create a credentials file in the default location (~/.aws/credentials on Linux and macOS, %USERPROFILE%.aws\credentials on Windows) and store the access key ID and secret access key in the file.
+For example, to set environment variables in Linux or macOS, you can run the following commands:
+
+```
+export AWS_ACCESS_KEY_ID=<your_access_key_id>
+export AWS_SECRET_ACCESS_KEY=<your_secret_access_key>
+```
+Alternatively, you can create a credentials file at the default location and store the access key ID and secret access key in the file, like so:
+
+```
+[default]
+aws_access_key_id=<your_access_key_id>
+aws_secret_access_key=<your_secret_access_key>
+```
+Be sure to replace <your_access_key_id> and <your_secret_access_key> with your actual access key ID and secret access key.
+
+### How to get Access Keys/Tokens and Configure AWS access
+In Polyverse - you'll need access keys and access id generate (from the AWS admin mgmt console)
+
+Once obtained, you can run
+```
+aws configure
+```
+You'll want to answer prompts with something like this:
+```
+ ~ % aws configure
+AWS Access Key ID [****************5V3M]: 
+AWS Secret Access Key [****************J7Tk]: 
+Default region name [us-west-2]: 
+Default output format [None]: 
+```
+NOTE: Polyverse uses us-west-2 (Oregon) datacenter currently
+
+Once completed, running _chalice Local_ should work
+
+Chalice local example local console
+```
+boostlambda % chalice local
+Found credentials in shared credentials file: ~/.aws/credentials
+openai key  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
+openai key  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
+openai key  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
+Serving on http://127.0.0.1:8000
+```
+
+## AWS Services and Debugging
+Since Chalice is only an event-driven framework to host Python code/scriptlets - and the AWS services (e.g. Dynamo, S3, etc.) are all running in the cloud, care should be taken to debug the current app.py code via the local Chalice environment. But know that live production data is being used.
+
+In the future, publishing code, and the endpoints for AWS services may be separated into stages for dev, test, production
+
+Today's AWS environment is 'dev' only
+
+## API Timeouts and AWS API Gateway
+
+The current Boost Web Service API does NOT use an API gateway (e.g. load balancer for API calls to multiple regions, or masking API endpoints behind FQDNs). This is for short-term expediency in development.
+And most importantly - the timeout on the AWS API Gateway is maximum 1 minute.
+The Lambda maximum timeout is 5 minutes
+The OpenAI analysis API generally takes between 5 seconds and 90 seconds - beyond the API gateway timeout.
+
+Future revisions will need to be done to the Boost API endpoint to either:
+* use a larger max timeout on default AWS API Gateway
+* use a different asynchronous API pattern, e.g. tasks, callbacks, etc - from within the Boost API
+* upgrade to a newer, faster OpenAI API endpoint that can process in <60 seconds guaranteed
+
