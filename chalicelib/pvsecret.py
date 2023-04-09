@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 
 secret_json = None
 
+
 def get_secrets():
     global secret_json
     if secret_json is not None:

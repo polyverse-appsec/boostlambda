@@ -9,9 +9,17 @@ https://polyverse.awsapps.com/start#/ Polyverse portal on AWS
 Implementation of Boost Service: https://github.com/polyverse-appsec/boostlambda
 
 ## Testing
-to test this:
+to test this, first start the Chalice Local Server
+```
 chalice local
+```
 
+Then go into the tests directory and run the tests
+```
+pytest
+```
+
+You can also run the pytests directly from inside Visual Studio Code in the Tests tab.
 ## Dev Environment Setup
 to setup the environment on MacOS, Python 3.9 is needed.
 
@@ -26,6 +34,16 @@ Add the pyenv executable to your PATH if it's not already there
 run eval "$(pyenv init -)" to install pyenv into your shell as a shell function, enable shims and autocompletion
 You may run eval "$(pyenv init --path)" instead to just enable shims, without shell integration
 The below setup should work for the vast majority of users for common use cases. See Advanced configuration for details and more configuration options.
+
+### Visual Studio Code integration
+Install the AWS Toolkit for Visual Studio Code
+
+Enter the Authentication Code, Secret Key, and Region in the AWS Toolkit for Visual Studio Code
+
+## Test Environment Setup
+
+You can use the "Chalice: Local" Launch settings in Visual Studio Code to run the local server.
+This should also provide debugging inside the Visual Studio Code python debugger.
 
 # lambda manual config
 

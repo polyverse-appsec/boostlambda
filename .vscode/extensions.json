@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+      "ms-python.python",
+      "amazonwebservices.aws-toolkit-vscode",
+      "ms-azuretools.vscode-docker",
+      "ms-vscode-remote.remote-ssh",
+      "ms-vscode.azure-account",
+      "redhat.vscode-yaml",
+      "eamodio.gitlens"
+    ]
+  }
+  

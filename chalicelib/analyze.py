@@ -3,10 +3,11 @@ from . import pvsecret
 
 secret_json = pvsecret.get_secrets()
 
-#TEMP - put this back to the polyverse key once gpt-4 access is approved there
+# TEMP - put this back to the polyverse key once gpt-4 access is approved there
 openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
 print("openai key ", openai_key)
+
 
 # a function to call openai to explain code
 def analyze_code(code):
@@ -27,4 +28,3 @@ def analyze_code(code):
     )
     explanation = response.choices[0].message.content
     return explanation
-

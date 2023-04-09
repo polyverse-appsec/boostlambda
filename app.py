@@ -1,5 +1,5 @@
 from chalice import Chalice
-from chalicelib.convert import *
+from chalicelib.convert import explain_code, generate_code
 from chalicelib.auth import validate_request_lambda
 from chalice import BadRequestError
 from chalicelib.analyze import analyze_code
@@ -12,15 +12,15 @@ app = Chalice(app_name='boost')
 
 @app.lambda_function(name='explain')
 def explain(event, context):
-    #print the event and context objects
+    # print the event and context objects
     print("event is: " + str(event))
     print("context is: " + str(context))
 
     try:
         # Extract parameters from the event object
-        #if the event object has a body, use that, otherwise use the event object itself
+        # if the event object has a body, use that, otherwise use the event object itself
         if 'body' in event:
-            json_data = json.loads(event['body'])        
+            json_data = json.loads(event['body'])
         else:
             json_data = event
 
@@ -49,7 +49,7 @@ def explain(event, context):
         }
 
     except Exception as e:
-        #if e has a status code, use it, otherwise use 500
+        # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
             status_code = e.STATUS_CODE
         else:
@@ -61,17 +61,17 @@ def explain(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
+
 @app.lambda_function(name='generate')
 def generate(event, context):
     try:
         # Extract parameters from the event object
         if 'body' in event:
-            json_data = json.loads(event['body'])        
+            json_data = json.loads(event['body'])
         else:
             json_data = event
 
         validate_request_lambda(json_data['session'])
-
 
         # Parse the request body as JSON
         print("got to generate with ")
@@ -117,9 +117,10 @@ def generate(event, context):
 def testgen(event, context):
     try:
         # Extract parameters from the event object
-   
-        if 'body' in event:            #event body is a string, so parse it as JSON
-            json_data = json.loads(event['body'])        
+
+        # event body is a string, so parse it as JSON
+        if 'body' in event:
+            json_data = json.loads(event['body'])
         else:
             json_data = event
 
@@ -129,14 +130,14 @@ def testgen(event, context):
         framework = json_data['framework']
         code = json_data['code']
 
-        if code == None:
+        if code is None:
             raise BadRequestError("Error: please provide the code to write tests for")
 
         outputlanguage = language
-        if outputlanguage == None:
+        if outputlanguage is None:
             outputlanguage = "python"
 
-        if framework == None:
+        if framework is None:
             if outputlanguage == "python":
                 framework = "pytest"
             else:
@@ -166,7 +167,7 @@ def analyze(event, context):
     try:
         # Extract parameters from the event object
         if 'body' in event:
-            #event body is a string, so parse it as JSON
+            # event body is a string, so parse it as JSON
             json_data = json.loads(event['body'])
         else:
             json_data = event

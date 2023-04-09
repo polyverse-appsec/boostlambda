@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+      {
+        "name": "Chalice: Local",
+        "type": "python",
+        "request": "launch",
+        "program": "~/Library/Python/3.9/bin/chalice",
+        "cwd": "${workspaceFolder}",
+        "args": [
+          "local",
+          "--no-autoreload"
+        ],
+        "console": "integratedTerminal",
+        "justMyCode": true
+      },
+      {
+        "name": "Remote Lambda Invoke",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/app.py",
+        "cwd": "/var/task",
+        "args": [
+          "${workspaceFolder}/event.json"
+        ],
+        "console": "integratedTerminal",
+        "stopOnEntry": false,
+    }
+    ]
+}
