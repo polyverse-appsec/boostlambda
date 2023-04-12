@@ -1,0 +1,9 @@
+.vscode/**
+venv/**
+.pytest_cache/**
+.gitignore
+.yarnrc
+**/.eslintrc.json
+**/*.map
+node_modules/**
+tests/node_modules/**
