@@ -8,6 +8,9 @@
         "request": "launch",
         "program": "~/Library/Python/3.9/bin/chalice",
         "cwd": "${workspaceFolder}",
+        "env": {
+            "NO_SIGN_REQUEST": "true"
+          },
         "args": [
           "local",
           "--no-autoreload"
@@ -16,13 +19,13 @@
         "justMyCode": true
       },
       {
-        "name": "Remote Lambda Invoke",
+        "name": "(UNTESTED) Remote Lambda Invoke",
         "type": "python",
         "request": "launch",
         "program": "${workspaceFolder}/app.py",
-        "cwd": "/var/task",
+        "cwd": "${workspaceFolder}",
         "args": [
-          "${workspaceFolder}/event.json"
+          ""
         ],
         "console": "integratedTerminal",
         "stopOnEntry": false,
