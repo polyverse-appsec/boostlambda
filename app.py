@@ -4,6 +4,7 @@ from chalicelib.auth import validate_request_lambda
 from chalice import BadRequestError
 from chalicelib.analyze import analyze_code
 from chalicelib.testgen import testgen_code
+from chalicelib.compliance import compliance_code
 
 import json
 
