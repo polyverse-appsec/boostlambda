@@ -178,12 +178,54 @@ def analyze(event, context):
         code = json_data['code']
 
         if code is None:
-            raise BadRequestError("Error: please provide a code fragment to explain")
+            raise BadRequestError("Error: please provide a code fragment to analyze")
 
         # Now call the explain function
         analysis = analyze_code(code)
 
         print("analyzed code is: " + analysis)
+
+        # Put this into a json object
+        json_obj = {}
+        json_obj["analysis"] = analysis
+
+        # Now return the json object in the response
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps(json_obj)
+        }
+
+    except Exception as e:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({"error": str(e)})
+        }
+
+
+@app.lambda_function(name='compliance')
+def compliance(event, context):
+    try:
+        # Extract parameters from the event object
+        if 'body' in event:
+            # event body is a string, so parse it as JSON
+            json_data = json.loads(event['body'])
+        else:
+            json_data = event
+
+        validate_request_lambda(json_data['session'])
+
+        # Extract the code from the json data
+        code = json_data['code']
+
+        if code is None:
+            raise BadRequestError("Error: please provide a code fragment to analyze for compliance")
+
+        # Now call the explain function
+        analysis = analyze_code(code)
+
+        print("compliance analyzed code is: " + analysis)
 
         # Put this into a json object
         json_obj = {}
