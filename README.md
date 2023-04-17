@@ -20,13 +20,19 @@ pytest
 ```
 
 You can also run the pytests directly from inside Visual Studio Code in the Tests tab.
+
+### Tutorials on Lambda Testing
+[Testing Chalice Local and Lambda Functions](https://makimo.pl/blog/testing-triggered-lambdas-locally-with-aws-chalice-and-localstack/)
+
+[AWS Testing of Lambda Functions with Chalice](https://aws.amazon.com/blogs/developer/introducing-the-new-test-client-for-aws-chalice/)
+
 ## Dev Environment Setup
 to setup the environment on MacOS, Python 3.9 is needed.
 Note that newer installs of Python3 - may install 3.11 or higher, which are not supported in Lambda (or may not work correctly)
 
 https://github.com/pyenv/pyenv#set-up-your-shell-environment-for-pyenv
 
-Set up your shell environment for Pyenv
+### Set up your shell environment for Pyenv
 
 Upgrade note: The startup logic and instructions have been updated for simplicity in 2.3.0. The previous, more complicated configuration scheme for 2.0.0-2.2.5 still works.
 
