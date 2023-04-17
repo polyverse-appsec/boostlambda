@@ -223,7 +223,7 @@ def compliance(event, context):
             raise BadRequestError("Error: please provide a code fragment to analyze for compliance")
 
         # Now call the explain function
-        analysis = analyze_code(code)
+        analysis = compliance_code(code)
 
         print("compliance analyzed code is: " + analysis)
 
