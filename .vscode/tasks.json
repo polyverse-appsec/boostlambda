@@ -2,20 +2,9 @@
     "version": "2.0.0",
     "tasks": [
       {
-        "label": "sam: build",
+        "label": "chalice deploy",
         "type": "shell",
-        "command": "sam build",
-        "args": [
-          "--use-container"
-        ],
-        "options": {
-          "cwd": "${workspaceFolder}"
-        }
-      },
-      {
-        "label": "sam: deploy",
-        "type": "shell",
-        "command": "sam deploy --guided",
+        "command": "chalice deploy",
         "options": {
           "cwd": "${workspaceFolder}"
         }
