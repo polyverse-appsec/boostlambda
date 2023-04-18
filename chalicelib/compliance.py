@@ -9,7 +9,7 @@ openai.api_key = openai_key
 print("openai key ", openai_key)
 
 
-# a function to call openai to explain code
+# a function to call openai to check code for data compliance
 def compliance_code(code):
 
     prompt = "Analyze this code for compliance issues related to GDPR, PCI DSS, and HIPAA compliance. For each issue, indicate a severity on a ten point scale, ten being the worse. Explain the compliance issue and if possible, suggest a solution.:\n\n" + code
