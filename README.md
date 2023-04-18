@@ -72,7 +72,7 @@ compliance:
 https://q57gtrfpkuzquelgqtnncpjwta0nngfx.lambda-url.us-west-2.on.aws/
 
 codeguidelines:
-
+https://4govp5ze7uyio3kjehtarpv24u0nabhw.lambda-url.us-west-2.on.aws/
 
 Also, ensure that the IAM permissions are set to allow access to secrets manager:
 
