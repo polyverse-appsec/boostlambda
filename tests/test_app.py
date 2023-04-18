@@ -116,3 +116,16 @@ def test_compliance():
             'compliance', request_body)
 
         assert response.payload['statusCode'] == 200
+
+
+def test_codeguidelines():
+    with Client(app) as client:
+        request_body = {
+            'code': 'print("Hello, World!")',
+            'session': 'testemail: alex@darklight.ai'
+        }
+
+        response = client.lambda_.invoke(
+            'codeguidelines', request_body)
+
+        assert response.payload['statusCode'] == 200

@@ -68,6 +68,12 @@ https://gylbelpkobvont6vpxp4ihw5fm0iwnto.lambda-url.us-west-2.on.aws/
 generate:
 https://ukkqda6zl22nd752blcqlv3rum0ziwnq.lambda-url.us-west-2.on.aws/
 
+compliance:
+https://q57gtrfpkuzquelgqtnncpjwta0nngfx.lambda-url.us-west-2.on.aws/
+
+codeguidelines:
+
+
 Also, ensure that the IAM permissions are set to allow access to secrets manager:
 
 Follow these steps to update the IAM role:
@@ -130,6 +136,9 @@ Run the Chalice application: You can run the Chalice application by navigating t
 
 This will start a local development server on your laptop that you can use to test your Chalice application.
 Once you have your Chalice application running, you can modify the app.py file in your project directory to define your application logic. You can also deploy your application to AWS Lambda and Amazon API Gateway by running the chalice deploy command.
+
+### Deploying new Lambda APIs / Functions to AWS
+Use the "Chalice: Deploy" Launch settings in Visual Studio Code to deploy the local server to AWS.
 
 ## Troubleshooting Tips
 
