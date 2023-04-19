@@ -52,6 +52,12 @@ Enter the Authentication Code, Secret Key, and Region in the AWS Toolkit for Vis
 You can use the "Chalice: Local" Launch settings in Visual Studio Code to run the local server.
 This should also provide debugging inside the Visual Studio Code python debugger.
 
+In the tests directory, you can run 
+```
+python3 server.py
+```
+to run a local server that will run the lambda functions locally.  This is useful for debugging and rapid development.
+
 # lambda manual config
 
 for right now, the lambda function urls must be set manually for each api. this is what it is currently set to.
