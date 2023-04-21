@@ -1,3 +1,4 @@
 boto3==1.25.1
 openai==0.27.2
 ShopifyAPI==12.2.0
+stripe==5.4.0

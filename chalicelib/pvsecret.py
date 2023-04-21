@@ -1,5 +1,6 @@
 import json
 import boto3
+import os
 from botocore.exceptions import ClientError
 
 secret_json = None
@@ -33,5 +34,13 @@ def get_secrets():
     awssecret = get_secret_value_response['SecretString']
 
     secret_json = json.loads(awssecret)
+    # Use the get() method to retrieve the value of CHALICE_STAGE, with a default value of 'dev'
+    chalice_stage = os.environ.get('CHALICE_STAGE', 'dev')
+
+    # Use the retrieved value in the conditional statement
+    if chalice_stage == 'prod':
+        secret_json['stripe'] = secret_json['stripe_prod']
+    else:
+        secret_json['stripe'] = secret_json['stripe_dev']
 
     return secret_json
