@@ -1,4 +1,7 @@
 import stripe
+import math
+import uuid
+
 from . import pvsecret
 
 secret_json = pvsecret.get_secrets()
@@ -40,7 +43,8 @@ def check_create_subscription(customer, email):
                 "price": "boost_per_kb",
                 "metadata": {"email": email}
             },
-        ]
+        ],
+        coupon="RNhiqVPC"
     )
     return subscription
 
@@ -63,3 +67,16 @@ def check_create_subscription_item(subscription, email):
 
     return subscription_item
 
+def update_usage(subscription_item, bytes):
+    #calculate the usage by dividing the bytes by 1024 and rounding up
+
+    usage = math.ceil(bytes / 1024)
+    idempotency_key = str(uuid.uuid4())
+
+    #update the usage
+    stripe.SubscriptionItem.create_usage_record(
+        id=subscription_item.id,
+        quantity=usage,
+        idempotency_key=idempotency_key
+    )
+    return subscription_item
