@@ -37,7 +37,7 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
             with Client(app) as client:
                 response = client.lambda_.invoke(verb, json_data)
 
-            print('respnse payload')
+            print('response payload')
             print(response.payload["body"])
             # Convert the response to a JSON-formatted string if it's not already a string.
             response_str = json.dumps(response.payload["body"]) if not isinstance(response.payload["body"], str) else response.payload["body"]
