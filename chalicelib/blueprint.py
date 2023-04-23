@@ -1,5 +1,6 @@
 import openai
 from . import pvsecret
+import os
 
 secret_json = pvsecret.get_secrets()
 
@@ -7,6 +8,37 @@ secret_json = pvsecret.get_secrets()
 openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
 print("openai key ", openai_key)
+
+# Define the directory where prompt files are stored
+PROMPT_DIR = "chalicelib/prompts"
+
+# Define the filenames for each prompt file
+SEED_PROMPT_FILENAME = "blueprint-seed.prompt"
+UPDATE_PROMPT_FILENAME = "blueprint-update.prompt"
+ROLE_CONTENT_FILENAME = "blueprint-role-content.prompt"
+
+
+# Load the prompt files and replace the placeholders with the actual values
+def load_prompts():
+    promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
+    print("promptdir: " + promptdir)
+
+    # Load the prompt file for seed
+    with open(os.path.join(promptdir, SEED_PROMPT_FILENAME), 'r') as f:
+        seed_prompt = f.read()
+
+    # Load the prompt file for update
+    with open(os.path.join(promptdir, UPDATE_PROMPT_FILENAME), 'r') as f:
+        update_prompt = f.read()
+
+    # Load the prompt file for role content
+    with open(os.path.join(promptdir, ROLE_CONTENT_FILENAME), 'r') as f:
+        role_content = f.read()
+
+    return seed_prompt, update_prompt, role_content
+
+
+blueprint_seed_prompt, blueprint_update_prompt, role_content = load_prompts()
 
 
 # a function to call openai to blueprint code for architecture
@@ -20,11 +52,11 @@ def blueprint_code(json_data):
         prior_blueprint = json_data['blueprint']
         # If there is no prior blueprint, set the prompt is creating the seed blueprint from the ingested code
         if prior_blueprint is None:
-            prompt = "You are an Architect for a software project. For the following code, please produce Architectural Summary such as:\n\n\n```\n* kind of software project for this code: web app, server code, cloud web service, mobile app, shared library, etc.\n* definition of software principles used in the code: multi-threaded, event-driven, data transformation, server processing, client app code, etc\n* how is data stored: shared memory, disk, database, SQL vs NoSQL, non-persisted\n* how is security handled: encrypted vs non-encrypted data, \n* how is performance handled: multi-threaded, non-blocking code, extra optimized, background tasks, CPU bound processing, etc.\n* describe software resiliency pattern in this software: fail fast, defensive code, error logging, etc.\n* analysis of the architectural soundness and best practices: \n* abnormalities in the architecture identified: coarse locks in multi-threaded, global and shared memory in library, UI in a non-interactive server, versioning fragility, etc.\n* terse short summary of the above that can be used as a reference for analyzing other code in this codebase\n\nUse the following sample code from a software project to create the Architectural Summary of the overall project.```\n\n" + code
+            prompt = blueprint_seed_prompt.format(code=code)
         else:
-            prompt = "You are an Architect for a software project. Based on samples of software code files in a project, you produce architectural summaries of the overall project in the following format:\n\n\n```\n* kind of software project for this code: web app, server code, cloud web service, mobile app, shared library, etc.\n* definition of software principles used in the code: multi-threaded, event-driven, data transformation, server processing, client app code, etc\n* how is data stored: shared memory, disk, database, SQL vs NoSQL, non-persisted\n* how is security handled: encrypted vs non-encrypted data, \n* how is performance handled: multi-threaded, non-blocking code, extra optimized, background tasks, CPU bound processing, etc.\n* describe software resiliency pattern in this software: fail fast, defensive code, error logging, etc.\n* analysis of the architectural soundness and best practices: \n* abnormalities in the architecture identified: coarse locks in multi-threaded, global and shared memory in library, UI in a non-interactive server, versioning fragility, etc.\n* terse short summary of the above that can be used as a reference for analyzing other code in this codebase\n```\n\nYou previously analyzed sample code in this software project and generated this project-level Architectural Summary as follows:" + prior_blueprint + "\n```\n\nNow, you are analyzing the following code from this same software project. You may update your previously generated Architectural Summary of this project as needed. Note that you can add additional aspects to the overall architecture, and you can clarify prior assumptions. But you should not remove prior architectural aspects from the prior generated Architectural Summary. And the final Architectural Summary should remain high-level, not specific to any one function.\n\nThe new code sample follows:\n\n```\n" + code
+            prompt = blueprint_seed_prompt.format(code=code, prior_blueprint=prior_blueprint)
     else:
-        prompt = "You are an Architect for a software project. For the following code, please produce Architectural Summary such as:\n\n\n```\n* kind of software project for this code: web app, server code, cloud web service, mobile app, shared library, etc.\n* definition of software principles used in the code: multi-threaded, event-driven, data transformation, server processing, client app code, etc\n* how is data stored: shared memory, disk, database, SQL vs NoSQL, non-persisted\n* how is security handled: encrypted vs non-encrypted data, \n* how is performance handled: multi-threaded, non-blocking code, extra optimized, background tasks, CPU bound processing, etc.\n* describe software resiliency pattern in this software: fail fast, defensive code, error logging, etc.\n* analysis of the architectural soundness and best practices: \n* abnormalities in the architecture identified: coarse locks in multi-threaded, global and shared memory in library, UI in a non-interactive server, versioning fragility, etc.\n* terse short summary of the above that can be used as a reference for analyzing other code in this codebase\n\nUse the following sample code from a software project to create the Architectural Summary of the overall project.```\n\n" + code
+        prompt = blueprint_seed_prompt.format(code=code)
 
     print("calling openai with prompt: " + prompt + "\n\n")
 
@@ -32,7 +64,7 @@ def blueprint_code(json_data):
         model="gpt-4",
         messages=[
         {   "role": "system",
-            "content": "I am a code explanation bot. I will analyze the code below to help build an architectural summary of the overall software project that contains this code."
+            "content": role_content
         },
         {
             "role": "user",

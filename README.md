@@ -148,6 +148,11 @@ Once you have your Chalice application running, you can modify the app.py file i
 ### Deploying new Lambda APIs / Functions to AWS
 Use the "Chalice: Deploy" Launch settings in Visual Studio Code to deploy the local server to AWS.
 
+The configuration for the Chalice App (with Lambda functions) is in the config.json file
+NOTE: An example of the full available schema for config.json is also available in sample-config.json
+
+The default deployment is to the "dev" stage. To deploy to a different stage, use the "chalice deploy --stage prod" or "chalice deploy --stage dev" commands.
+
 ## Troubleshooting Tips
 
 __ Missing Dependencies: openai, boto3 __
