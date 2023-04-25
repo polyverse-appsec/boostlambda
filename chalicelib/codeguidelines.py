@@ -1,5 +1,6 @@
 import openai
 from . import pvsecret
+import os
 
 secret_json = pvsecret.get_secrets()
 
@@ -8,18 +9,44 @@ openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
 print("openai key ", openai_key)
 
+# Define the directory where prompt files are stored
+PROMPT_DIR = "chalicelib/prompts"
+
+# Define the filenames for each prompt file
+GUIDELINES_PROMPT_FILENAME = "guidelines.prompt"
+ROLE_SYSTEM_FILENAME = "guidelines-role-system.prompt"
+
+
+# Load the prompt files and replace the placeholders with the actual values
+def load_prompts():
+    promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
+    print("promptdir: " + promptdir)
+
+    # Load the prompt file for guidelines
+    with open(os.path.join(promptdir, GUIDELINES_PROMPT_FILENAME), 'r') as f:
+        guidelines_prompt = f.read()
+
+    # Load the prompt file for system role
+    with open(os.path.join(promptdir, ROLE_SYSTEM_FILENAME), 'r') as f:
+        role_system = f.read()
+
+    return guidelines_prompt, role_system
+
+
+guidelines_prompt, role_system = load_prompts()
+
 
 # a function to call openai to evaluate code for coding guidelines
 def guidelines_code(code):
 
-    prompt = "You are an Architect for best development practices in an enterprise. Analyze the following code, describe the coding style and patterns used in the code and comments with examples. Identify exceptions to best practice coding guidelines in the code and comments. For any exceptions - explain why the best practice should be used. Where available, provide links to online material detailing each coding guidelines.:\n\n" + code
+    prompt = guidelines_prompt.format(code=code)
 
     print("calling openai with prompt: " + prompt + "\n\n")
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
         {   "role": "system",
-            "content": "I am a code explanation bot. I will analyze the code below in detail for coding guidelines, best practices and developer education."
+            "content": role_system
         },
         {
             "role": "user",

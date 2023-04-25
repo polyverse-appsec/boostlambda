@@ -15,7 +15,7 @@ PROMPT_DIR = "chalicelib/prompts"
 # Define the filenames for each prompt file
 SEED_PROMPT_FILENAME = "blueprint-seed.prompt"
 UPDATE_PROMPT_FILENAME = "blueprint-update.prompt"
-ROLE_CONTENT_FILENAME = "blueprint-role-content.prompt"
+ROLE_SYSTEM_FILENAME = "blueprint-role-system.prompt"
 
 
 # Load the prompt files and replace the placeholders with the actual values
@@ -31,14 +31,14 @@ def load_prompts():
     with open(os.path.join(promptdir, UPDATE_PROMPT_FILENAME), 'r') as f:
         update_prompt = f.read()
 
-    # Load the prompt file for role content
-    with open(os.path.join(promptdir, ROLE_CONTENT_FILENAME), 'r') as f:
-        role_content = f.read()
+    # Load the prompt file for system role
+    with open(os.path.join(promptdir, ROLE_SYSTEM_FILENAME), 'r') as f:
+        role_system = f.read()
 
-    return seed_prompt, update_prompt, role_content
+    return seed_prompt, update_prompt, role_system
 
 
-blueprint_seed_prompt, blueprint_update_prompt, role_content = load_prompts()
+blueprint_seed_prompt, blueprint_update_prompt, role_system = load_prompts()
 
 
 # a function to call openai to blueprint code for architecture
@@ -64,7 +64,7 @@ def blueprint_code(json_data):
         model="gpt-4",
         messages=[
         {   "role": "system",
-            "content": role_content
+            "content": role_system
         },
         {
             "role": "user",

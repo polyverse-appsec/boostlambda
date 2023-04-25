@@ -1,5 +1,6 @@
 import openai
 from . import pvsecret
+import os
 
 secret_json = pvsecret.get_secrets()
 
@@ -8,18 +9,45 @@ openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
 print("openai key ", openai_key)
 
+# Define the directory where prompt files are stored
+PROMPT_DIR = "chalicelib/prompts"
+
+# Define the filenames for each prompt file
+TESTGEN_PROMPT_FILENAME = "testgen.prompt"
+ROLE_SYSTEM_FILENAME = "testgen-role-system.prompt"
+
+
+# Load the prompt files and replace the placeholders with the actual values
+def load_prompts():
+    promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
+    print("promptdir: " + promptdir)
+
+    # Load the prompt file for seed
+    with open(os.path.join(promptdir, TESTGEN_PROMPT_FILENAME), 'r') as f:
+        testgen_prompt = f.read()
+
+    # Load the prompt file for role content
+    with open(os.path.join(promptdir, ROLE_SYSTEM_FILENAME), 'r') as f:
+        role_system = f.read()
+
+    return testgen_prompt, role_system
+
+
+testgen_prompt, role_system = load_prompts()
+
 
 # a function to call openai to generate code from english
 def testgen_code(original_code, language, framework):
 
-    prompt = "### Generate " + language + " test code from the code shown here, using the " + framework + " for " + language + ". Here the code to test: \n\n" + original_code + "\n\n"
+    prompt = testgen_prompt.format(original_code=original_code, language=language, framework=framework)
+
     print("calling openai with prompt: " + prompt + "\n\n")
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
             {
                 "role": "system",
-                "content": "I am a code generation assistant that can generate " + language + "test code. I generate syntactically correct code."
+                "content": role_system
             },
             {
                 "role": "user",
