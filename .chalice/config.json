@@ -3,16 +3,36 @@
     "app_name": "boost",
     "tags": {
         "Environment": "Development",
-        "Application": "My Chalice App"
+        "Application": "Boost"
     },
     "stages": {
         "dev": {
             "api_gateway_stage": "api",
-            "lambda_timeout": 240
+            "lambda_timeout": 240,
+            "tags": {
+                "Environment": "Development"
+            }
+        },
+        "test": {
+            "api_gateway_stage": "api",
+            "lambda_timeout": 240,
+            "tags": {
+                "Environment": "Test"
+            }
+        },
+        "staging": {
+            "api_gateway_stage": "api",
+            "lambda_timeout": 240,
+            "tags": {
+                "Environment": "Staging"
+            }
         },
         "prod": {
             "api_gateway_stage": "api",
-            "lambda_timeout": 240
+            "lambda_timeout": 240,
+            "tags": {
+                "Environment": "Production"
+            }
         }
     },
   "include": ["prompts"]
