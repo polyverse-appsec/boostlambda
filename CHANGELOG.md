@@ -3,6 +3,10 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.4.2: April 24, 2023
+
+- Web resource links are now included for Vulnerability scan, Data/Privacy Compliance, and Test Case Generation
+
 ## Version 0.4.1: April 22, 2023
 
 - Added "prod" deployment stage (in addition to existing "dev" stage)
