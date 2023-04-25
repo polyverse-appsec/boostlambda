@@ -153,6 +153,13 @@ NOTE: An example of the full available schema for config.json is also available 
 
 The default deployment is to the "dev" stage. To deploy to a different stage, use the "chalice deploy --stage prod" or "chalice deploy --stage dev" commands.
 
+The full list of Service Deployment stages:
+- Local: Local service deployment running on local dev laptop, localhost services, uses live OpenAI service
+- Dev: Development stage, uses live OpenAI service, for individual developer testing - on top of AWS
+- Test: Test stage, uses live OpenAI service, for integration testing - on top of AWS, just prior to publishing or promoting to Staging or Production
+- (_Not Implemented Yet: Same as Prod today_) Staging: Staging stage, uses live OpenAI service on top of AWS, for performance, scale and resiliency testing, just prior to publishing or promoting to Production
+- Prod: Production stage, uses live OpenAI service, for production use - on top of AWS, the default for customers, running only the most stable services
+
 ## Troubleshooting Tips
 
 __ Missing Dependencies: openai, boto3 __
