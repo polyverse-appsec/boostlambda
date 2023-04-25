@@ -1,8 +1,11 @@
 import openai
 from . import pvsecret
 import os
+from chalicelib.constants import API_VERSION
 
 secret_json = pvsecret.get_secrets()
+
+testgen_api_version = API_VERSION  # API version is global for now, not service specific
 
 # TEMP - put this back to the polyverse key once gpt-4 access is approved there
 openai_key = secret_json["openai-personal"]

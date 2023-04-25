@@ -44,7 +44,9 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
 
             # Send the response back to the client.
             self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
+            headers = response.payload["headers"]
+            for header_name, header_value in headers.items():
+                self.send_header(header_name, header_value)
             self.end_headers()
             self.wfile.write(response_str.encode())
         else:

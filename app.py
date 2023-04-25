@@ -1,12 +1,12 @@
 from chalice import Chalice
-from chalicelib.convert import explain_code, generate_code
 from chalicelib.auth import validate_request_lambda
 from chalice import BadRequestError
-from chalicelib.analyze import analyze_code
-from chalicelib.testgen import testgen_code
-from chalicelib.compliance import compliance_code
-from chalicelib.codeguidelines import guidelines_code
-from chalicelib.blueprint import blueprint_code
+from chalicelib.analyze import analyze_code, analyze_api_version
+from chalicelib.testgen import testgen_code, testgen_api_version
+from chalicelib.compliance import compliance_code, compliance_api_version
+from chalicelib.codeguidelines import guidelines_code, guidelines_api_version
+from chalicelib.blueprint import blueprint_code, blueprint_api_version
+from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
 
 import json
 
@@ -47,7 +47,8 @@ def explain(event, context):
         # Now return the JSON object in the response
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': explain_api_version},
             'body': json.dumps(json_obj)
         }
 
@@ -60,7 +61,8 @@ def explain(event, context):
 
         return {
             'statusCode': status_code,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': explain_api_version},
             'body': json.dumps({"error": str(e)})
         }
 
@@ -104,14 +106,22 @@ def generate(event, context):
         # Now return the JSON object in the response
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': convert_api_version},
             'body': json.dumps(json_obj)
         }
 
     except Exception as e:
+        # if e has a status code, use it, otherwise use 500
+        if hasattr(e, 'STATUS_CODE'):
+            status_code = e.STATUS_CODE
+        else:
+            status_code = 500
+
         return {
-            'statusCode': 400,
-            'headers': {'Content-Type': 'application/json'},
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': convert_api_version},
             'body': json.dumps({"error": str(e)})
         }
 
@@ -153,14 +163,21 @@ def testgen(event, context):
 
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': testgen_api_version},
             'body': json.dumps(json_obj)
         }
 
     except Exception as e:
+        # if e has a status code, use it, otherwise use 500
+        if hasattr(e, 'STATUS_CODE'):
+            status_code = e.STATUS_CODE
+        else:
+            status_code = 500
         return {
-            'statusCode': 400,
-            'headers': {'Content-Type': 'application/json'},
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': testgen_api_version},
             'body': json.dumps({"error": str(e)})
         }
 
@@ -195,14 +212,22 @@ def analyze(event, context):
         # Now return the json object in the response
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': analyze_api_version},
             'body': json.dumps(json_obj)
         }
 
     except Exception as e:
+        # if e has a status code, use it, otherwise use 500
+        if hasattr(e, 'STATUS_CODE'):
+            status_code = e.STATUS_CODE
+        else:
+            status_code = 500
+
         return {
-            'statusCode': 400,
-            'headers': {'Content-Type': 'application/json'},
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': analyze_api_version},
             'body': json.dumps({"error": str(e)})
         }
 
@@ -237,14 +262,22 @@ def compliance(event, context):
         # Now return the json object in the response
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': compliance_api_version},
             'body': json.dumps(json_obj)
         }
 
     except Exception as e:
+        # if e has a status code, use it, otherwise use 500
+        if hasattr(e, 'STATUS_CODE'):
+            status_code = e.STATUS_CODE
+        else:
+            status_code = 500
+
         return {
-            'statusCode': 400,
-            'headers': {'Content-Type': 'application/json'},
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': compliance_api_version},
             'body': json.dumps({"error": str(e)})
         }
 
@@ -279,14 +312,22 @@ def codeguidelines(event, context):
         # Now return the json object in the response
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': guidelines_api_version},
             'body': json.dumps(json_obj)
         }
 
     except Exception as e:
+        # if e has a status code, use it, otherwise use 500
+        if hasattr(e, 'STATUS_CODE'):
+            status_code = e.STATUS_CODE
+        else:
+            status_code = 500
+
         return {
-            'statusCode': 400,
-            'headers': {'Content-Type': 'application/json'},
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': guidelines_api_version},
             'body': json.dumps({"error": str(e)})
         }
 
@@ -329,13 +370,21 @@ def blueprint(event, context):
         # Now return the json object in the response
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': blueprint_api_version},
             'body': json.dumps(json_obj)
         }
 
     except Exception as e:
+        # if e has a status code, use it, otherwise use 500
+        if hasattr(e, 'STATUS_CODE'):
+            status_code = e.STATUS_CODE
+        else:
+            status_code = 500
+
         return {
-            'statusCode': 400,
-            'headers': {'Content-Type': 'application/json'},
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': blueprint_api_version},
             'body': json.dumps({"error": str(e)})
         }

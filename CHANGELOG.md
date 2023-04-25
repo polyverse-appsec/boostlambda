@@ -6,6 +6,9 @@ Polyverse Boost Cloud Service
 ## Version 0.4.2: April 24, 2023
 
 - Web resource links are now included for Vulnerability scan, Data/Privacy Compliance, and Test Case Generation
+- Added version header to all responses - e.g. "X-API-Version: 0.4.2"
+- set all HTTP error codes to 500 (instead of 400) unless otherwise specified
+- fixed bug in Local Server that erased content headers in response
 
 ## Version 0.4.1: April 22, 2023
 

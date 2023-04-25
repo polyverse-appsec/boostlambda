@@ -1,8 +1,13 @@
 import openai
 from . import pvsecret
 import os
+from chalicelib.constants import API_VERSION
 
 secret_json = pvsecret.get_secrets()
+
+explain_api_version = API_VERSION  # API version is global for now, not service specific
+convert_api_version = API_VERSION  # API version is global for now, not service specific
+
 
 # TEMP - put this back to the polyverse key once gpt-4 access is approved there
 openai_key = secret_json["openai-personal"]
@@ -54,7 +59,7 @@ explain_prompt, convert_prompt, role_system, role_user, role_assistant = load_pr
 def explain_code(code):
 
     prompt = explain_prompt.format(code=code)
- 
+
     print("calling openai with prompt: " + prompt + "\n\n")
     response = openai.ChatCompletion.create(
         model="gpt-4",

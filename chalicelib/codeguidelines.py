@@ -1,6 +1,9 @@
 import openai
 from . import pvsecret
 import os
+from chalicelib.constants import API_VERSION
+
+guidelines_api_version = API_VERSION  # API version is global for now, not service specific
 
 secret_json = pvsecret.get_secrets()
 
