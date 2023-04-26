@@ -10,12 +10,13 @@ from chalicelib.convert import explain_code, generate_code, convert_api_version,
 
 import json
 import uuid
-import os
 from chalicelib.telemetry import cw_client, xray_recorder
+import time
 
 app = Chalice(app_name='boost')
 
 
+@xray_recorder.capture('explain')
 @app.lambda_function(name='explain')
 def explain(event, context):
 
@@ -34,11 +35,15 @@ def explain(event, context):
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cw_client is not None:
+            print("X-Ray validate_request_lambda")
             with xray_recorder.capture('validate_request_lambda'):
                 validate_request_lambda(json_data['session'], correlation_id)
         else:
             # Otherwise, call the function directly
+            start_time = time.monotonic()
             validate_request_lambda(json_data['session'], correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         code = json_data.get('code')
@@ -48,11 +53,15 @@ def explain(event, context):
 
         # Now call the explain function
         if cw_client is not None:
+            print("X-Ray explain_code")
             with xray_recorder.capture('explain_code'):
-                explanation = explain_code(code)
+                explanation = explain_code(code, event, context, correlation_id)
         else:
             # Otherwise, call the function directly
-            explanation = explain_code(code)
+            start_time = time.monotonic()
+            explanation = explain_code(code, event, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
 
     except Exception as e:
 
@@ -78,48 +87,6 @@ def explain(event, context):
     # Put this into a JSON object
     json_obj = {}
     json_obj["explanation"] = explanation
-
-    # Get the size of the code and explanation
-    code_size = len(code)
-    explanation_size = len(explanation)
-
-    if cw_client is not None:
-        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', 'Local Lambda Server: Explain')
-        cw_client.put_metric_data(
-            Namespace='Boost/Lambda',
-            MetricData=[
-                {
-                    'MetricName': 'CodeSize',
-                    'Dimensions': [
-                        {
-                            'Name': 'LambdaFunctionName',
-                            'Value': lambda_function
-                        },
-                        {
-                            'Name': 'CorrelationID',
-                            'Value': correlation_id
-                        }
-                    ],
-                    'Unit': 'Bytes',
-                    'Value': code_size
-                },
-                {
-                    'MetricName': 'ExplanationSize',
-                    'Dimensions': [
-                        {
-                            'Name': 'LambdaFunctionName',
-                            'Value': lambda_function
-                        },
-                        {
-                            'Name': 'CorrelationID',
-                            'Value': correlation_id
-                        }
-                    ],
-                    'Unit': 'Bytes',
-                    'Value': explanation_size
-                }
-            ]
-        )
 
     # Now return the JSON object in the response
     return {

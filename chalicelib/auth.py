@@ -4,6 +4,7 @@ from . import pvsecret
 from chalice import UnauthorizedError
 import re
 from chalicelib.telemetry import cw_client, xray_recorder
+import time
 
 
 def fetch_email(access_token):
@@ -32,17 +33,28 @@ def fetch_email(access_token):
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
 def validate_github_session(access_token, correlation_id):
     if cw_client is not None:
-        with xray_recorder.capture('github_fetch_email'):
+        with xray_recorder.capture('github_verify_email'):
             email = fetch_email(access_token)
     else:
+        start_time = time.monotonic()
         email = fetch_email(access_token)
+        end_time = time.monotonic()
+        print(f'Execution time {correlation_id} github_verify_email: {end_time - start_time:.3f} seconds')
+
     print('BOOST_USAGE: email is ', email)
+
     if email:
+
         if cw_client is not None:
             with xray_recorder.capture('shopify_verify_email'):
                 return verify_email_with_shopify(email, correlation_id), email
         else:
-            return verify_email_with_shopify(email, correlation_id), email
+            start_time = time.monotonic()
+            verified = verify_email_with_shopify(email, correlation_id), email
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} shopify_verify_email: {end_time - start_time:.3f} seconds')
+            return verified
+
     else:
         return False, email
 

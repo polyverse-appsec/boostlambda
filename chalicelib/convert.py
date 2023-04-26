@@ -2,6 +2,7 @@ import openai
 from . import pvsecret
 import os
 from chalicelib.version import API_VERSION
+from chalicelib.telemetry import cw_client
 
 secret_json = pvsecret.get_secrets()
 
@@ -55,22 +56,67 @@ explain_prompt, convert_prompt, role_system, role_user, role_assistant = load_pr
 
 
 # a function to call openai to explain code
-def explain_code(code):
+def explain_code(code, event, context, correlation_id):
 
     prompt = explain_prompt.format(code=code)
 
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-        {   "role": "system",
-            "content": role_system
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }]
+            {
+                "role": "system",
+                "content": role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
     )
     explanation = response.choices[0].message.content
+
+    # Get the size of the code and explanation
+    prompt_size = len(prompt) + len(role_system)
+    explanation_size = len(explanation)
+
+    if cw_client is not None:
+        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
+        cw_client.put_metric_data(
+            Namespace='Boost/Lambda',
+            MetricData=[
+                {
+                    'MetricName': 'PromptSize',
+                    'Dimensions': [
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': 'Bytes',
+                    'Value': prompt_size
+                },
+                {
+                    'MetricName': 'ExplanationSize',
+                    'Dimensions': [
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': 'Bytes',
+                    'Value': explanation_size
+                }
+            ]
+        )
+
     return explanation
 
 
