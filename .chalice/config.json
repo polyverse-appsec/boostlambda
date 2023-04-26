@@ -1,20 +1,25 @@
 {
-  "version": "2.0",
-  "app_name": "boost",
-  "stages": {
-    "dev": {
-      "api_gateway_stage": "api",
-      "lambda_timeout": 240,
-      "environment_variables": {
-        "CHALICE_STAGE": "dev"
-      }
+    "version": "2.0",
+    "app_name": "boost",
+    "tags": {
+        "Environment": "Development",
+        "Application": "My Chalice App"
     },
-    "prod": {
-      "api_gateway_stage": "api",
-      "lambda_timeout": 240,
-      "environment_variables": {
-        "CHALICE_STAGE": "prod"
-      }
-    }
-  }
+    "stages": {
+        "dev": {
+            "api_gateway_stage": "api",
+            "lambda_timeout": 240,
+            "environment_variables": {
+              "CHALICE_STAGE": "dev"
+            }
+        },
+        "prod": {
+            "api_gateway_stage": "api",
+            "lambda_timeout": 240,
+            "environment_variables": {
+              "CHALICE_STAGE": "prod"
+            }
+        }
+    },
+  "include": ["prompts"]
 }

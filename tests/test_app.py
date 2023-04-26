@@ -129,3 +129,16 @@ def test_codeguidelines():
             'codeguidelines', request_body)
 
         assert response.payload['statusCode'] == 200
+
+
+def test_blueprint():
+    with Client(app) as client:
+        request_body = {
+            'code': 'print("Hello, World!")',
+            'session': 'testemail: alex@darklight.ai'
+        }
+
+        response = client.lambda_.invoke(
+            'codeguidelines', request_body)
+
+        assert response.payload['statusCode'] == 200

@@ -1,0 +1,63 @@
+{
+    "version": "2.0",
+    "app_name": "my-chalice-app",
+    "autogen_policy": true,
+    "manage_iam_role": true,
+    "tags": {
+        "Environment": "Development",
+        "Application": "My Chalice App"
+    },
+    "stages": {
+        "dev": {
+            "api_gateway_stage": "dev",
+            "lambda_functions": {
+                "my-function-dev": {
+                    "handler": "app.app",
+                    "memory_size": 256,
+                    "timeout": 30,
+                    "environment_variables": {
+                        "MY_VAR": "dev-value"
+                    },
+                    "tags": {
+                        "Function": "My Function",
+                        "Environment": "Development"
+                    },
+                    "layers": [
+                        "arn:aws:lambda:us-west-2:123456789012:layer:my-layer:1"
+                    ]
+                }
+            },
+            "api_gateway_custom_domain": {
+                "domain_name": "api.dev.example.com",
+                "certificate_arn": "arn:aws:acm:us-west-2:123456789012:certificate/abcdef12-3456-7890-abcd-1234567890ab",
+                "endpoint_type": "REGIONAL"
+            }
+        },
+        "prod": {
+            "api_gateway_stage": "prod",
+            "lambda_functions": {
+                "my-function-prod": {
+                    "handler": "app.app",
+                    "memory_size": 512,
+                    "timeout": 60,
+                    "environment_variables": {
+                        "MY_VAR": "prod-value"
+                    },
+                    "tags": {
+                        "Function": "My Function",
+                        "Environment": "Production"
+                    },
+                    "layers": [
+                        "arn:aws:lambda:us-west-2:123456789012:layer:my-layer:1"
+                    ]
+                }
+            },
+            "api_gateway_custom_domain": {
+                "domain_name": "api.example.com",
+                "certificate_arn": "arn:aws:acm:us-west-2:123456789012:certificate/abcdef12-3456-7890-abcd-1234567890ab",
+                "endpoint_type": "EDGE"
+            }
+        }
+    },
+    "iam_policy_file": "policy.json"
+}

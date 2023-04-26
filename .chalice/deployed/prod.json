@@ -1,0 +1,47 @@
+{
+  "resources": [
+    {
+      "name": "default-role",
+      "resource_type": "iam_role",
+      "role_arn": "arn:aws:iam::507760724064:role/boost-prod",
+      "role_name": "boost-prod"
+    },
+    {
+      "name": "explain",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-prod-explain"
+    },
+    {
+      "name": "generate",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-prod-generate"
+    },
+    {
+      "name": "testgen",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-prod-testgen"
+    },
+    {
+      "name": "analyze",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-prod-analyze"
+    },
+    {
+      "name": "compliance",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-prod-compliance"
+    },
+    {
+      "name": "codeguidelines",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-prod-codeguidelines"
+    },
+    {
+      "name": "blueprint",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-prod-blueprint"
+    }
+  ],
+  "schema_version": "2.0",
+  "backend": "api"
+}

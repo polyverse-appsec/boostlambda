@@ -6,6 +6,7 @@ from chalicelib.analyze import analyze_code
 from chalicelib.testgen import testgen_code
 from chalicelib.compliance import compliance_code
 from chalicelib.codeguidelines import guidelines_code
+from chalicelib.blueprint import blueprint_code
 
 import json
 
@@ -274,6 +275,56 @@ def codeguidelines(event, context):
         # Put this into a json object
         json_obj = {}
         json_obj["analysis"] = analysis
+
+        # Now return the json object in the response
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps(json_obj)
+        }
+
+    except Exception as e:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({"error": str(e)})
+        }
+
+
+@app.lambda_function(name='blueprint')
+def blueprint(event, context):
+    try:
+        # Extract parameters from the event object
+        if 'body' in event:
+            # event body is a string, so parse it as JSON
+            json_data = json.loads(event['body'])
+        else:
+            json_data = event
+
+        validate_request_lambda(json_data['session'])
+
+        # Extract the code from the json data
+        if 'code' not in json_data:
+            raise BadRequestError("Error: please provide a code fragment to blueprint")
+        code = json_data['code']
+        if code is None:
+            raise BadRequestError("Error: please provide a code fragment to blueprint")
+
+        # Extract the prior blueprint from the json data
+        if 'blueprint' in json_data:
+            prior_blueprint = json_data['blueprint']
+            if prior_blueprint is not None:
+                print("Prior blueprint: " + prior_blueprint)
+
+        # Now call the explain function
+        blueprint = blueprint_code(json_data)
+
+        print("blueprinted code is: " + code)
+        print("new blueprint is: " + blueprint)
+
+        # Put this into a json object
+        json_obj = {}
+        json_obj["blueprint"] = blueprint
 
         # Now return the json object in the response
         return {
