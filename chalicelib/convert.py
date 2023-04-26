@@ -100,7 +100,7 @@ def explain_code(code, event, context, correlation_id):
                     'Value': prompt_size
                 },
                 {
-                    'MetricName': 'ExplanationSize',
+                    'MetricName': 'ResponseSize',
                     'Dimensions': [
                         {
                             'Name': 'LambdaFunctionName',
@@ -121,7 +121,7 @@ def explain_code(code, event, context, correlation_id):
 
 
 # a function to call openai to generate code from english
-def generate_code(summary, original_code, language):
+def generate_code(summary, original_code, language, event, context, correlation_id):
 
     prompt = convert_prompt.format(summary=summary, original_code=original_code, language=language)
     this_role_system = role_system.format(language=language)
@@ -150,5 +150,47 @@ def generate_code(summary, original_code, language):
         ]
     )
     generated_code = response.choices[0].message.content
+
+    # Get the size of the code and explanation
+    prompt_size = len(prompt) + len(this_role_assistant) + len(this_role_system) + len(this_role_user)
+    generated_code_size = len(generated_code)
+
+    if cw_client is not None:
+        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
+        cw_client.put_metric_data(
+            Namespace='Boost/Lambda',
+            MetricData=[
+                {
+                    'MetricName': 'PromptSize',
+                    'Dimensions': [
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': 'Bytes',
+                    'Value': prompt_size
+                },
+                {
+                    'MetricName': 'ResponseSize',
+                    'Dimensions': [
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': 'Bytes',
+                    'Value': generated_code_size
+                }
+            ]
+        )
 
     return generated_code

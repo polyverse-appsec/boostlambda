@@ -2,6 +2,7 @@ import openai
 from . import pvsecret
 import os
 from chalicelib.version import API_VERSION
+from chalicelib.telemetry import cw_client
 
 compliance_api_version = API_VERSION  # API version is global for now, not service specific
 print("compliance_api_version: ", compliance_api_version)
@@ -39,7 +40,7 @@ compliance_prompt, role_system = load_prompts()
 
 
 # a function to call openai to check code for data compliance
-def compliance_code(code):
+def compliance_code(code, event, context, correlation_id):
 
     prompt = compliance_prompt.format(code=code)
 
@@ -57,4 +58,47 @@ def compliance_code(code):
         ]
     )
     explanation = response.choices[0].message.content
+
+    # Get the size of the code and explanation
+    prompt_size = len(prompt) + len(role_system)
+    explanation_size = len(explanation)
+
+    if cw_client is not None:
+        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
+        cw_client.put_metric_data(
+            Namespace='Boost/Lambda',
+            MetricData=[
+                {
+                    'MetricName': 'PromptSize',
+                    'Dimensions': [
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': 'Bytes',
+                    'Value': prompt_size
+                },
+                {
+                    'MetricName': 'ResponseSize',
+                    'Dimensions': [
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': 'Bytes',
+                    'Value': explanation_size
+                }
+            ]
+        )
+
     return explanation

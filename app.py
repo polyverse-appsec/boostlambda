@@ -35,7 +35,6 @@ def explain(event, context):
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cw_client is not None:
-            print("X-Ray validate_request_lambda")
             with xray_recorder.capture('validate_request_lambda'):
                 validate_request_lambda(json_data['session'], correlation_id)
         else:
@@ -53,7 +52,6 @@ def explain(event, context):
 
         # Now call the explain function
         if cw_client is not None:
-            print("X-Ray explain_code")
             with xray_recorder.capture('explain_code'):
                 explanation = explain_code(code, event, context, correlation_id)
         else:
@@ -97,6 +95,7 @@ def explain(event, context):
     }
 
 
+@xray_recorder.capture('generate')
 @app.lambda_function(name='generate')
 def generate(event, context):
 
@@ -111,7 +110,17 @@ def generate(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'], correlation_id)
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cw_client is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                validate_request_lambda(json_data['session'], correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            validate_request_lambda(json_data['session'], correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the explanation and original_code from the json data
         explanation = json_data.get('explanation')
@@ -125,22 +134,25 @@ def generate(event, context):
         # The output language is optional; if not set, then default to Python
         outputlanguage = json_data.get('language', 'python')
 
-        # Now call the explain function
-        code = generate_code(explanation, original_code, outputlanguage)
-
-        # Put this into a JSON object
-        json_obj = {}
-        json_obj["code"] = code
-
-        # Now return the JSON object in the response
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json',
-                        'X-API-Version': convert_api_version},
-            'body': json.dumps(json_obj)
-        }
+        # Now call the openai function
+        if cw_client is not None:
+            with xray_recorder.capture('generate_code'):
+                code = generate_code(explanation, original_code, outputlanguage, event, context, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            code = generate_code(explanation, original_code, outputlanguage, event, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
 
     except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cw_client is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
             status_code = e.STATUS_CODE
@@ -154,7 +166,20 @@ def generate(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
+    # Put this into a JSON object
+    json_obj = {}
+    json_obj["code"] = code
 
+    # Now return the JSON object in the response
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': convert_api_version},
+        'body': json.dumps(json_obj)
+    }
+
+
+@xray_recorder.capture('testgen')
 @app.lambda_function(name='testgen')
 def testgen(event, context):
 
@@ -171,7 +196,17 @@ def testgen(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'], correlation_id)
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cw_client is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                validate_request_lambda(json_data['session'], correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            validate_request_lambda(json_data['session'], correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         language = json_data['language']
         framework = json_data['framework']
@@ -190,19 +225,25 @@ def testgen(event, context):
             else:
                 framework = "the best framework for " + outputlanguage + " tests"
 
-        testcode = testgen_code(code, outputlanguage, framework)
-
-        json_obj = {}
-        json_obj["testcode"] = testcode
-
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json',
-                        'X-API-Version': testgen_api_version},
-            'body': json.dumps(json_obj)
-        }
+        # Now call the openai function
+        if cw_client is not None:
+            with xray_recorder.capture('testgen_code'):
+                testcode = testgen_code(code, outputlanguage, framework, event, context, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            testcode = testgen_code(code, outputlanguage, framework, event, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} testgen_code: {end_time - start_time:.3f} seconds')
 
     except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cw_client is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
             status_code = e.STATUS_CODE
@@ -215,7 +256,18 @@ def testgen(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
+    json_obj = {}
+    json_obj["testcode"] = testcode
 
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': testgen_api_version},
+        'body': json.dumps(json_obj)
+    }
+
+
+@xray_recorder.capture('analyze')
 @app.lambda_function(name='analyze')
 def analyze(event, context):
 
@@ -231,7 +283,17 @@ def analyze(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'], correlation_id)
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cw_client is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                validate_request_lambda(json_data['session'], correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            validate_request_lambda(json_data['session'], correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         code = json_data['code']
@@ -239,22 +301,25 @@ def analyze(event, context):
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze")
 
-        # Now call the explain function
-        analysis = analyze_code(code)
-
-        # Put this into a json object
-        json_obj = {}
-        json_obj["analysis"] = analysis
-
-        # Now return the json object in the response
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json',
-                        'X-API-Version': analyze_api_version},
-            'body': json.dumps(json_obj)
-        }
+        # Now call the openai function
+        if cw_client is not None:
+            with xray_recorder.capture('analyze_code'):
+                analysis = analyze_code(code, event, context, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            analysis = analyze_code(code, event, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
 
     except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cw_client is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
             status_code = e.STATUS_CODE
@@ -268,7 +333,20 @@ def analyze(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
+    # Put this into a json object
+    json_obj = {}
+    json_obj["analysis"] = analysis
 
+    # Now return the json object in the response
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': analyze_api_version},
+        'body': json.dumps(json_obj)
+    }
+
+
+@xray_recorder.capture('compliance')
 @app.lambda_function(name='compliance')
 def compliance(event, context):
 
@@ -284,7 +362,17 @@ def compliance(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'], correlation_id)
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cw_client is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                validate_request_lambda(json_data['session'], correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            validate_request_lambda(json_data['session'], correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         code = json_data['code']
@@ -292,22 +380,25 @@ def compliance(event, context):
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze for compliance")
 
-        # Now call the explain function
-        analysis = compliance_code(code)
-
-        # Put this into a json object
-        json_obj = {}
-        json_obj["analysis"] = analysis
-
-        # Now return the json object in the response
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json',
-                        'X-API-Version': compliance_api_version},
-            'body': json.dumps(json_obj)
-        }
+        # Now call the openai function
+        if cw_client is not None:
+            with xray_recorder.capture('compliance_code'):
+                analysis = compliance_code(code, event, context, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            analysis = compliance_code(json_data, event, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
 
     except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cw_client is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
             status_code = e.STATUS_CODE
@@ -321,7 +412,20 @@ def compliance(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
+    # Put this into a json object
+    json_obj = {}
+    json_obj["analysis"] = analysis
 
+    # Now return the json object in the response
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': compliance_api_version},
+        'body': json.dumps(json_obj)
+    }
+
+
+@xray_recorder.capture('codeguidelines')
 @app.lambda_function(name='codeguidelines')
 def codeguidelines(event, context):
 
@@ -337,7 +441,17 @@ def codeguidelines(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'], correlation_id)
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cw_client is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                validate_request_lambda(json_data['session'], correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            validate_request_lambda(json_data['session'], correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         code = json_data['code']
@@ -345,22 +459,25 @@ def codeguidelines(event, context):
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze for coding guidelines")
 
-        # Now call the explain function
-        analysis = guidelines_code(code)
-
-        # Put this into a json object
-        json_obj = {}
-        json_obj["analysis"] = analysis
-
-        # Now return the json object in the response
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json',
-                        'X-API-Version': guidelines_api_version},
-            'body': json.dumps(json_obj)
-        }
+        # Now call the openai function
+        if cw_client is not None:
+            with xray_recorder.capture('guidelines_code'):
+                analysis = guidelines_code(code, event, context, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            analysis = guidelines_code(code, event, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
 
     except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cw_client is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
             status_code = e.STATUS_CODE
@@ -374,7 +491,20 @@ def codeguidelines(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
+    # Put this into a json object
+    json_obj = {}
+    json_obj["analysis"] = analysis
 
+    # Now return the json object in the response
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': guidelines_api_version},
+        'body': json.dumps(json_obj)
+    }
+
+
+@xray_recorder.capture('blueprint')
 @app.lambda_function(name='blueprint')
 def blueprint(event, context):
 
@@ -390,7 +520,17 @@ def blueprint(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'], correlation_id)
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cw_client is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                validate_request_lambda(json_data['session'], correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            validate_request_lambda(json_data['session'], correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         if 'code' not in json_data:
@@ -399,22 +539,25 @@ def blueprint(event, context):
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to blueprint")
 
-        # Now call the explain function
-        blueprint = blueprint_code(json_data)
-
-        # Put this into a json object
-        json_obj = {}
-        json_obj["blueprint"] = blueprint
-
-        # Now return the json object in the response
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json',
-                        'X-API-Version': blueprint_api_version},
-            'body': json.dumps(json_obj)
-        }
+        # Now call the openai function
+        if cw_client is not None:
+            with xray_recorder.capture('blueprint_code'):
+                blueprint = blueprint_code(json_data, event, context, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            blueprint = blueprint_code(json_data, event, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} blueprint_code: {end_time - start_time:.3f} seconds')
 
     except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cw_client is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
             status_code = e.STATUS_CODE
@@ -427,3 +570,15 @@ def blueprint(event, context):
                         'X-API-Version': blueprint_api_version},
             'body': json.dumps({"error": str(e)})
         }
+
+    # Put this into a json object
+    json_obj = {}
+    json_obj["blueprint"] = blueprint
+
+    # Now return the json object in the response
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': blueprint_api_version},
+        'body': json.dumps(json_obj)
+    }
