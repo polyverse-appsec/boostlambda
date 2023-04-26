@@ -9,15 +9,19 @@ from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
 
 import json
+import uuid
+import os
+from chalicelib.telemetry import cw_client, xray_recorder
 
 app = Chalice(app_name='boost')
 
 
 @app.lambda_function(name='explain')
 def explain(event, context):
-    # print the event and context objects
-    print("event is: " + str(event))
-    print("context is: " + str(context))
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
 
     try:
         # Extract parameters from the event object
@@ -27,7 +31,14 @@ def explain(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'])
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cw_client is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                validate_request_lambda(json_data['session'], correlation_id)
+        else:
+            # Otherwise, call the function directly
+            validate_request_lambda(json_data['session'], correlation_id)
 
         # Extract the code from the json data
         code = json_data.get('code')
@@ -36,23 +47,21 @@ def explain(event, context):
             raise BadRequestError("Error: please provide a code fragment to explain")
 
         # Now call the explain function
-        explanation = explain_code(code)
-
-        print("explained code is: " + explanation)
-
-        # Put this into a JSON object
-        json_obj = {}
-        json_obj["explanation"] = explanation
-
-        # Now return the JSON object in the response
-        return {
-            'statusCode': 200,
-            'headers': {'Content-Type': 'application/json',
-                        'X-API-Version': explain_api_version},
-            'body': json.dumps(json_obj)
-        }
+        if cw_client is not None:
+            with xray_recorder.capture('explain_code'):
+                explanation = explain_code(code)
+        else:
+            # Otherwise, call the function directly
+            explanation = explain_code(code)
 
     except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cw_client is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
             status_code = e.STATUS_CODE
@@ -66,9 +75,68 @@ def explain(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
+    # Put this into a JSON object
+    json_obj = {}
+    json_obj["explanation"] = explanation
+
+    # Get the size of the code and explanation
+    code_size = len(code)
+    explanation_size = len(explanation)
+
+    if cw_client is not None:
+        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', 'Local Lambda Server: Explain')
+        cw_client.put_metric_data(
+            Namespace='Boost/Lambda',
+            MetricData=[
+                {
+                    'MetricName': 'CodeSize',
+                    'Dimensions': [
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': 'Bytes',
+                    'Value': code_size
+                },
+                {
+                    'MetricName': 'ExplanationSize',
+                    'Dimensions': [
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': 'Bytes',
+                    'Value': explanation_size
+                }
+            ]
+        )
+
+    # Now return the JSON object in the response
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': explain_api_version},
+        'body': json.dumps(json_obj)
+    }
+
 
 @app.lambda_function(name='generate')
 def generate(event, context):
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -76,11 +144,7 @@ def generate(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'])
-
-        # Parse the request body as JSON
-        print("got to generate with ")
-        print(json_data)
+        validate_request_lambda(json_data['session'], correlation_id)
 
         # Extract the explanation and original_code from the json data
         explanation = json_data.get('explanation')
@@ -96,8 +160,6 @@ def generate(event, context):
 
         # Now call the explain function
         code = generate_code(explanation, original_code, outputlanguage)
-
-        print("generated code is: " + code)
 
         # Put this into a JSON object
         json_obj = {}
@@ -128,6 +190,11 @@ def generate(event, context):
 
 @app.lambda_function(name='testgen')
 def testgen(event, context):
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
     try:
         # Extract parameters from the event object
 
@@ -137,7 +204,7 @@ def testgen(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'])
+        validate_request_lambda(json_data['session'], correlation_id)
 
         language = json_data['language']
         framework = json_data['framework']
@@ -184,6 +251,11 @@ def testgen(event, context):
 
 @app.lambda_function(name='analyze')
 def analyze(event, context):
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -192,7 +264,7 @@ def analyze(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'])
+        validate_request_lambda(json_data['session'], correlation_id)
 
         # Extract the code from the json data
         code = json_data['code']
@@ -202,8 +274,6 @@ def analyze(event, context):
 
         # Now call the explain function
         analysis = analyze_code(code)
-
-        print("analyzed code is: " + analysis)
 
         # Put this into a json object
         json_obj = {}
@@ -234,6 +304,11 @@ def analyze(event, context):
 
 @app.lambda_function(name='compliance')
 def compliance(event, context):
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -242,7 +317,7 @@ def compliance(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'])
+        validate_request_lambda(json_data['session'], correlation_id)
 
         # Extract the code from the json data
         code = json_data['code']
@@ -252,8 +327,6 @@ def compliance(event, context):
 
         # Now call the explain function
         analysis = compliance_code(code)
-
-        print("compliance analyzed code is: " + analysis)
 
         # Put this into a json object
         json_obj = {}
@@ -284,6 +357,11 @@ def compliance(event, context):
 
 @app.lambda_function(name='codeguidelines')
 def codeguidelines(event, context):
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -292,7 +370,7 @@ def codeguidelines(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'])
+        validate_request_lambda(json_data['session'], correlation_id)
 
         # Extract the code from the json data
         code = json_data['code']
@@ -302,8 +380,6 @@ def codeguidelines(event, context):
 
         # Now call the explain function
         analysis = guidelines_code(code)
-
-        print("coding guidelines analyzed code is: " + analysis)
 
         # Put this into a json object
         json_obj = {}
@@ -334,6 +410,11 @@ def codeguidelines(event, context):
 
 @app.lambda_function(name='blueprint')
 def blueprint(event, context):
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -342,7 +423,7 @@ def blueprint(event, context):
         else:
             json_data = event
 
-        validate_request_lambda(json_data['session'])
+        validate_request_lambda(json_data['session'], correlation_id)
 
         # Extract the code from the json data
         if 'code' not in json_data:
@@ -351,17 +432,8 @@ def blueprint(event, context):
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to blueprint")
 
-        # Extract the prior blueprint from the json data
-        if 'blueprint' in json_data:
-            prior_blueprint = json_data['blueprint']
-            if prior_blueprint is not None:
-                print("Prior blueprint: " + prior_blueprint)
-
         # Now call the explain function
         blueprint = blueprint_code(json_data)
-
-        print("blueprinted code is: " + code)
-        print("new blueprint is: " + blueprint)
 
         # Put this into a json object
         json_obj = {}

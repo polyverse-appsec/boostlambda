@@ -27,8 +27,8 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
 
         # Check if the verb is a valid Lambda function in the Chalice app.
         # print the app.routes and app functions
-        print(app.routes)
-        print(app.pure_lambda_functions)
+        # print(app.routes)
+        # print(app.pure_lambda_functions)
 
         # Check if the verb is a valid Lambda function in the Chalice app.
         lambda_function_names = [func.name for func in app.pure_lambda_functions]
@@ -37,8 +37,9 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
             with Client(app) as client:
                 response = client.lambda_.invoke(verb, json_data)
 
-            print('response payload')
-            print(response.payload["body"])
+            # debug only local code for payload
+            # print('response payload\n' + response.payload["body"])
+
             # Convert the response to a JSON-formatted string if it's not already a string.
             response_str = json.dumps(response.payload["body"]) if not isinstance(response.payload["body"], str) else response.payload["body"]
 

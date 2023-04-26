@@ -1,18 +1,18 @@
 import openai
 from . import pvsecret
 import os
-from chalicelib.constants import API_VERSION
+from chalicelib.version import API_VERSION
 
 secret_json = pvsecret.get_secrets()
 
 explain_api_version = API_VERSION  # API version is global for now, not service specific
 convert_api_version = API_VERSION  # API version is global for now, not service specific
-
+print("explain_api_version: ", explain_api_version)
+print("convert_api_version: ", convert_api_version)
 
 # TEMP - put this back to the polyverse key once gpt-4 access is approved there
 openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
-print("openai key ", openai_key)
 
 # Define the directory where prompt files are stored
 PROMPT_DIR = "chalicelib/prompts"
@@ -28,7 +28,6 @@ ROLE_ASSISTANT_FILENAME = "convert-role-assistant.prompt"
 # Load the prompt files and replace the placeholders with the actual values
 def load_prompts():
     promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
-    print("promptdir: " + promptdir)
 
     # Load the prompt file
     with open(os.path.join(promptdir, EXPLAIN_PROMPT_FILENAME), 'r') as f:
@@ -60,7 +59,6 @@ def explain_code(code):
 
     prompt = explain_prompt.format(code=code)
 
-    print("calling openai with prompt: " + prompt + "\n\n")
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
@@ -83,8 +81,6 @@ def generate_code(summary, original_code, language):
     this_role_system = role_system.format(language=language)
     this_role_user = role_user.format(original_code=original_code)
     this_role_assistant = role_assistant.format(summary=summary)
-
-    print("calling openai with prompt: " + prompt + "\n\n")
 
     response = openai.ChatCompletion.create(
         model="gpt-4",

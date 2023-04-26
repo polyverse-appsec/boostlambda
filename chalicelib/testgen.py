@@ -1,16 +1,16 @@
 import openai
 from . import pvsecret
 import os
-from chalicelib.constants import API_VERSION
+from chalicelib.version import API_VERSION
 
 secret_json = pvsecret.get_secrets()
 
 testgen_api_version = API_VERSION  # API version is global for now, not service specific
+print("testgen_api_version: ", testgen_api_version)
 
 # TEMP - put this back to the polyverse key once gpt-4 access is approved there
 openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
-print("openai key ", openai_key)
 
 # Define the directory where prompt files are stored
 PROMPT_DIR = "chalicelib/prompts"
@@ -23,7 +23,6 @@ ROLE_SYSTEM_FILENAME = "testgen-role-system.prompt"
 # Load the prompt files and replace the placeholders with the actual values
 def load_prompts():
     promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
-    print("promptdir: " + promptdir)
 
     # Load the prompt file for seed
     with open(os.path.join(promptdir, TESTGEN_PROMPT_FILENAME), 'r') as f:
@@ -44,7 +43,6 @@ def testgen_code(original_code, language, framework):
 
     prompt = testgen_prompt.format(original_code=original_code, language=language, framework=framework)
 
-    print("calling openai with prompt: " + prompt + "\n\n")
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
