@@ -80,3 +80,18 @@ def update_usage(subscription_item, bytes):
         idempotency_key=idempotency_key
     )
     return subscription_item
+
+def check_trial_expired(customer):
+    # Check if the customer has a non-zero balance and if they do NOT have a payment method
+    # in this case, we know their trial has expired.
+    # there are two ways to check balance, balance and a pending invoice. it's not clear which is the better way yet
+    # so we will check both
+    invoice = stripe.Invoice.upcoming(customer=customer.id)
+    if customer['balance'] > 0 or invoice.amount_due > 0:
+        # Check if the customer has a default payment method
+        if not customer['invoice_settings']['default_payment_method']:
+            return True
+    
+    # If we got here, the trial has not expired or they have a payment method
+    return False
+    
