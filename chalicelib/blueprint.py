@@ -63,13 +63,15 @@ def blueprint_code(json_data):
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-        {   "role": "system",
-            "content": role_system
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }]
+            {
+                "role": "system",
+                "content": role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
     )
     blueprint = response.choices[0].message.content
     return blueprint

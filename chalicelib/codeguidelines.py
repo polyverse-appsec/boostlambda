@@ -46,13 +46,15 @@ def guidelines_code(code):
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-        {   "role": "system",
-            "content": role_system
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }]
+            {
+                "role": "system",
+                "content": role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
     )
     analysis = response.choices[0].message.content
     return analysis

@@ -46,13 +46,15 @@ def compliance_code(code):
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-        {   "role": "system",
-            "content": role_system
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }]
+            {
+                "role": "system",
+                "content": role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
     )
     explanation = response.choices[0].message.content
     return explanation
