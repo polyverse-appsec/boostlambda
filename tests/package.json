@@ -3,6 +3,10 @@
     "axios": "^1.3.5"
   },
   "scripts": {
-    "deploy": "chalice deploy"
+    "deploy-test": "chalice deploy --stage test",
+    "deploy-dev": "chalice deploy --stage dev",
+    "deploy-staging": "chalice deploy --stage staging",
+    "deploy-production": "chalice deploy --stage production",
+    "enable-tracing": "bash ./enable-all-xray-tracing.sh"
   }
 }
