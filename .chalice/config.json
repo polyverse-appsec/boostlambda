@@ -14,6 +14,7 @@
             },
             "environment_variables": {
               "CHALICE_STAGE": "dev"
+            }
         },
         "test": {
             "api_gateway_stage": "api",
@@ -23,6 +24,7 @@
             },
             "environment_variables": {
               "CHALICE_STAGE": "test"
+            }
         },
         "staging": {
             "api_gateway_stage": "api",
@@ -32,12 +34,14 @@
             },
             "environment_variables": {
               "CHALICE_STAGE": "staging"
+            }
         },
         "prod": {
             "api_gateway_stage": "api",
             "lambda_timeout": 240,
             "environment_variables": {
               "CHALICE_STAGE": "prod"
+            }
         }
     },
   "include": ["prompts"]
