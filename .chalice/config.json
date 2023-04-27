@@ -5,6 +5,8 @@
         "Environment": "Development",
         "Application": "Boost"
     },
+    "xray": true,
+    "lambda_memory_size": 256,
     "stages": {
         "dev": {
             "api_gateway_stage": "api",

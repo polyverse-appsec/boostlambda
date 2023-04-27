@@ -3,7 +3,7 @@ import shopify
 from . import pvsecret
 from chalice import UnauthorizedError
 import re
-from chalicelib.telemetry import cw_client, xray_recorder
+from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, InfoMetrics
 import time
 
 
@@ -31,8 +31,8 @@ def fetch_email(access_token):
 
 
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
-def validate_github_session(access_token, correlation_id):
-    if cw_client is not None:
+def validate_github_session(access_token, correlation_id, context):
+    if cloudwatch is not None:
         with xray_recorder.capture('github_verify_email'):
             email = fetch_email(access_token)
     else:
@@ -45,12 +45,12 @@ def validate_github_session(access_token, correlation_id):
 
     if email:
 
-        if cw_client is not None:
+        if cloudwatch is not None:
             with xray_recorder.capture('shopify_verify_email'):
-                return verify_email_with_shopify(email, correlation_id), email
+                return verify_email_with_shopify(email, correlation_id, context), email
         else:
             start_time = time.monotonic()
-            verified = verify_email_with_shopify(email, correlation_id), email
+            verified = verify_email_with_shopify(email, correlation_id, context), email
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} shopify_verify_email: {end_time - start_time:.3f} seconds')
             return verified
@@ -59,7 +59,7 @@ def validate_github_session(access_token, correlation_id):
         return False, email
 
 
-def verify_email_with_shopify(email, correlation_id):
+def verify_email_with_shopify(email, correlation_id, context):
     # Authenticate with the Shopify API
     shop_url = 'https://polyverse-security.myshopify.com/admin/api/2023-01'
     api_version = '2023-01'
@@ -90,7 +90,7 @@ def verify_email_with_shopify(email, correlation_id):
         for customer in customers:
             # Only print customer info if locally debugging - until we enable aggressive short-duration log collection for debugging (CloudWatch)
             # avoid logging anything except email to avoid any unnecessary PII concerns
-            if cw_client is None:
+            if cloudwatch is None:
                 print(f"Customer Information for {customer.email}:")
                 print(f"ID: {customer.id}")
                 print(f"First Name: {customer.first_name}")
@@ -100,43 +100,15 @@ def verify_email_with_shopify(email, correlation_id):
             if customer.orders_count > 0:
                 return True
     else:
-        if (cw_client is not None):
-            if customer is None:
-                # Send a CloudWatch alert
-                cw_client.put_metric_data(
-                    Namespace='Boost/Lambda',
-                    MetricData=[
-                        {
-                            'MetricName': 'CustomerNotFound',
-                            'Dimensions': [
-                                {
-                                    'Name': 'Application',
-                                    'Value': 'Boost'
-                                },
-                                {
-                                    'Name': 'CorrelationID',
-                                    'Value': correlation_id
-                                },
-                                {
-                                    'Name': 'CustomerEmail',
-                                    'Value': email
-                                }
-                            ],
-                            'Value': 1,
-                            'Unit': 'Count',
-                            'StorageResolution': 60
-                        }
-                    ]
-                )
-        else:
-            print(f"No customer found with email {email}")
+        capture_metric(email, correlation_id, context,
+                       {'name': InfoMetrics.GITHUB_ACCESS_NOT_FOUND, 'value': 1, 'unit': 'Count'})
 
     return email.endswith('@polyverse.com') or email.endswith('@polyverse.io')
 
 
 # function to validate that the request came from a github logged in user or we are running on localhost
 # or that the session token is valid github oauth token for a subscribed email
-def validate_request(request, correlation_id):
+def validate_request(request, correlation_id, context):
 
     # otherwise check to see if we have a valid github session token
     # parse the request body as json
@@ -144,7 +116,7 @@ def validate_request(request, correlation_id):
         json_data = request.json_body
         # extract the code from the json data
         session = json_data.get('session')
-        validate = validate_github_session(session, correlation_id)
+        validate = validate_github_session(session, correlation_id, context)
         if (validate):
             return True, None
     except ValueError:
@@ -167,15 +139,15 @@ def validate_request(request, correlation_id):
 # function to validate that the request came from a github logged in user or we are running on localhost
 # or that the session token is valid github oauth token for a subscribed email. This version is for the
 # raw lambda function and so has the session key passed in as a string
-def validate_request_lambda(session, correlation_id):
+def validate_request_lambda(session, context, correlation_id):
 
     # otherwise check to see if we have a valid github session token
     # parse the request body as json
     try:
         # extract the code from the json data
-        validated, email = validate_github_session(session, correlation_id)
+        validated, email = validate_github_session(session, correlation_id, context)
         if validated:
-            return True
+            return email
     except ValueError:
         # don't do anything if the json is invalid
         pass
@@ -189,35 +161,8 @@ def validate_request_lambda(session, correlation_id):
     # if ip.startswith("127"):
     #    return True, None
 
-    if (cw_client is not None):
-        # Send a CloudWatch alert
-        cw_client.put_metric_data(
-            Namespace='Boost/Lambda',
-            MetricData=[
-                {
-                    'MetricName': 'GitHubAccessNotFound',
-                    'Dimensions': [
-                        {
-                            'Name': 'Application',
-                            'Value': 'Boost'
-                        },
-                        {
-                            'Name': 'CustomerEmail',
-                            'Value': email
-                        },
-                        {
-                            'Name': 'CorrelationID',
-                            'Value': correlation_id
-                        }
-                    ],
-                    'Value': 1,
-                    'Unit': 'Count',
-                    'StorageResolution': 60
-                }
-            ]
-        )
-    else:
-        print("Failed to validate GitHub / Access token")
+    capture_metric(email, correlation_id, context,
+                   {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
 
     # if we got here, we failed, return an error
     raise UnauthorizedError("Error: please login to github to use this service")

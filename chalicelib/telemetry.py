@@ -1,7 +1,9 @@
+import decimal
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 import boto3
 import os
+
 
 # If running under AWS Lambda - Patch all supported libraries for X-Ray tracing, enable CloudWatch
 if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
@@ -9,11 +11,69 @@ if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
     patch_all()
     print('patched all functions')
     # Create a CloudWatch client to log metrics and errors
-    cw_client = boto3.client('cloudwatch')
+    cloudwatch = boto3.client('cloudwatch')
     print('CloudWatch enabled')
 
     xray_recorder.configure(service='Boost', context_missing='LOG_ERROR')
     print('X-Ray configured')
 else:
-    cw_client = None
+    cloudwatch = None
     print('AWS Lambda not detected, skipping X-Ray configuration.')
+
+
+class InfoMetrics:
+    GITHUB_ACCESS_NOT_FOUND = 'GitHubAccessNotFound'
+
+
+class CostMetrics:
+    RESPONSE_SIZE = 'ResponseSize'
+    PROMPT_SIZE = 'PromptSize'
+    OPENAI_COST = 'OpenAICost'
+    BOOST_COST = 'BoostCost'
+    OPENAI_INPUT_COST = 'OpenAIInputCost'
+    OPENAI_CUSTOMERINPUT_COST = 'OpenAICustomerInputCost'
+    OPENAI_OUTPUT_COST = 'OpenAIOutputCost'
+    OPENAI_TOKENS = 'OpenAITokens'
+    OPENAI_INPUT_TOKENS = 'OpenAIInputTokens'
+    OPENAI_CUSTOMERINPUT_TOKENS = 'OpenAICustomerInputTokens'
+    OPENAI_OUTPUT_TOKENS = 'OpenAIOutputTokens'
+
+
+# Capture a metric to CloudWatch or local console
+# Usage: capture_metric(email, correlation_id, context, {'name': 'PromptSize', 'value': prompt_size, 'unit': 'Bytes'})
+# metrics is a list of dicts with name, value and unit
+# unit: Seconds, Microseconds, Milliseconds, Bytes, Kilobytes, Megabytes, Gigabytes, Terabytes, Bits, Kilobits, Megabits, Gigabits, Terabits, Percent, Count, Count/Second, None
+def capture_metric(email, correlation_id, context, *metrics):
+    if cloudwatch is not None:
+        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
+        metric_data = []
+        for metric in metrics:
+            metric_obj = {
+                'MetricName': metric['name'],
+                'Dimensions': [
+                    {
+                        'Name': 'AccountEmail',
+                        'Value': email
+                    },
+                    {
+                        'Name': 'LambdaFunctionName',
+                        'Value': lambda_function
+                    },
+                    {
+                        'Name': 'CorrelationID',
+                        'Value': correlation_id
+                    }
+                ],
+                'Unit': metric['unit'],
+                'Value': metric['value'],
+                'StorageResolution': 1  # Note that this is 1-second resolution, may be too high
+            }
+            metric_data.append(metric_obj)
+        cloudwatch.put_metric_data(Namespace='Boost/Lambda', MetricData=metric_data)
+    else:
+        for metric in metrics:
+            if isinstance(metric['value'], float) or isinstance(metric['value'], decimal.Decimal):
+                formatted_value = f"{metric['value']:.5f}"
+            else:
+                formatted_value = str(metric['value'])
+            print(f"METRIC::[{email}]{context.function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
