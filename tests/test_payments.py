@@ -53,7 +53,7 @@ def test_check_create_customer():
     assert result4 is not None
     assert result4.id is not None
     assert result4.id != result.id
-    
+
     
 def test_check_create_subscription():
     # Define test inputs
@@ -140,7 +140,6 @@ def test_update_usage_large():
 
     #now get the current balance from the customer.  we should look up the customer id again to get the latest
     customer = stripe.Customer.retrieve(customer.id)
-    print(customer)
     assert customer is not None
     assert customer.id is not None
     assert customer.balance is not None
@@ -155,7 +154,6 @@ def test_update_usage_large():
     #assert that the invoice is not none
     assert invoice is not None
     assert invoice.amount_due > 0
-    print (invoice)
 
 def test_check_valid_subscriber():
     # Define test inputs
@@ -170,19 +168,16 @@ def test_multiple_emails_per_org():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    print('testing with email ' + email + ' ' + org)
     valid = check_valid_subscriber(email=email, organization=org)
     assert valid is True
 
     email = generate_email("@" + org + ".com")
-    print('testing with email ' + email + ' ' + org)
 
     valid = check_valid_subscriber(email=email, organization=org)
     assert valid is True
 
     #test a third email
     email = generate_email("@" + org + ".com")
-    print('testing with email ' + email + ' ' + org)
 
     valid = check_valid_subscriber(email=email, organization=org)
     assert valid is True

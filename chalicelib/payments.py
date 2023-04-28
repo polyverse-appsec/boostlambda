@@ -8,7 +8,58 @@ from . import pvsecret
 secret_json = pvsecret.get_secrets()
 
 stripe.api_key = secret_json["stripe"]
-print("stripe key ", secret_json["stripe"])
+
+import stripe
+
+
+def create_price(email):
+    price_id = "boost_per_kb"
+
+    # Retrieve the existing Price object
+    original_price = stripe.Price.retrieve(price_id, expand=['tiers'])
+
+    # Extract relevant attributes from the original Price object
+    currency = original_price['currency']
+    product = original_price['product']
+    billing_scheme = original_price['billing_scheme']
+    tiers = original_price['tiers']
+    tiers_mode = original_price['tiers_mode']
+    #add the email to the nickname
+    # Use the 'get' method to retrieve the value of 'nickname' from the dictionary, with a default value of an empty string
+    nickname_value = original_price.get('nickname', '')
+
+    # Use a conditional expression to check if the value of 'nickname' is None before performing the concatenation
+    nickname = (nickname_value + '_') if nickname_value is not None else 'price_' + email
+    recurring = original_price['recurring']
+
+    #stripe will give us both flat_amount and _flat_amount_decimal, as well as unit_amount_decimal in the tiers array
+    #we need to use the regular flat_amount one. detele the decimal ones
+    for tier in tiers:
+        if 'flat_amount_decimal' in tier:
+            del tier['flat_amount_decimal']
+        if 'unit_amount_decimal' in tier:
+            del tier['unit_amount_decimal']
+
+    #now set the up_to attribute to the max value
+    tiers[1]['up_to'] = 'inf'
+
+
+    # Create a new Price object with the same attributes as the original one
+    new_price = stripe.Price.create(
+        currency=currency,
+        product=product,
+        billing_scheme=billing_scheme,
+        tiers=tiers,
+        tiers_mode=tiers_mode,
+        nickname=nickname,
+        recurring = recurring,
+        metadata = {
+            "email": email
+        }
+    )
+
+    return new_price
+
 
 # a function to call stripe to create a customer
 def check_create_customer(email, org):
@@ -42,27 +93,30 @@ def check_create_customer(email, org):
     return customer
 
 def check_create_subscription(customer, email):
-    print("customer id is ", customer.id, email)
     #first see if the customer already has a subscription. this can be found on the subscription field of the customer. make sure the field exists first!
 
     #check if the subscriptions field exists
     if hasattr(customer, 'subscriptions'):
         subscriptions = customer.subscriptions
         for subscription in subscriptions.data:
-            print("subscription status for id ", subscription.id, " is ", subscription.status)
             if subscription.status == "active":
                 return subscription
 
-     #if we got here, we don't have a subscription, so create one
-
+    #if we got here, we don't have a subscription, so create one
+    #we need to create a price per email address
+    price = create_price(email)
     subscription = stripe.Subscription.create(
         customer=customer.id,
         items=[
             {
-                "price": "boost_per_kb",
+                "price": price.id,
                 "metadata": {"email": email}
             },
         ],
+        billing_thresholds={
+            'amount_gte': 100000,
+            'reset_billing_cycle_anchor': False,
+        },
         coupon="RNhiqVPC"
     )
     return subscription
@@ -71,22 +125,20 @@ def check_create_subscription(customer, email):
 
 def check_create_subscription_item(subscription, email):
     #first see if the customer already has a subscription
-    print("subscription id ", subscription.id)
     subscription_items = stripe.SubscriptionItem.list(subscription=subscription.id)
     for subscription_item in subscription_items.data:
         #if the email in the metadata matches the email we are looking for, return the subscription item
-        print("checking subscription item metadata ", subscription_item.metadata.email, email)
         if subscription_item.metadata.email == email:
             return subscription_item
     
     #if not, create a subscription
-    print("trying to create subscription item")
-    print(subscription.id)
-    print(email)
+
+    #we need to create a price per email address
+    price = create_price(email)
 
     subscription_item = stripe.SubscriptionItem.create(
         subscription=subscription.id,
-        price="boost_per_kb",
+        price=price.id,
         metadata={"email": email},
     )
 
