@@ -5,7 +5,12 @@ from chalice import UnauthorizedError
 import re
 from chalicelib.telemetry import cw_client, xray_recorder
 import time
+from .payments import check_valid_subscriber
 
+class ExtendedUnauthorizedError(UnauthorizedError):
+    def __init__(self, message, reason=None):
+        super().__init__(message)
+        self.reason = reason
 
 def fetch_email(access_token):
     headers = {
@@ -167,60 +172,69 @@ def validate_request(request, correlation_id):
 # function to validate that the request came from a github logged in user or we are running on localhost
 # or that the session token is valid github oauth token for a subscribed email. This version is for the
 # raw lambda function and so has the session key passed in as a string
-def validate_request_lambda(session, correlation_id):
+def validate_request_lambda(request_json, correlation_id):
+
+    session = request_json.get('session')
+    organization = request_json.get('organization')
+    version = request_json.get('version')
+
+    #if no version or organization specified, then we need to ask the client to upgrade
+    if version is None or organization is None:
+        raise ExtendedUnauthorizedError("Error: please upgrade to use this service", reason="UpgradeRequired")
 
     # otherwise check to see if we have a valid github session token
     # parse the request body as json
     try:
         # extract the code from the json data
         validated, email = validate_github_session(session, correlation_id)
-        if validated:
-            return True
     except ValueError:
-        # don't do anything if the json is invalid
         pass
 
-    # last chance, check the ip address
+    # if we did not get a valid email, send a cloudwatch alert and raise the error
+    if not validated:
+        if (cw_client is not None):
+            # Send a CloudWatch alert
+            cw_client.put_metric_data(
+                Namespace='Boost/Lambda',
+                MetricData=[
+                    {
+                        'MetricName': 'GitHubAccessNotFound',
+                        'Dimensions': [
+                            {
+                                'Name': 'Application',
+                                'Value': 'Boost'
+                            },
+                            {
+                                'Name': 'CustomerEmail',
+                                'Value': email
+                            },
+                            {
+                                'Name': 'CorrelationID',
+                                'Value': correlation_id
+                            }
+                        ],
+                        'Value': 1,
+                        'Unit': 'Count',
+                        'StorageResolution': 60
+                    }
+                ]
+            )
+        else:
+            print("Failed to validate GitHub / Access token")
 
-    # if we don't have a rapid api key, check the origin
-    # ip = request.context["identity"]["sourceIp"]
-    # print("got client ip: " + ip)
-    # if the ip starts with 127, it's local
-    # if ip.startswith("127"):
-    #    return True, None
+        # if we got here, we failed, return an error
+        raise ExtendedUnauthorizedError("Error: please login to github to use this service", reason="GitHubAccessNotFound")
+    
+    #if we got this far, we got a valid email. now check that the email is subscribed
 
-    if (cw_client is not None):
-        # Send a CloudWatch alert
-        cw_client.put_metric_data(
-            Namespace='Boost/Lambda',
-            MetricData=[
-                {
-                    'MetricName': 'GitHubAccessNotFound',
-                    'Dimensions': [
-                        {
-                            'Name': 'Application',
-                            'Value': 'Boost'
-                        },
-                        {
-                            'Name': 'CustomerEmail',
-                            'Value': email
-                        },
-                        {
-                            'Name': 'CorrelationID',
-                            'Value': correlation_id
-                        }
-                    ],
-                    'Value': 1,
-                    'Unit': 'Count',
-                    'StorageResolution': 60
-                }
-            ]
-        )
-    else:
-        print("Failed to validate GitHub / Access token")
-
-    # if we got here, we failed, return an error
-    raise UnauthorizedError("Error: please login to github to use this service")
+    print('callling check_valid_subscriber', email, organization)
+    valid = check_valid_subscriber(email, organization)
+    
+    if not valid:
+        raise ExtendedUnauthorizedError("Error: please subscribe to use this service", reason="InvalidSubscriber")
+    
+    
+    
 
 
 def get_domain(email):
