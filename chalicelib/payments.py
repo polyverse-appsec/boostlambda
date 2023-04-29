@@ -140,6 +140,7 @@ def check_create_subscription_item(subscription, email):
         subscription=subscription.id,
         price=price.id,
         metadata={"email": email},
+        description="$10/month per active user plus $.03 per KB of code analyzed"
     )
 
     return subscription_item
