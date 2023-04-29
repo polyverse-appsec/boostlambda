@@ -1,4 +1,4 @@
-from chalice import Chalice
+from chalice import Chalice, Response
 from chalicelib.auth import validate_request_lambda
 from chalice import BadRequestError
 from chalicelib.analyze import analyze_code, analyze_api_version
@@ -7,6 +7,7 @@ from chalicelib.compliance import compliance_code, compliance_api_version
 from chalicelib.codeguidelines import guidelines_code, guidelines_api_version
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
+from chalicelib.payments import customer_portal_url
 
 import json
 import uuid
@@ -580,5 +581,77 @@ def blueprint(event, context):
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json',
                     'X-API-Version': blueprint_api_version},
+        'body': json.dumps(json_obj)
+    }
+
+@xray_recorder.capture('customer_portal')
+@app.lambda_function(name='customer_portal')
+def customer_portal(event, context):
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
+    try:
+        # Extract parameters from the event object
+        if 'body' in event:
+            # event body is a string, so parse it as JSON
+            json_data = json.loads(event['body'])
+        else:
+            json_data = event
+
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cw_client is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                valid, account = validate_request_lambda(json_data, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            valid, account = validate_request_lambda(json_data, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+
+
+
+        # Now call the openai function
+        if cw_client is not None:
+            with xray_recorder.capture('customer_portal'):
+                session = customer_portal_url(account)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            session = customer_portal_url(account)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} portal: {end_time - start_time:.3f} seconds')
+
+    except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cw_client is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
+        # if e has a status code, use it, otherwise use 500
+        if hasattr(e, 'STATUS_CODE'):
+            status_code = e.STATUS_CODE
+        else:
+            status_code = 500
+
+        return {
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({"error": str(e)})
+        }
+
+
+    json_obj = {}
+    json_obj["portal_url"] = session.url
+
+    # Now return the json object in the response
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json'},
         'body': json.dumps(json_obj)
     }

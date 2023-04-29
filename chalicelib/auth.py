@@ -228,11 +228,12 @@ def validate_request_lambda(request_json, correlation_id):
     #if we got this far, we got a valid email. now check that the email is subscribed
 
     print('callling check_valid_subscriber', email, organization)
-    valid = check_valid_subscriber(email, organization)
+    valid, account = check_valid_subscriber(email, organization)
     
     if not valid:
         raise ExtendedUnauthorizedError("Error: please subscribe to use this service", reason="InvalidSubscriber")
     
+    return True, account
     
     
 

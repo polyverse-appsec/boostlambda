@@ -183,8 +183,17 @@ def check_valid_subscriber(email, organization):
     if not subscription_item:
         return False
     
+    # return a dict with the customer, subscription, and subscription_item
+    
     expired = check_trial_expired(customer=customer)
     if not expired:
-        return True
+        return True, {"customer": customer, "subscription": subscription, "subscription_item": subscription_item}
     else:
-        return False
+        return False, None
+
+def customer_portal_url(account):
+    session = stripe.billing_portal.Session.create(
+        customer=account['customer'].id,
+        return_url='https://polyverse.com',
+    )
+    return session
