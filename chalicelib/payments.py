@@ -139,8 +139,7 @@ def check_create_subscription_item(subscription, email):
     subscription_item = stripe.SubscriptionItem.create(
         subscription=subscription.id,
         price=price.id,
-        metadata={"email": email},
-        description="$10/month per active user plus $.03 per KB of code analyzed"
+        metadata={"email": email}
     )
 
     return subscription_item
@@ -176,13 +175,13 @@ def check_trial_expired(customer):
 def check_valid_subscriber(email, organization):
     customer = check_create_customer(email=email, org=organization)
     if not customer:
-        return False
+        return False, None
     subscription = check_create_subscription(customer=customer, email=email)
     if not subscription:
-        return False
+        return False, None
     subscription_item = check_create_subscription_item(subscription=subscription, email=email)
     if not subscription_item:
-        return False
+        return False, None
     
     # return a dict with the customer, subscription, and subscription_item
     

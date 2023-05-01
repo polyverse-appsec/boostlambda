@@ -8,7 +8,7 @@ from chalicelib.codeguidelines import guidelines_code, guidelines_api_version
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
 from chalicelib.payments import customer_portal_url
-from chalicelib.auth import fetch_orgs
+from chalicelib.auth import fetch_orgs, fetch_email_and_username
 
 import json
 import uuid
@@ -678,10 +678,12 @@ def user_organizations(event, context):
         if cw_client is not None:
             with xray_recorder.capture('get_user_organizations'):
                 orgs = fetch_orgs(json_data["session"])
+                email, username = fetch_email_and_username(json_data["session"])
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
             orgs = fetch_orgs(json_data["session"])
+            email, username = fetch_email_and_username(json_data["session"])
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -708,6 +710,7 @@ def user_organizations(event, context):
 
     json_obj = {}
     json_obj["organizations"] = orgs
+    json_obj["personal"] = username
 
     # Now return the json object in the response
     return {

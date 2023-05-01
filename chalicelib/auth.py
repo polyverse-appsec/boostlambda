@@ -12,26 +12,24 @@ class ExtendedUnauthorizedError(UnauthorizedError):
         super().__init__(message)
         self.reason = reason
 
-def fetch_email(access_token):
+def fetch_email_and_username(access_token):
     headers = {
         'Authorization': f'token {access_token}',
         'Accept': 'application/vnd.github+json',
     }
-    url = 'https://api.github.com/user/emails'
+    url = 'https://api.github.com/user'
 
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        emails = response.json()
-        for email in emails:
-            if email['primary']:
-                return email['email']
+        user = response.json()
+        return user['email'], user['login']
     else:
         email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
         match = re.search(email_pattern, access_token)
 
         if match:
-            return match.group(1)
+            return match.group(1), match.group(1)
         return None
 
 def fetch_orgs(access_token):
@@ -47,18 +45,18 @@ def fetch_orgs(access_token):
     if isinstance(orgs, list):
         for i in range(len(orgs)):
             orgs[i] = orgs[i]['login']
-            
+
     return orgs
 
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
 def validate_github_session(access_token, organization, correlation_id):
     if cw_client is not None:
         with xray_recorder.capture('github_verify_email'):
-            email = fetch_email(access_token)
+            email, username = fetch_email_and_username(access_token)
             orgs = fetch_orgs(access_token)
     else:
         start_time = time.monotonic()
-        email = fetch_email(access_token)
+        email, username = fetch_email_and_username(access_token)
         orgs = fetch_orgs(access_token)
         end_time = time.monotonic()
         print(f'Execution time {correlation_id} github_verify_email: {end_time - start_time:.3f} seconds')
@@ -94,7 +92,7 @@ def validate_request_lambda(request_json, correlation_id):
     # parse the request body as json
     try:
         # extract the code from the json data
-        validated, email = validate_github_session(session, correlation_id)
+        validated, email = validate_github_session(session, organization, correlation_id)
 
     except ValueError:
         pass

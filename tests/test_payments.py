@@ -160,24 +160,28 @@ def test_check_valid_subscriber():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    valid = check_valid_subscriber(email=email, organization=org)
+    valid, sub = check_valid_subscriber(email=email, organization=org)
     assert valid is True
+    assert sub is not None
 
 def test_multiple_emails_per_org():
     # Define test inputs
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    valid = check_valid_subscriber(email=email, organization=org)
+    valid, sub = check_valid_subscriber(email=email, organization=org)
     assert valid is True
+    assert sub is not None
 
     email = generate_email("@" + org + ".com")
 
-    valid = check_valid_subscriber(email=email, organization=org)
+    valid, sub = check_valid_subscriber(email=email, organization=org)
     assert valid is True
+    assert sub is not None
 
     #test a third email
     email = generate_email("@" + org + ".com")
 
-    valid = check_valid_subscriber(email=email, organization=org)
+    valid, sub = check_valid_subscriber(email=email, organization=org)
     assert valid is True
+    assert sub is not None
