@@ -3,11 +3,12 @@ import os
 
 
 class OpenAIDefaults:
-    boost_max_tokens_default = 4000
+    boost_max_tokens_default = 0  # 0 is disabled max, 32768 for gpt-4-32k, 4000 for gpt3.5 and 8192 for gpt4
     boost_tuned_max_tokens = boost_max_tokens_default  # could be 1000 based on OpenAI recommendation, no obvious response time difference
 
     # Models to choose from
-    boost_model_gpt4 = "gpt-4"  # best overall model
+    boost_model_gpt4 = "gpt-4"              # best overall model
+    boost_model_gpt4_32k = "gpt-4-32k"          # best overall model with 32k limit
     boost_model_gpt35_cheap_chat = "gpt-3.5-turbo"   # 1/10 cost of Davinci-3, and faster than gpt4, but less effective (no codex)
     boost_model_gpt35_generic = "text-davinci-003"   # more expensive 3x model, but faster than gpt4
     boost_model_cheap_fast_generic = "ada"  # cheapest and fastest, least accurate circa 2019

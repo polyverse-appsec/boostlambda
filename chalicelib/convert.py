@@ -74,7 +74,7 @@ def explain_code(code, email, context, correlation_id):
                 "content": prompt
             }
         ],
-        max_tokens=OpenAIDefaults.boost_tuned_max_tokens  # Max is 4000, but we're tuning lower for performance
+        max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
     )
     explanation = response.choices[0].message.content
 
@@ -137,7 +137,7 @@ def generate_code(summary, original_code, language, email, context, correlation_
                 "content": prompt
             }
         ],
-        max_tokens=OpenAIDefaults.boost_tuned_max_tokens  # Max is 4000, but we're tuning lower for performance
+        max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
     )
     generated_code = response.choices[0].message.content
 
