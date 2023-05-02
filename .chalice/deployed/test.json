@@ -40,6 +40,11 @@
       "name": "blueprint",
       "resource_type": "lambda_function",
       "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-test-blueprint"
+    },
+    {
+      "name": "customprocess",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-test-customprocess"
     }
   ],
   "schema_version": "2.0",

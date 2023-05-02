@@ -5,6 +5,7 @@ from chalicelib.analyze import analyze_code, analyze_api_version
 from chalicelib.testgen import testgen_code, testgen_api_version
 from chalicelib.compliance import compliance_code, compliance_api_version
 from chalicelib.codeguidelines import guidelines_code, guidelines_api_version
+from chalicelib.customprocess import customprocess_code, customprocess_api_version
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
 
@@ -576,5 +577,87 @@ def blueprint(event, context):
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json',
                     'X-API-Version': blueprint_api_version},
+        'body': json.dumps(json_obj)
+    }
+
+
+@app.lambda_function(name='customprocess')
+def customprocess(event, context):
+
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
+    try:
+        # Extract parameters from the event object
+        if 'body' in event:
+            # event body is a string, so parse it as JSON
+            json_data = json.loads(event['body'])
+        else:
+            json_data = event
+
+        # Capture the duration of the validation step
+        # If cw_client has been set, use xray_recorder.capture
+        if cloudwatch is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                email = validate_request_lambda(json_data['session'], context, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            email = validate_request_lambda(json_data['session'], context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+
+        # Extract the code from the json data
+        code = json_data['code']
+        if code is None:
+            raise BadRequestError("Error: please provide a code fragment to analyze for coding guidelines")
+
+        # Extract the prompt from the json data
+        prompt = json_data['prompt']
+        if prompt is None:
+            raise BadRequestError("Error: please provide a custom prompt to run against the code fragment")
+
+        # Now call the openai function
+        if cloudwatch is not None:
+            with xray_recorder.capture('guidelines_code'):
+                analysis = customprocess_code(code, prompt, email, context, correlation_id)
+        else:
+            # Otherwise, call the function directly
+            start_time = time.monotonic()
+            analysis = customprocess_code(code, prompt, email, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
+
+    except Exception as e:
+
+        # Record the error and re-raise the exception
+        if cloudwatch is not None:
+            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
+        else:
+            print("Explain {} failed with exception: {}".format(correlation_id, e))
+
+        # if e has a status code, use it, otherwise use 500
+        if hasattr(e, 'STATUS_CODE'):
+            status_code = e.STATUS_CODE
+        else:
+            status_code = 500
+
+        return {
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': customprocess_api_version},
+            'body': json.dumps({"error": str(e)})
+        }
+
+    # Put this into a json object
+    json_obj = {}
+    json_obj["analysis"] = analysis
+
+    # Now return the json object in the response
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': customprocess_api_version},
         'body': json.dumps(json_obj)
     }
