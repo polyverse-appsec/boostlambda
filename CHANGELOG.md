@@ -7,6 +7,9 @@ Polyverse Boost Cloud Service
 
 ### New Features
 - Added Custom Process Lambda Service API - enabling custom prompts to be sent from the Boost client (Dev-Only)
+- Added usage-based Metered billing for all Boost Cloud Service APIs
+- Added support for reporting usage per customer input (charged on input only)
+- Added support for using GitHub email/organization as customer identifier - for enterprise licensing/billing
 
 ### Enhancements
 - Added Licensing analysis to Architectural Blueprint generation Service API
