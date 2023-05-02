@@ -630,11 +630,11 @@ def customer_portal(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                valid, account = validate_request_lambda(json_data, correlation_id)
+                valid, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            valid, account = validate_request_lambda(json_data, correlation_id)
+            valid, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
