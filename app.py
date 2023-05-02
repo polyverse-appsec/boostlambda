@@ -1,4 +1,4 @@
-from chalice import Chalice, Response
+from chalice import Chalice
 from chalicelib.auth import validate_request_lambda
 from chalice import BadRequestError
 from chalicelib.analyze import analyze_code, analyze_api_version
@@ -64,7 +64,7 @@ def explain(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
 
-        #update the billing usage for this analysis
+        # update the billing usage for this analysis
         update_usage_for_code(account, code)
 
     except Exception as e:
@@ -155,7 +155,7 @@ def generate(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
 
-        #update the billing usage for this analysis
+        # update the billing usage for this analysis
         update_usage_for_code(account, code)
 
     except Exception as e:
@@ -249,7 +249,7 @@ def testgen(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} testgen_code: {end_time - start_time:.3f} seconds')
 
-        #update the billing usage for this analysis
+        # update the billing usage for this analysis
         update_usage_for_code(account, code)
 
     except Exception as e:
@@ -328,7 +328,7 @@ def analyze(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
 
-        #update the billing usage for this analysis
+        # update the billing usage for this analysis
         update_usage_for_code(account, code)
 
     except Exception as e:
@@ -410,7 +410,7 @@ def compliance(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
 
-        #update the billing usage for this analysis
+        # update the billing usage for this analysis
         update_usage_for_code(account, code)
 
     except Exception as e:
@@ -491,7 +491,7 @@ def codeguidelines(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
 
-        #update the billing usage for this analysis
+        # update the billing usage for this analysis
         update_usage_for_code(account, code)
 
     except Exception as e:
@@ -575,7 +575,7 @@ def blueprint(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} blueprint_code: {end_time - start_time:.3f} seconds')
 
-        #update the billing usage for this analysis
+        # update the billing usage for this analysis
         update_usage_for_code(account, code)
 
     except Exception as e:
@@ -610,7 +610,8 @@ def blueprint(event, context):
                     'X-API-Version': blueprint_api_version},
         'body': json.dumps(json_obj)
     }
-    
+
+
 @app.lambda_function(name='customprocess')
 def customprocess(event, context):
 
@@ -692,7 +693,7 @@ def customprocess(event, context):
         'body': json.dumps(json_obj)
     }
 
-            
+
 @xray_recorder.capture('customer_portal')
 @app.lambda_function(name='customer_portal')
 def customer_portal(event, context):
@@ -720,8 +721,6 @@ def customer_portal(event, context):
             valid, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
-
-
 
         # Now call the openai function
         if cloudwatch is not None:
@@ -754,7 +753,6 @@ def customer_portal(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
-
     json_obj = {}
     json_obj["portal_url"] = session.url
 
@@ -764,6 +762,7 @@ def customer_portal(event, context):
         'headers': {'Content-Type': 'application/json'},
         'body': json.dumps(json_obj)
     }
+
 
 @xray_recorder.capture('user_organizations')
 @app.lambda_function(name='user_organizations')
@@ -814,7 +813,6 @@ def user_organizations(event, context):
             'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({"error": str(e)})
         }
-
 
     json_obj = {}
     json_obj["organizations"] = orgs
