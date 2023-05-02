@@ -156,7 +156,7 @@ def generate(event, context):
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
 
         # update the billing usage for this analysis
-        update_usage_for_code(account, code)
+        update_usage_for_code(account, original_code)
 
     except Exception as e:
 
