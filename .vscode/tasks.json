@@ -10,6 +10,38 @@
         }
       },
       {
+        "label": "deploy dev stage",
+        "type": "shell",
+        "command": "chalice deploy --stage dev",
+        "options": {
+          "cwd": "${workspaceFolder}"
+        }
+      },
+      {
+        "label": "deploy test stage",
+        "type": "shell",
+        "command": "chalice deploy --stage test",
+        "options": {
+          "cwd": "${workspaceFolder}"
+        }
+      },
+      {
+        "label": "deploy staging",
+        "type": "shell",
+        "command": "chalice deploy --stage staging",
+        "options": {
+          "cwd": "${workspaceFolder}"
+        }
+      },
+      {
+        "label": "deploy production",
+        "type": "shell",
+        "command": "chalice deploy --stage prod",
+        "options": {
+          "cwd": "${workspaceFolder}"
+        }
+      },
+      {
         "label": "pip: install",
         "type": "shell",
         "command": "source .venv/bin/activate && pip install -r requirements.txt",

@@ -3,6 +3,14 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.4.6: May 2, 2023
+
+### New Features
+- Added Custom Process Lambda Service API - enabling custom prompts to be sent from the Boost client (Dev-Only)
+
+### Enhancements
+- Added Licensing analysis to Architectural Blueprint generation Service API
+
 ## Version 0.4.5: May 1, 2023
 
 ### Enhancements
