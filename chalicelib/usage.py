@@ -29,8 +29,8 @@ class OpenAIDefaults:
 # | 32K context  | $0.06 / 1K tokens   | $0.12 / 1K tokens         |
 
 
-# Assuming the cost per kb is 0.03 cents
-boost_cost_per_kb = 0.03
+# Assuming the cost per kb is 0.06 cents
+boost_cost_per_kb = 0.06
 
 # Assuming the cost per token is 0.01 cents
 cost_gpt4_per_prompt_token_lt_8000 = 0.03 / 1000
