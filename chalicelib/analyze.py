@@ -10,7 +10,6 @@ print("analyze_api_version: ", analyze_api_version)
 
 secret_json = pvsecret.get_secrets()
 
-# TEMP - put this back to the polyverse key once gpt-4 access is approved there
 openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
 

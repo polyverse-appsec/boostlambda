@@ -13,6 +13,9 @@
             "lambda_timeout": 240,
             "tags": {
                 "Environment": "Development"
+            },
+            "environment_variables": {
+              "CHALICE_STAGE": "dev"
             }
         },
         "test": {
@@ -20,6 +23,9 @@
             "lambda_timeout": 240,
             "tags": {
                 "Environment": "Test"
+            },
+            "environment_variables": {
+              "CHALICE_STAGE": "test"
             }
         },
         "staging": {
@@ -27,13 +33,16 @@
             "lambda_timeout": 240,
             "tags": {
                 "Environment": "Staging"
+            },
+            "environment_variables": {
+              "CHALICE_STAGE": "staging"
             }
         },
         "prod": {
             "api_gateway_stage": "api",
             "lambda_timeout": 240,
-            "tags": {
-                "Environment": "Production"
+            "environment_variables": {
+              "CHALICE_STAGE": "prod"
             }
         }
     },

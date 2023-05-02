@@ -323,3 +323,19 @@ Future revisions will need to be done to the Boost API endpoint to either:
 * use a different asynchronous API pattern, e.g. tasks, callbacks, etc - from within the Boost API
 * upgrade to a newer, faster OpenAI API endpoint that can process in <60 seconds guaranteed
 
+## Stripe API and integration
+
+To debug with Stripe, install the STripe CLI
+```
+brew install stripe/stripe-cli/stripe
+```
+Then run the CLI
+``` 
+stripe login
+```
+
+then install the Stripe Visual Studio Code extension
+```
+code --install-extension stripe.stripe-vscode
+```
+

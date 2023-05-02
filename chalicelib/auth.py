@@ -5,167 +5,126 @@ from chalice import UnauthorizedError
 import re
 from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, InfoMetrics
 import time
+from .payments import check_valid_subscriber
 
+class ExtendedUnauthorizedError(UnauthorizedError):
+    def __init__(self, message, reason=None):
+        super().__init__(message)
+        self.reason = reason
 
-def fetch_email(access_token):
+def fetch_email_and_username(access_token):
     headers = {
         'Authorization': f'token {access_token}',
         'Accept': 'application/vnd.github+json',
     }
-    url = 'https://api.github.com/user/emails'
+    url = 'https://api.github.com/user'
 
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        emails = response.json()
-        for email in emails:
-            if email['primary']:
-                return email['email']
+        user = response.json()
+        return user['email'], user['login']
     else:
         email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
         match = re.search(email_pattern, access_token)
 
         if match:
-            return match.group(1)
+            return match.group(1), match.group(1)
         return None
 
+def fetch_orgs(access_token):
+    headers = {
+        'Authorization': f'token {access_token}',
+        'Accept': 'application/vnd.github+json',
+    }
+    url = 'https://api.github.com/user/orgs'
+
+    response = requests.get(url, headers=headers)
+    #if we got a 200, then we have a list of orgs, otherwise check for a testorg
+    if response.status_code == 200:
+        orgs = response.json()
+        #we just need the string of the org name, it's in the 'login' field.  update the orgs array to just be the string
+        if isinstance(orgs, list):
+            for i in range(len(orgs)):
+                orgs[i] = orgs[i]['login']
+
+        return orgs
+    else:
+        org_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
+        match = re.search(org_pattern, access_token)
+
+        if match:
+            email = match.group(1)
+            org = get_domain(email)
+            return [org]
+        return None
 
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
-def validate_github_session(access_token, correlation_id, context):
+def validate_github_session(access_token, organization, correlation_id, context):
     if cloudwatch is not None:
         with xray_recorder.capture('github_verify_email'):
-            email = fetch_email(access_token)
+            email, username = fetch_email_and_username(access_token)
+            orgs = fetch_orgs(access_token)
     else:
         start_time = time.monotonic()
-        email = fetch_email(access_token)
+        email, username = fetch_email_and_username(access_token)
+        orgs = fetch_orgs(access_token)
         end_time = time.monotonic()
         print(f'Execution time {correlation_id} github_verify_email: {end_time - start_time:.3f} seconds')
 
     print('BOOST_USAGE: email is ', email)
 
-    if email:
-
-        if cloudwatch is not None:
-            with xray_recorder.capture('shopify_verify_email'):
-                return verify_email_with_shopify(email, correlation_id, context), email
+    #make sure that organization is in the list of orgs, make sure orgs is an array then loop through
+    if orgs is not None:
+        if isinstance(orgs, list):
+            for org in orgs:
+                if org == organization:
+                    return True, email
         else:
-            start_time = time.monotonic()
-            verified = verify_email_with_shopify(email, correlation_id, context), email
-            end_time = time.monotonic()
-            print(f'Execution time {correlation_id} shopify_verify_email: {end_time - start_time:.3f} seconds')
-            return verified
-
-    else:
-        return False, email
-
-
-def verify_email_with_shopify(email, correlation_id, context):
-    # Authenticate with the Shopify API
-    shop_url = 'https://polyverse-security.myshopify.com/admin/api/2023-01'
-    api_version = '2023-01'
-    secret_json = pvsecret.get_secrets()
-
-    shopify_token = secret_json["shopify"]
-
-    session = shopify.Session(shop_url, api_version, shopify_token)
-    shopify.ShopifyResource.activate_session(session)
-
-    shopify.ShopifyResource.set_site(shop_url)
-
-    # Fetch the customer information using the email address
-    # first see if the email is in a valid domain
-    domain = get_domain(email)
-    if is_valid_domain(domain):
-        customers = shopify.Customer.search(query=f'email:*@{domain}')
-    else:
-        customers = shopify.Customer.find(email=email)
-
-    # Clear the Shopify API session
-    shopify.ShopifyResource.clear_session()
-
-    # Check if a customer was found
-    # Check if any customers were found
-    if customers:
-        # Loop through the customers and print their information
-        for customer in customers:
-            # Only print customer info if locally debugging - until we enable aggressive short-duration log collection for debugging (CloudWatch)
-            # avoid logging anything except email to avoid any unnecessary PII concerns
-            if cloudwatch is None:
-                print(f"Customer Information for {customer.email}:")
-                print(f"ID: {customer.id}")
-                print(f"First Name: {customer.first_name}")
-                print(f"Last Name: {customer.last_name}")
-                print(f"Total Spent: {customer.total_spent} {customer.currency}")
-                print(f"Orders Count: {customer.orders_count}")
-            if customer.orders_count > 0:
-                return True
-    else:
-        capture_metric(email, correlation_id, context,
-                       {'name': InfoMetrics.GITHUB_ACCESS_NOT_FOUND, 'value': 1, 'unit': 'Count'})
-
-    return email.endswith('@polyverse.com') or email.endswith('@polyverse.io')
-
-
-# function to validate that the request came from a github logged in user or we are running on localhost
-# or that the session token is valid github oauth token for a subscribed email
-def validate_request(request, correlation_id, context):
-
-    # otherwise check to see if we have a valid github session token
-    # parse the request body as json
-    try:
-        json_data = request.json_body
-        # extract the code from the json data
-        session = json_data.get('session')
-        validate = validate_github_session(session, correlation_id, context)
-        if (validate):
-            return True, None
-    except ValueError:
-        # don't do anything if the json is invalid
-        pass
-
-    # last chance, check the ip address
-
-    # if we don't have a rapid api key, check the origin
-    # ip = request.context["identity"]["sourceIp"]
-    # print("got client ip: " + ip)
-    # if the ip starts with 127, it's local
-    # if ip.startswith("127"):
-    #    return True, None
-
-    # if we got here, we failed, return an error
-    raise UnauthorizedError("Error: please login to github to use this service")
+            if orgs == organization:
+                return True, email
+    return False, email
 
 
 # function to validate that the request came from a github logged in user or we are running on localhost
 # or that the session token is valid github oauth token for a subscribed email. This version is for the
 # raw lambda function and so has the session key passed in as a string
-def validate_request_lambda(session, context, correlation_id):
+def validate_request_lambda(request_json, context, correlation_id):
+
+    session = request_json.get('session')
+    organization = request_json.get('organization')
+    version = request_json.get('version')
+
+    #if no version or organization specified, then we need to ask the client to upgrade
+    if version is None or organization is None:
+        raise ExtendedUnauthorizedError("Error: please upgrade to use this service", reason="UpgradeRequired")
 
     # otherwise check to see if we have a valid github session token
     # parse the request body as json
     try:
         # extract the code from the json data
-        validated, email = validate_github_session(session, correlation_id, context)
-        if validated:
-            return email
+        validated, email = validate_github_session(session, organization, correlation_id, context)
     except ValueError:
-        # don't do anything if the json is invalid
         pass
 
-    # last chance, check the ip address
+    # if we did not get a valid email, send a cloudwatch alert and raise the error
+    if not validated:
+        capture_metric(email, correlation_id, context,
+            {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
 
-    # if we don't have a rapid api key, check the origin
-    # ip = request.context["identity"]["sourceIp"]
-    # print("got client ip: " + ip)
-    # if the ip starts with 127, it's local
-    # if ip.startswith("127"):
-    #    return True, None
+        # if we got here, we failed, return an error
+        raise ExtendedUnauthorizedError("Error: please login to github to use this service", reason="GitHubAccessNotFound")
+    
+    #if we got this far, we got a valid email. now check that the email is subscribed
 
-    capture_metric(email, correlation_id, context,
-                   {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
-
-    # if we got here, we failed, return an error
-    raise UnauthorizedError("Error: please login to github to use this service")
+    valid, account = check_valid_subscriber(email, organization)
+    
+    if not valid:
+        raise ExtendedUnauthorizedError("Error: please subscribe to use this service", reason="InvalidSubscriber")
+    
+    return True, account
+    
+    
 
 
 def get_domain(email):
