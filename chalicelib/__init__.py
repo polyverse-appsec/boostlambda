@@ -1,2 +1,1 @@
-__all__ = ["convert", "pvsecret", "auth", "testgen", "analyze", "compliance", "codeguidelines", "blueprint", "stripe", "constants"]
-
+__all__ = ["convert", "pvsecret", "auth", "testgen", "analyze", "compliance", "codeguidelines", "blueprint", "constants", "telemetry", "usage", "version", "stripe"]

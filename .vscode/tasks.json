@@ -12,7 +12,7 @@
       {
         "label": "pip: install",
         "type": "shell",
-        "command": "${env:VIRTUAL_ENV}/bin/pip install -r requirements.txt",
+        "command": "source .venv/bin/activate && pip install -r requirements.txt",
         "options": {
           "cwd": "${workspaceFolder}"
         }

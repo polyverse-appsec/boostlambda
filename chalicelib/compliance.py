@@ -2,7 +2,8 @@ import openai
 from . import pvsecret
 import os
 from chalicelib.version import API_VERSION
-from chalicelib.telemetry import cw_client
+from chalicelib.telemetry import capture_metric, CostMetrics
+from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
 
 compliance_api_version = API_VERSION  # API version is global for now, not service specific
 print("compliance_api_version: ", compliance_api_version)
@@ -40,12 +41,12 @@ compliance_prompt, role_system = load_prompts()
 
 
 # a function to call openai to check code for data compliance
-def compliance_code(code, event, context, correlation_id):
+def compliance_code(code, email, context, correlation_id):
 
     prompt = compliance_prompt.format(code=code)
 
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model=OpenAIDefaults.boost_default_gpt_model,
         messages=[
             {
                 "role": "system",
@@ -55,50 +56,37 @@ def compliance_code(code, event, context, correlation_id):
                 "role": "user",
                 "content": prompt
             }
-        ]
+        ],
+        max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
     )
     explanation = response.choices[0].message.content
 
-    # Get the size of the code and explanation
-    prompt_size = len(prompt) + len(role_system)
-    explanation_size = len(explanation)
+    try:
+        # Get the cost of the prompting - so we have visibiity into our cost per user API
+        prompt_size = len(prompt) + len(role_system)
+        explanation_size = len(explanation)
+        boost_cost = get_boost_cost(prompt_size + explanation_size)
+        openai_input_tokens, openai_input_cost = get_openai_usage(prompt + role_system)
+        openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(code)
+        openai_output_tokens, openai_output_cost = get_openai_usage(explanation, False)
+        openai_tokens = openai_input_tokens + openai_output_tokens
+        openai_cost = openai_input_cost + openai_output_cost
 
-    if cw_client is not None:
-        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
-        cw_client.put_metric_data(
-            Namespace='Boost/Lambda',
-            MetricData=[
-                {
-                    'MetricName': 'PromptSize',
-                    'Dimensions': [
-                        {
-                            'Name': 'LambdaFunctionName',
-                            'Value': lambda_function
-                        },
-                        {
-                            'Name': 'CorrelationID',
-                            'Value': correlation_id
-                        }
-                    ],
-                    'Unit': 'Bytes',
-                    'Value': prompt_size
-                },
-                {
-                    'MetricName': 'ResponseSize',
-                    'Dimensions': [
-                        {
-                            'Name': 'LambdaFunctionName',
-                            'Value': lambda_function
-                        },
-                        {
-                            'Name': 'CorrelationID',
-                            'Value': correlation_id
-                        }
-                    ],
-                    'Unit': 'Bytes',
-                    'Value': explanation_size
-                }
-            ]
-        )
+        capture_metric(email, correlation_id, context,
+                       {'name': CostMetrics.PROMPT_SIZE, 'value': prompt_size, 'unit': 'Count'},
+                       {'name': CostMetrics.RESPONSE_SIZE, 'value': explanation_size, 'unit': 'Count'},
+                       {'name': CostMetrics.OPENAI_INPUT_COST, 'value': round(openai_input_cost, 5), 'unit': 'None'},
+                       {'name': CostMetrics.OPENAI_CUSTOMERINPUT_COST, 'value': round(openai_customerinput_cost, 5), 'unit': 'None'},
+                       {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
+                       {'name': CostMetrics.OPENAI_COST, 'value': round(openai_cost, 5), 'unit': 'None'},
+                       {'name': CostMetrics.BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
+                       {'name': CostMetrics.OPENAI_INPUT_TOKENS, 'value': openai_input_tokens, 'unit': 'Count'},
+                       {'name': CostMetrics.OPENAI_CUSTOMERINPUT_TOKENS, 'value': openai_customerinput_tokens, 'unit': 'Count'},
+                       {'name': CostMetrics.OPENAI_OUTPUT_TOKENS, 'value': openai_output_tokens, 'unit': 'Count'},
+                       {'name': CostMetrics.OPENAI_TOKENS, 'value': openai_tokens, 'unit': 'Count'})
+
+    except Exception as e:
+        print("{email}:{correlation_id}:Error capturing metrics: ", e)
+        pass  # Don't fail if we can't capture metrics
 
     return explanation

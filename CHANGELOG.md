@@ -3,6 +3,22 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.4.5: May 1, 2023
+
+### Enhancements
+- Default to max_tokens for any GPT model - set by 0 value, so model change change max_tokens automatically
+
+### Bug Fixes
+- Raised max_tokens to 8192 for gpt4 usage - was 4000 for gpt3.5
+## Version 0.4.4: April 27, 2023
+### Enhancements
+- Improved resolution of GitHub account missing alert from 60 seconds to 1 second (to minimize missing alerts)
+- Set the max_tokens to 4000 (was implied) on completions
+- Added CloudWatch metrics for all OpenAI and Boost costs on prompts, completions (OpenAI costs change on input, output and token counts)
+- Added CloudWatch metrics to track token counts on inputs and outputs
+- Added customer email to CloudWatch metric dimensions for searching
+- Set Lambda functions to use 256mb of memory (was 128mb) to improve performance and avoid limit using OpenAI tokenizer/tiktoken
+
 ## Version 0.4.3: April 26, 2023
 
 ### New Features

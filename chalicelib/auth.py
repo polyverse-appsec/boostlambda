@@ -3,7 +3,7 @@ import shopify
 from . import pvsecret
 from chalice import UnauthorizedError
 import re
-from chalicelib.telemetry import cw_client, xray_recorder
+from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, InfoMetrics
 import time
 from .payments import check_valid_subscriber
 
@@ -40,17 +40,28 @@ def fetch_orgs(access_token):
     url = 'https://api.github.com/user/orgs'
 
     response = requests.get(url, headers=headers)
-    orgs = response.json()
-    #we just need the string of the org name, it's in the 'login' field.  update the orgs array to just be the string
-    if isinstance(orgs, list):
-        for i in range(len(orgs)):
-            orgs[i] = orgs[i]['login']
+    #if we got a 200, then we have a list of orgs, otherwise check for a testorg
+    if response.status_code == 200:
+        orgs = response.json()
+        #we just need the string of the org name, it's in the 'login' field.  update the orgs array to just be the string
+        if isinstance(orgs, list):
+            for i in range(len(orgs)):
+                orgs[i] = orgs[i]['login']
 
-    return orgs
+        return orgs
+    else:
+        org_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
+        match = re.search(org_pattern, access_token)
+
+        if match:
+            email = match.group(1)
+            org = get_domain(email)
+            return [org]
+        return None
 
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
-def validate_github_session(access_token, organization, correlation_id):
-    if cw_client is not None:
+def validate_github_session(access_token, organization, correlation_id, context):
+    if cloudwatch is not None:
         with xray_recorder.capture('github_verify_email'):
             email, username = fetch_email_and_username(access_token)
             orgs = fetch_orgs(access_token)
@@ -78,7 +89,7 @@ def validate_github_session(access_token, organization, correlation_id):
 # function to validate that the request came from a github logged in user or we are running on localhost
 # or that the session token is valid github oauth token for a subscribed email. This version is for the
 # raw lambda function and so has the session key passed in as a string
-def validate_request_lambda(request_json, correlation_id):
+def validate_request_lambda(request_json, context, correlation_id):
 
     session = request_json.get('session')
     organization = request_json.get('organization')
@@ -92,49 +103,22 @@ def validate_request_lambda(request_json, correlation_id):
     # parse the request body as json
     try:
         # extract the code from the json data
-        validated, email = validate_github_session(session, organization, correlation_id)
-
+        validated, email = validate_github_session(session, organization, correlation_id, context)
+        if validated:
+            return True
     except ValueError:
         pass
 
     # if we did not get a valid email, send a cloudwatch alert and raise the error
     if not validated:
-        if (cw_client is not None):
-            # Send a CloudWatch alert
-            cw_client.put_metric_data(
-                Namespace='Boost/Lambda',
-                MetricData=[
-                    {
-                        'MetricName': 'GitHubAccessNotFound',
-                        'Dimensions': [
-                            {
-                                'Name': 'Application',
-                                'Value': 'Boost'
-                            },
-                            {
-                                'Name': 'CustomerEmail',
-                                'Value': email
-                            },
-                            {
-                                'Name': 'CorrelationID',
-                                'Value': correlation_id
-                            }
-                        ],
-                        'Value': 1,
-                        'Unit': 'Count',
-                        'StorageResolution': 60
-                    }
-                ]
-            )
-        else:
-            print("Failed to validate GitHub / Access token")
+        capture_metric(email, correlation_id, context,
+            {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
 
         # if we got here, we failed, return an error
         raise ExtendedUnauthorizedError("Error: please login to github to use this service", reason="GitHubAccessNotFound")
     
     #if we got this far, we got a valid email. now check that the email is subscribed
 
-    print('callling check_valid_subscriber', email, organization)
     valid, account = check_valid_subscriber(email, organization)
     
     if not valid:
