@@ -41,6 +41,9 @@
         "prod": {
             "api_gateway_stage": "api",
             "lambda_timeout": 240,
+            "tags": {
+                "Environment": "prod"
+            },
             "environment_variables": {
               "CHALICE_STAGE": "prod"
             }
