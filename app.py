@@ -7,7 +7,7 @@ from chalicelib.compliance import compliance_code, compliance_api_version
 from chalicelib.codeguidelines import guidelines_code, guidelines_api_version
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
-from chalicelib.payments import customer_portal_url
+from chalicelib.payments import customer_portal_url, update_usage_for_code
 from chalicelib.auth import fetch_orgs, fetch_email_and_username
 
 import json
@@ -37,16 +37,17 @@ def explain(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                email = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            email = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         code = json_data.get('code')
+        email = account['email']
 
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to explain")
@@ -61,6 +62,9 @@ def explain(event, context):
             explanation = explain_code(code, email, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
+
+        #update the billing usage for this analysis
+        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -117,13 +121,15 @@ def generate(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                email = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            email = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+
+        email = account['email']
 
         # Extract the explanation and original_code from the json data
         explanation = json_data.get('explanation')
@@ -147,6 +153,9 @@ def generate(event, context):
             code = generate_code(explanation, original_code, outputlanguage, email, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
+
+        #update the billing usage for this analysis
+        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -202,17 +211,18 @@ def testgen(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                email = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            email = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         language = json_data['language']
         framework = json_data['framework']
         code = json_data['code']
+        email = account['email']
 
         if code is None:
             raise BadRequestError("Error: please provide the code to write tests for")
@@ -237,6 +247,9 @@ def testgen(event, context):
             testcode = testgen_code(code, outputlanguage, framework, email, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} testgen_code: {end_time - start_time:.3f} seconds')
+
+        #update the billing usage for this analysis
+        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -288,16 +301,17 @@ def analyze(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                email = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            email = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         code = json_data['code']
+        email = account['email']
 
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze")
@@ -312,6 +326,9 @@ def analyze(event, context):
             analysis = analyze_code(email, code, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
+
+        #update the billing usage for this analysis
+        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -366,16 +383,17 @@ def compliance(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                email = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            email = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         code = json_data['code']
+        email = account['email']
 
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze for compliance")
@@ -390,6 +408,9 @@ def compliance(event, context):
             analysis = compliance_code(json_data, email, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
+
+        #update the billing usage for this analysis
+        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -444,17 +465,17 @@ def codeguidelines(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                email = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            email = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         # Extract the code from the json data
         code = json_data['code']
-
+        email = account['email']
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze for coding guidelines")
 
@@ -468,6 +489,9 @@ def codeguidelines(event, context):
             analysis = guidelines_code(code, email, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
+
+        #update the billing usage for this analysis
+        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -522,11 +546,11 @@ def blueprint(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                email = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            email = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -536,6 +560,8 @@ def blueprint(event, context):
         code = json_data['code']
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to blueprint")
+
+        email = account['email']
 
         # Now call the openai function
         if cloudwatch is not None:
@@ -547,6 +573,9 @@ def blueprint(event, context):
             blueprint = blueprint_code(json_data, email, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} blueprint_code: {end_time - start_time:.3f} seconds')
+
+        #update the billing usage for this analysis
+        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -599,7 +628,7 @@ def customer_portal(event, context):
 
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
-        if cw_client is not None:
+        if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
                 valid, account = validate_request_lambda(json_data, correlation_id)
         else:
@@ -612,7 +641,7 @@ def customer_portal(event, context):
 
 
         # Now call the openai function
-        if cw_client is not None:
+        if cloudwatch is not None:
             with xray_recorder.capture('customer_portal'):
                 session = customer_portal_url(account)
         else:
@@ -625,7 +654,7 @@ def customer_portal(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
-        if cw_client is not None:
+        if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
             print("Explain {} failed with exception: {}".format(correlation_id, e))
@@ -671,7 +700,7 @@ def user_organizations(event, context):
 
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
-        if cw_client is not None:
+        if cloudwatch is not None:
             with xray_recorder.capture('get_user_organizations'):
                 orgs = fetch_orgs(json_data["session"])
                 email, username = fetch_email_and_username(json_data["session"])
@@ -686,7 +715,7 @@ def user_organizations(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
-        if cw_client is not None:
+        if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
             print("Explain {} failed with exception: {}".format(correlation_id, e))

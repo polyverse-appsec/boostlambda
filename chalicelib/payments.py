@@ -158,6 +158,14 @@ def update_usage(subscription_item, bytes):
     )
     return subscription_item
 
+def update_usage_for_code(account, code):
+    #get the subscription item
+    subscription_item = account['subscription_item']
+    #get the bytes from the code (the length of the code)
+    bytes = len(code)
+    #update the usage
+    update_usage(subscription_item, bytes)
+
 def check_trial_expired(customer):
     # Check if the customer has a non-zero balance and if they do NOT have a payment method
     # in this case, we know their trial has expired.
@@ -187,7 +195,7 @@ def check_valid_subscriber(email, organization):
     
     expired = check_trial_expired(customer=customer)
     if not expired:
-        return True, {"customer": customer, "subscription": subscription, "subscription_item": subscription_item}
+        return True, {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
     else:
         return False, None
 

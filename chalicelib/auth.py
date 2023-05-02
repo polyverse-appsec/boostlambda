@@ -104,8 +104,6 @@ def validate_request_lambda(request_json, context, correlation_id):
     try:
         # extract the code from the json data
         validated, email = validate_github_session(session, organization, correlation_id, context)
-        if validated:
-            return True
     except ValueError:
         pass
 
