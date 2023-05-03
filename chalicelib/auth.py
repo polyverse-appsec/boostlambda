@@ -12,18 +12,47 @@ class ExtendedUnauthorizedError(UnauthorizedError):
         self.reason = reason
 
 
+def fetch_email(access_token):
+    headers = {
+        'Authorization': f'token {access_token}',
+        'Accept': 'application/vnd.github+json',
+    }
+    url = 'https://api.github.com/user/emails'
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        emails = response.json()
+        for email in emails:
+            if email['primary']:
+                return email['email']
+    else:
+        email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
+        match = re.search(email_pattern, access_token)
+
+        if match:
+            return match.group(1)
+        return None
+
+
 def fetch_email_and_username(access_token):
     headers = {
         'Authorization': f'token {access_token}',
         'Accept': 'application/vnd.github+json',
     }
-    url = 'https://api.github.com/user'
 
+    # get email from github
+    email = fetch_email(access_token)
+    if email is None:
+        raise Exception("GitHub Email is required to access Boost account")
+
+    # get login/username from github
+    url = 'https://api.github.com/user'
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
         user = response.json()
-        return user['email'], user['login']
+        return email, user['login']
     else:
         email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
         match = re.search(email_pattern, access_token)
@@ -74,7 +103,7 @@ def validate_github_session(access_token, organization, correlation_id, context)
         end_time = time.monotonic()
         print(f'Execution time {correlation_id} github_verify_email: {end_time - start_time:.3f} seconds')
 
-    print(f'BOOST_USAGE: username:{username}, organization:{organization}')
+    print(f'BOOST_USAGE: username:{username}, organization:{organization}, email:{email}')
 
     # make sure that organization is in the list of orgs, make sure orgs is an array then loop through
     if orgs is not None:
