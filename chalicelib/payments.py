@@ -110,6 +110,9 @@ def check_create_subscription(customer, email):
             if subscription.status == "active":
                 return subscription
 
+    if (email is None):
+        raise Exception("Email is required to create a payment account")
+
     # if we got here, we don't have a subscription, so create one
     # we need to create a price per email address
     price = create_price(email)
@@ -193,6 +196,10 @@ def check_trial_expired(customer):
 
 
 def check_valid_subscriber(email, organization):
+
+    if (email is None):
+        raise Exception("Email is required to create a subscription account")
+
     customer = check_create_customer(email=email, org=organization)
     if not customer:
         return False, None
