@@ -16,7 +16,8 @@ else:  # dev, test, or local
 
 
 def create_price(email):
-    price_id = "boost_per_kb"
+    # price_id = "boost_per_kb"  # original Boost pricing on input only
+    price_id = "boost_per_kb_launch"  # new Boost pricing on combined input+output only
 
     # Retrieve the existing Price object
     original_price = stripe.Price.retrieve(price_id, expand=['tiers'])
@@ -33,7 +34,10 @@ def create_price(email):
     nickname_value = original_price.get('nickname', '')
 
     # Use a conditional expression to check if the value of 'nickname' is None before performing the concatenation
-    nickname = (nickname_value + '_') if nickname_value is not None else 'price_' + email
+    if (nickname_value is not None):
+        nickname = nickname_value + '_' + email
+    else:
+        nickname = 'price_' + email
     recurring = original_price['recurring']
 
     # stripe will give us both flat_amount and _flat_amount_decimal, as well as unit_amount_decimal in the tiers array
