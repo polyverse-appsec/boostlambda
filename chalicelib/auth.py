@@ -30,7 +30,7 @@ def fetch_email_and_username(access_token):
 
         if match:
             return match.group(1), match.group(1)
-        return None
+        return None, None
 
 
 def fetch_orgs(access_token):
