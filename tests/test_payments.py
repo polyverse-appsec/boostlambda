@@ -11,6 +11,7 @@ def generate_org():
     import string
     # Generate a random string of 10 lowercase letters for the domain
     org = ''.join(random.choice(string.ascii_lowercase) for i in range(10))
+    org = 'test-org-' + org
     return org
 
 
@@ -18,7 +19,9 @@ def generate_email(domain):
     import random
     import string
     # Generate a random string of 10 lowercase letters for the domain
-    return ''.join(random.choice(string.ascii_lowercase) for i in range(10)) + domain
+    email = ''.join(random.choice(string.ascii_lowercase) for i in range(10)) + domain
+    email = 'test-email-' + email
+    return email
 
 
 # Define a test function using the pytest naming convention (test_*)
