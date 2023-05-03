@@ -9,7 +9,7 @@ from chalicelib.customprocess import customprocess_code, customprocess_api_versi
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
 from chalicelib.payments import customer_portal_url, update_usage_for_code
-from chalicelib.auth import fetch_orgs, fetch_email_and_username
+from chalicelib.auth import fetch_orgs, fetch_email_and_username, ExtendedUnauthorizedError
 
 import json
 import uuid
@@ -46,12 +46,17 @@ def explain(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
+
         # Extract the code from the json data
         code = json_data.get('code')
-        email = account['email']
-
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to explain")
+
+        email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
 
         # Now call the explain function
         if cloudwatch is not None:
@@ -130,7 +135,12 @@ def generate(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
+
         email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
 
         # Extract the explanation and original_code from the json data
         explanation = json_data.get('explanation')
@@ -220,18 +230,23 @@ def testgen(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
-        language = json_data['language']
-        framework = json_data['framework']
-        code = json_data['code']
-        email = account['email']
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
 
+        code = json_data['code']
         if code is None:
             raise BadRequestError("Error: please provide the code to write tests for")
 
+        email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
+
+        language = json_data['language']
         outputlanguage = language
         if outputlanguage is None:
             outputlanguage = "python"
 
+        framework = json_data['framework']
         if framework is None:
             if outputlanguage == "python":
                 framework = "pytest"
@@ -310,12 +325,17 @@ def analyze(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
+
         # Extract the code from the json data
         code = json_data['code']
-        email = account['email']
-
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze")
+
+        email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
 
         # Now call the openai function
         if cloudwatch is not None:
@@ -392,12 +412,17 @@ def compliance(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
+
         # Extract the code from the json data
         code = json_data['code']
-        email = account['email']
-
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze for compliance")
+
+        email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
 
         # Now call the openai function
         if cloudwatch is not None:
@@ -474,11 +499,17 @@ def codeguidelines(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
+
         # Extract the code from the json data
         code = json_data['code']
-        email = account['email']
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze for coding guidelines")
+
+        email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
 
         # Now call the openai function
         if cloudwatch is not None:
@@ -555,6 +586,9 @@ def blueprint(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
+
         # Extract the code from the json data
         if 'code' not in json_data:
             raise BadRequestError("Error: please provide a code fragment to blueprint")
@@ -563,6 +597,8 @@ def blueprint(event, context):
             raise BadRequestError("Error: please provide a code fragment to blueprint")
 
         email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
 
         # Now call the openai function
         if cloudwatch is not None:
@@ -631,13 +667,16 @@ def customprocess(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                email = validate_request_lambda(json_data['session'], context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            email = validate_request_lambda(json_data['session'], context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
 
         # Extract the code from the json data
         code = json_data['code']
@@ -649,6 +688,10 @@ def customprocess(event, context):
         if prompt is None:
             raise BadRequestError("Error: please provide a custom prompt to run against the code fragment")
 
+        email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
+
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
@@ -659,6 +702,9 @@ def customprocess(event, context):
             analysis = customprocess_code(code, prompt, email, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
+
+        # update the billing usage for this analysis
+        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -714,13 +760,16 @@ def customer_portal(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                valid, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            valid, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+
+        if (not validated):
+            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
 
         # Now call the openai function
         if cloudwatch is not None:
@@ -816,6 +865,7 @@ def user_organizations(event, context):
 
     json_obj = {}
     json_obj["organizations"] = orgs
+    json_obj["email"] = email
     json_obj["personal"] = username
 
     # Now return the json object in the response
