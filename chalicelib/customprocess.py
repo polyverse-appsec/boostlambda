@@ -76,7 +76,7 @@ def customprocess_code(code, customprompt, account, context, correlation_id):
         analysis_size = len(analysis)
         boost_cost = get_boost_cost(prompt_size + analysis_size)
         openai_input_tokens, openai_input_cost = get_openai_usage(prompt + role_system)
-        openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(code) + get_openai_usage(customprompt)
+        openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(code + customprompt)
         openai_output_tokens, openai_output_cost = get_openai_usage(analysis, False)
         openai_tokens = openai_input_tokens + openai_output_tokens
         openai_cost = openai_input_cost + openai_output_cost
