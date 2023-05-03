@@ -2,12 +2,17 @@ import stripe
 import math
 import uuid
 import time
+import os
 
 from . import pvsecret
 
 secret_json = pvsecret.get_secrets()
 
-stripe.api_key = secret_json["stripe"]
+service_stage = variable_value = os.getenv('CHALICE_STAGE')
+if (service_stage == "prod" or service_stage == "staging"):
+    stripe.api_key = secret_json["stripe_prod"]
+else:  # dev, test, or local
+    stripe.api_key = secret_json["stripe_dev"]
 
 
 def create_price(email):
