@@ -61,7 +61,7 @@ if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
 
 def num_tokens_from_string(string: str) -> int:
     """Returns the number of tokens in a text string."""
-    if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.model_gpt4):
+    if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4):
         if (code_encoding is None):
             return len(string)
 
