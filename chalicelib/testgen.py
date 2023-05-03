@@ -81,7 +81,7 @@ def testgen_code(original_code, language, framework, account, context, correlati
             # update the billing usage for this analysis
             update_usage_for_code(account, prompt + generated_code)
         except Exception as e:
-            print("UPDATE_USAGE:FAILURE:{customer}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", e)
+            print(f"UPDATE_USAGE:FAILURE:{customer}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", e)
             capture_metric(customer, email, correlation_id, context,
                            {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
 

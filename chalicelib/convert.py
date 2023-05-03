@@ -98,7 +98,7 @@ def explain_code(code, account, context, correlation_id):
             # update the billing usage for this analysis
             update_usage_for_code(account, prompt + explanation)
         except Exception as e:
-            print("UPDATE_USAGE:FAILURE:{customer}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", e)
+            print("UPDATE_USAGE:FAILURE:{}:{}:{}:Error updating ~${} usage: ".format(customer, email, correlation_id, boost_cost), e)
             capture_metric(customer, email, correlation_id, context,
                            {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
 
@@ -175,7 +175,7 @@ def generate_code(summary, original_code, language, account, context, correlatio
             # update the billing usage for this analysis
             update_usage_for_code(account, prompt + generate_code)
         except Exception as e:
-            print("UPDATE_USAGE:FAILURE:{customer}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", e)
+            print("UPDATE_USAGE:FAILURE:{}:{}:{}:Error updating ~${} usage: ".format(customer, email, correlation_id, boost_cost), e)
             capture_metric(customer, email, correlation_id, context,
                            {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
 

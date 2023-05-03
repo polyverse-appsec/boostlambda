@@ -85,7 +85,7 @@ def customprocess_code(code, customprompt, account, context, correlation_id):
             # update the billing usage for this analysis
             update_usage_for_code(account, prompt + analysis)
         except Exception as e:
-            print("UPDATE_USAGE:FAILURE:{customer}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", e)
+            print("UPDATE_USAGE:FAILURE:{}:{}:{}:Error updating ~${} usage: ".format(customer, email, correlation_id, boost_cost), e)
             capture_metric(customer, email, correlation_id, context,
                            {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
 
