@@ -168,7 +168,7 @@ def generate(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("Generate {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -264,7 +264,7 @@ def testgen(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("TestGen {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -345,7 +345,7 @@ def analyze(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("Analyze {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -428,7 +428,7 @@ def compliance(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("Compliance {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -512,7 +512,7 @@ def codeguidelines(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("CodeGuidelines {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -598,7 +598,7 @@ def blueprint(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("Blueprint {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -687,7 +687,7 @@ def customprocess(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("CustomProcess {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -763,7 +763,7 @@ def customer_portal(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -824,7 +824,7 @@ def user_organizations(event, context):
         if cloudwatch is not None:
             xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
         else:
-            print("Explain {} failed with exception: {}".format(correlation_id, e))
+            print("UserOrganizations {} failed with exception: {}".format(correlation_id, e))
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
