@@ -195,7 +195,6 @@ def check_valid_subscriber(email, organization):
         return False, None
 
     # return a dict with the customer, subscription, and subscription_item
-
     expired = check_trial_expired(customer=customer)
     if not expired:
         return True, {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}

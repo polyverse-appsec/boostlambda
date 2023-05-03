@@ -1,16 +1,16 @@
 import requests
-import shopify
-from . import pvsecret
 from chalice import UnauthorizedError
 import re
 from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, InfoMetrics
 import time
 from .payments import check_valid_subscriber
 
+
 class ExtendedUnauthorizedError(UnauthorizedError):
     def __init__(self, message, reason=None):
         super().__init__(message)
         self.reason = reason
+
 
 def fetch_email_and_username(access_token):
     headers = {
@@ -32,6 +32,7 @@ def fetch_email_and_username(access_token):
             return match.group(1), match.group(1)
         return None
 
+
 def fetch_orgs(access_token):
     headers = {
         'Authorization': f'token {access_token}',
@@ -40,10 +41,10 @@ def fetch_orgs(access_token):
     url = 'https://api.github.com/user/orgs'
 
     response = requests.get(url, headers=headers)
-    #if we got a 200, then we have a list of orgs, otherwise check for a testorg
+    # if we got a 200, then we have a list of orgs, otherwise check for a testorg
     if response.status_code == 200:
         orgs = response.json()
-        #we just need the string of the org name, it's in the 'login' field.  update the orgs array to just be the string
+        # we just need the string of the org name, it's in the 'login' field.  update the orgs array to just be the string
         if isinstance(orgs, list):
             for i in range(len(orgs)):
                 orgs[i] = orgs[i]['login']
@@ -58,6 +59,7 @@ def fetch_orgs(access_token):
             org = get_domain(email)
             return [org]
         return None
+
 
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
 def validate_github_session(access_token, organization, correlation_id, context):
@@ -74,7 +76,7 @@ def validate_github_session(access_token, organization, correlation_id, context)
 
     print('BOOST_USAGE: email is ', email)
 
-    #make sure that organization is in the list of orgs, make sure orgs is an array then loop through
+    # make sure that organization is in the list of orgs, make sure orgs is an array then loop through
     if orgs is not None:
         if isinstance(orgs, list):
             for org in orgs:
@@ -95,7 +97,7 @@ def validate_request_lambda(request_json, context, correlation_id):
     organization = request_json.get('organization')
     version = request_json.get('version')
 
-    #if no version or organization specified, then we need to ask the client to upgrade
+    # if no version or organization specified, then we need to ask the client to upgrade
     if version is None or organization is None:
         raise ExtendedUnauthorizedError("Error: please upgrade to use this service", reason="UpgradeRequired")
 
@@ -110,21 +112,19 @@ def validate_request_lambda(request_json, context, correlation_id):
     # if we did not get a valid email, send a cloudwatch alert and raise the error
     if not validated:
         capture_metric(email, correlation_id, context,
-            {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
+                       {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
 
         # if we got here, we failed, return an error
         raise ExtendedUnauthorizedError("Error: please login to github to use this service", reason="GitHubAccessNotFound")
-    
-    #if we got this far, we got a valid email. now check that the email is subscribed
+
+    # if we got this far, we got a valid email. now check that the email is subscribed
 
     valid, account = check_valid_subscriber(email, organization)
-    
+
     if not valid:
         raise ExtendedUnauthorizedError("Error: please subscribe to use this service", reason="InvalidSubscriber")
-    
+
     return True, account
-    
-    
 
 
 def get_domain(email):
