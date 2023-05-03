@@ -2,8 +2,9 @@ import openai
 from . import pvsecret
 import os
 from chalicelib.version import API_VERSION
-from chalicelib.telemetry import capture_metric, CostMetrics
+from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
 from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
+from chalicelib.payments import update_usage_for_code
 
 customprocess_api_version = API_VERSION  # API version is global for now, not service specific
 print("customprocess_api_version: ", customprocess_api_version)
@@ -41,7 +42,7 @@ customprocess_prompt, role_system = load_prompts()
 
 
 # a function to call openai to evaluate code for processing
-def customprocess_code(code, customprompt, email, context, correlation_id):
+def customprocess_code(code, customprompt, account, context, correlation_id):
 
     # if the user-provided prompt includes {code} block, then use that as the prompt
     if ("{{code}}" in customprompt):
@@ -66,6 +67,9 @@ def customprocess_code(code, customprompt, email, context, correlation_id):
     )
     analysis = response.choices[0].message.content
 
+    # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
+    customer = account['customer']
+    email = account['email']
     try:
         # Get the cost of the prompting - so we have visibiity into our cost per user API
         prompt_size = len(prompt) + len(role_system)
@@ -77,7 +81,17 @@ def customprocess_code(code, customprompt, email, context, correlation_id):
         openai_tokens = openai_input_tokens + openai_output_tokens
         openai_cost = openai_input_cost + openai_output_cost
 
-        capture_metric(email, correlation_id, context,
+        try:
+            # update the billing usage for this analysis
+            update_usage_for_code(account, prompt + analysis)
+        except Exception as e:
+            print("UPDATE_USAGE:FAILURE:{customer}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", e)
+            capture_metric(customer, email, correlation_id, context,
+                           {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
+
+            pass  # Don't fail if we can't update usage / but that means we may have lost revenue
+
+        capture_metric(customer, email, correlation_id, context,
                        {'name': CostMetrics.PROMPT_SIZE, 'value': prompt_size, 'unit': 'Count'},
                        {'name': CostMetrics.RESPONSE_SIZE, 'value': analysis_size, 'unit': 'Count'},
                        {'name': CostMetrics.OPENAI_INPUT_COST, 'value': round(openai_input_cost, 5), 'unit': 'None'},
@@ -91,7 +105,7 @@ def customprocess_code(code, customprompt, email, context, correlation_id):
                        {'name': CostMetrics.OPENAI_TOKENS, 'value': openai_tokens, 'unit': 'Count'})
 
     except Exception as e:
-        print("{email}:{correlation_id}:Error capturing metrics: ", e)
+        print("{customer}:{email}:{correlation_id}:Error capturing metrics: ", e)
         pass  # Don't fail if we can't capture metrics
 
     return analysis

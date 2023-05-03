@@ -8,7 +8,7 @@ from chalicelib.codeguidelines import guidelines_code, guidelines_api_version
 from chalicelib.customprocess import customprocess_code, customprocess_api_version
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
-from chalicelib.payments import customer_portal_url, update_usage_for_code
+from chalicelib.payments import customer_portal_url
 from chalicelib.auth import fetch_orgs, fetch_email_and_username, ExtendedUnauthorizedError
 
 import json
@@ -61,16 +61,13 @@ def explain(event, context):
         # Now call the explain function
         if cloudwatch is not None:
             with xray_recorder.capture('explain_code'):
-                explanation = explain_code(code, email, context, correlation_id)
+                explanation = explain_code(code, account, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            explanation = explain_code(code, email, context, correlation_id)
+            explanation = explain_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
-
-        # update the billing usage for this analysis
-        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -157,16 +154,13 @@ def generate(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('generate_code'):
-                code = generate_code(explanation, original_code, outputlanguage, email, context, correlation_id)
+                code = generate_code(explanation, original_code, outputlanguage, account, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            code = generate_code(explanation, original_code, outputlanguage, email, context, correlation_id)
+            code = generate_code(explanation, original_code, outputlanguage, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
-
-        # update the billing usage for this analysis
-        update_usage_for_code(account, original_code)
 
     except Exception as e:
 
@@ -256,16 +250,13 @@ def testgen(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('testgen_code'):
-                testcode = testgen_code(code, outputlanguage, framework, email, context, correlation_id)
+                testcode = testgen_code(code, outputlanguage, framework, account, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            testcode = testgen_code(code, outputlanguage, framework, email, context, correlation_id)
+            testcode = testgen_code(code, outputlanguage, framework, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} testgen_code: {end_time - start_time:.3f} seconds')
-
-        # update the billing usage for this analysis
-        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -340,16 +331,13 @@ def analyze(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('analyze_code'):
-                analysis = analyze_code(email, code, context, correlation_id)
+                analysis = analyze_code(account, code, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = analyze_code(email, code, context, correlation_id)
+            analysis = analyze_code(account, code, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
-
-        # update the billing usage for this analysis
-        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -427,17 +415,13 @@ def compliance(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('compliance_code'):
-                analysis = compliance_code(code, email, context, correlation_id)
+                analysis = compliance_code(code, account, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = compliance_code(json_data, email, context, correlation_id)
+            analysis = compliance_code(json_data, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
-
-        # update the billing usage for this analysis
-        update_usage_for_code(account, code)
-
     except Exception as e:
 
         # Record the error and re-raise the exception
@@ -514,16 +498,13 @@ def codeguidelines(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
-                analysis = guidelines_code(code, email, context, correlation_id)
+                analysis = guidelines_code(code, account, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = guidelines_code(code, email, context, correlation_id)
+            analysis = guidelines_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
-
-        # update the billing usage for this analysis
-        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -603,16 +584,13 @@ def blueprint(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('blueprint_code'):
-                blueprint = blueprint_code(json_data, email, context, correlation_id)
+                blueprint = blueprint_code(json_data, account, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            blueprint = blueprint_code(json_data, email, context, correlation_id)
+            blueprint = blueprint_code(json_data, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} blueprint_code: {end_time - start_time:.3f} seconds')
-
-        # update the billing usage for this analysis
-        update_usage_for_code(account, code)
 
     except Exception as e:
 
@@ -695,16 +673,13 @@ def customprocess(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
-                analysis = customprocess_code(code, prompt, email, context, correlation_id)
+                analysis = customprocess_code(code, prompt, account, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = customprocess_code(code, prompt, email, context, correlation_id)
+            analysis = customprocess_code(code, prompt, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
-
-        # update the billing usage for this analysis
-        update_usage_for_code(account, code)
 
     except Exception as e:
 

@@ -111,7 +111,7 @@ def validate_request_lambda(request_json, context, correlation_id):
 
     # if we did not get a valid email, send a cloudwatch alert and raise the error
     if not validated:
-        capture_metric(email, correlation_id, context,
+        capture_metric(organization, email, correlation_id, context,
                        {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
 
         # if we got here, we failed, return an error
@@ -119,9 +119,9 @@ def validate_request_lambda(request_json, context, correlation_id):
 
     # if we got this far, we got a valid email. now check that the email is subscribed
 
-    valid, account = check_valid_subscriber(email, organization)
+    validated, account = check_valid_subscriber(email, organization)
 
-    if not valid:
+    if not validated:
         raise ExtendedUnauthorizedError("Error: please subscribe to use this service", reason="InvalidSubscriber")
 
     return True, account

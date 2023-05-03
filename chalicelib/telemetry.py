@@ -23,6 +23,7 @@ else:
 
 class InfoMetrics:
     GITHUB_ACCESS_NOT_FOUND = 'GitHubAccessNotFound'
+    BILLING_USAGE_FAILURE = 'BillingUsageFailure'
 
 
 class CostMetrics:
@@ -40,10 +41,10 @@ class CostMetrics:
 
 
 # Capture a metric to CloudWatch or local console
-# Usage: capture_metric(email, correlation_id, context, {'name': 'PromptSize', 'value': prompt_size, 'unit': 'Bytes'})
+# Usage: capture_metric(customer, email, correlation_id, context, {'name': 'PromptSize', 'value': prompt_size, 'unit': 'Bytes'})
 # metrics is a list of dicts with name, value and unit
 # unit: Seconds, Microseconds, Milliseconds, Bytes, Kilobytes, Megabytes, Gigabytes, Terabytes, Bits, Kilobits, Megabits, Gigabits, Terabits, Percent, Count, Count/Second, None
-def capture_metric(email, correlation_id, context, *metrics):
+def capture_metric(customer, email, correlation_id, context, *metrics):
     if cloudwatch is not None:
         lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
         metric_data = []
@@ -51,6 +52,10 @@ def capture_metric(email, correlation_id, context, *metrics):
             metric_obj = {
                 'MetricName': metric['name'],
                 'Dimensions': [
+                    {
+                        'Name': 'Customer',
+                        'Value': customer
+                    },
                     {
                         'Name': 'AccountEmail',
                         'Value': email
@@ -76,4 +81,4 @@ def capture_metric(email, correlation_id, context, *metrics):
                 formatted_value = f"{metric['value']:.5f}"
             else:
                 formatted_value = str(metric['value'])
-            print(f"METRIC::[{email}]{context.function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
+            print(f"METRIC::[{customer}:{email}]{context.function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
