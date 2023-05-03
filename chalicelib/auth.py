@@ -74,7 +74,7 @@ def validate_github_session(access_token, organization, correlation_id, context)
         end_time = time.monotonic()
         print(f'Execution time {correlation_id} github_verify_email: {end_time - start_time:.3f} seconds')
 
-    print('BOOST_USAGE: email is ', email)
+    print('BOOST_USAGE: username:{username}, organization:{organization}')
 
     # make sure that organization is in the list of orgs, make sure orgs is an array then loop through
     if orgs is not None:
