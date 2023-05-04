@@ -727,16 +727,13 @@ def customer_portal(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, context, correlation_id, False)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, context, correlation_id, False)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
-
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
 
         # Now call the openai function
         if cloudwatch is not None:
@@ -754,7 +751,8 @@ def customer_portal(event, context):
         # Record the error and re-raise the exception
         print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
+            xray_recorder.put_annotation('correlation_id', correlation_id)
+            xray_recorder.put_annotation('error', e)
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):

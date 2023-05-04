@@ -120,7 +120,7 @@ def validate_github_session(access_token, organization, correlation_id, context)
 # function to validate that the request came from a github logged in user or we are running on localhost
 # or that the session token is valid github oauth token for a subscribed email. This version is for the
 # raw lambda function and so has the session key passed in as a string
-def validate_request_lambda(request_json, context, correlation_id):
+def validate_request_lambda(request_json, context, correlation_id, raiseOnError=True):
 
     session = request_json.get('session')
     organization = request_json.get('organization')
@@ -151,12 +151,18 @@ def validate_request_lambda(request_json, context, correlation_id):
 
     # if not validated, we need to see if we have a billing error, or if the user is not subscribed
     if not validated:
-        if (account and account.expired):
-            raise ExtendedAccountBillingError("Billing error: Please check your credit card on file and that you have an active subscription")
+        if (account and account['expired']):
+            if raiseOnError:
+                raise ExtendedAccountBillingError("Billing error: Please check your credit card on file and that you have an active Polyverse Boost subscription")
+            else:
+                print(f'Billing error:{email}: Please check your credit card on file and that you have an active Polyverse Boost subscription')
         else:
-            raise ExtendedUnauthorizedError("Error: please subscribe to use this service", reason="InvalidSubscriber")
+            if raiseOnError:
+                raise ExtendedUnauthorizedError("Error: please subscribe to use Polyverse Boost service", reason="InvalidSubscriber")
+            else:
+                print(f'Error:{email}: Please subscribe to Polyverse Boost service')
 
-    return True, account
+    return validated, account
 
 
 def get_domain(email):
