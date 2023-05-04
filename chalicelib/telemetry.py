@@ -42,6 +42,7 @@ class CostMetrics:
 
 # Capture a metric to CloudWatch or local console
 # Usage: capture_metric(customer, email, correlation_id, context, {'name': 'PromptSize', 'value': prompt_size, 'unit': 'Bytes'})
+# Customer is a dictionary of customer data from the billing database
 # metrics is a list of dicts with name, value and unit
 # unit: Seconds, Microseconds, Milliseconds, Bytes, Kilobytes, Megabytes, Gigabytes, Terabytes, Bits, Kilobits, Megabits, Gigabits, Terabits, Percent, Count, Count/Second, None
 def capture_metric(customer, email, correlation_id, context, *metrics):
@@ -54,10 +55,14 @@ def capture_metric(customer, email, correlation_id, context, *metrics):
                 'Dimensions': [
                     {
                         'Name': 'Customer',
-                        'Value': customer
+                        'Value': customer['name']
                     },
                     {
-                        'Name': 'AccountEmail',
+                        'Name': 'AccountID',
+                        'Value': customer['id']
+                    },
+                    {
+                        'Name': 'UserEmail',
                         'Value': email
                     },
                     {
@@ -81,4 +86,4 @@ def capture_metric(customer, email, correlation_id, context, *metrics):
                 formatted_value = f"{metric['value']:.5f}"
             else:
                 formatted_value = str(metric['value'])
-            print(f"METRIC::[{customer}:{email}]{context.function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
+            print(f"METRIC::[{customer['name']}:{customer['id']}:{email}]{context.function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")

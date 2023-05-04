@@ -1,4 +1,5 @@
 import openai
+import traceback
 from . import pvsecret
 import os
 from chalicelib.version import API_VERSION
@@ -97,8 +98,9 @@ def blueprint_code(json_data, account, context, correlation_id):
         try:
             # update the billing usage for this analysis
             update_usage_for_code(account, prompt + blueprint)
-        except Exception as e:
-            print("UPDATE_USAGE:FAILURE:{}:{}:{}:Error updating ~${} usage: ".format(customer, email, correlation_id, boost_cost), e)
+        except Exception:
+            exception_info = traceback.format_exc()
+            print("UPDATE_USAGE:FAILURE:{}:{}:{}:{}:Error updating ~${} usage: ".format(customer['name'], customer['id'], email, correlation_id, boost_cost), exception_info)
             capture_metric(customer, email, correlation_id, context,
                            {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
 
@@ -117,8 +119,9 @@ def blueprint_code(json_data, account, context, correlation_id):
                        {'name': CostMetrics.OPENAI_OUTPUT_TOKENS, 'value': openai_output_tokens, 'unit': 'Count'},
                        {'name': CostMetrics.OPENAI_TOKENS, 'value': openai_tokens, 'unit': 'Count'})
 
-    except Exception as e:
-        print(f'{customer}:{email}:{correlation_id}:Error capturing metrics: ', e)
+    except Exception:
+        exception_info = traceback.format_exc()
+        print(f"{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error capturing metrics: ", exception_info)
         pass  # Don't fail if we can't capture metrics
 
     return blueprint
