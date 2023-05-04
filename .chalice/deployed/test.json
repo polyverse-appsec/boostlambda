@@ -45,6 +45,16 @@
       "name": "customprocess",
       "resource_type": "lambda_function",
       "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-test-customprocess"
+    },
+    {
+      "name": "customer_portal",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-test-customer_portal"
+    },
+    {
+      "name": "user_organizations",
+      "resource_type": "lambda_function",
+      "lambda_arn": "arn:aws:lambda:us-west-2:507760724064:function:boost-test-user_organizations"
     }
   ],
   "schema_version": "2.0",
