@@ -195,7 +195,7 @@ def generate_code(summary, original_code, language, account, context, correlatio
                        {'name': CostMetrics.OPENAI_TOKENS, 'value': openai_tokens, 'unit': 'Count'})
 
     except Exception as e:
-        print("{customer}:{email}:{correlation_id}:Error capturing metrics: ", e)
+        print(f'{customer}:{email}:{correlation_id}:Error capturing metrics: ', e)
         pass  # Don't fail if we can't capture metrics
 
     return generated_code
