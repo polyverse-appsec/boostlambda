@@ -329,11 +329,11 @@ def analyze(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('analyze_code'):
-                analysis = analyze_code(account, code, context, correlation_id)
+                analysis = analyze_code(code, account, context, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = analyze_code(account, code, context, correlation_id)
+            analysis = analyze_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
 
