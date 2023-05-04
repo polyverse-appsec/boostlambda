@@ -72,10 +72,9 @@ def explain(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            # Report the exception using xray_recorder.capture
-            with xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id}):
-                xray_recorder.add_exception(e)
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # Print the exception to the log regardless
         print("Explain {} failed with exception: {}".format(correlation_id, e))
@@ -165,10 +164,9 @@ def generate(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("Generate {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -261,10 +259,9 @@ def testgen(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("TestGen {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -342,10 +339,9 @@ def analyze(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("Analyze {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -425,10 +421,9 @@ def compliance(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("Compliance {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -509,10 +504,9 @@ def codeguidelines(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("CodeGuidelines {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -595,10 +589,9 @@ def blueprint(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("Blueprint {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -684,10 +677,9 @@ def customprocess(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("CustomProcess {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -760,10 +752,9 @@ def customer_portal(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -821,10 +812,9 @@ def user_organizations(event, context):
     except Exception as e:
 
         # Record the error and re-raise the exception
+        print("CustomerPortal {} failed with exception: {}".format(correlation_id, e))
         if cloudwatch is not None:
-            xray_recorder.capture('exception', name='error', attributes={'correlation_id': correlation_id})
-        else:
-            print("UserOrganizations {} failed with exception: {}".format(correlation_id, e))
+            xray_recorder.capture('exception', attributes={'correlation_id': correlation_id})
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
