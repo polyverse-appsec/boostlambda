@@ -3,7 +3,10 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.4.6: May 2, 2023
+## Version 0.4.7: May 2, 2023
+
+### Bug Fixes
+- Fixed Analyze Service API - customer account parameter bug blocked analysis
 
 ### New Features
 - Added Custom Process Lambda Service API - enabling custom prompts to be sent from the Boost client (Dev-Only)
@@ -21,6 +24,7 @@ Polyverse Boost Cloud Service
 
 ### Bug Fixes
 - Raised max_tokens to 8192 for gpt4 usage - was 4000 for gpt3.5
+
 ## Version 0.4.4: April 27, 2023
 ### Enhancements
 - Improved resolution of GitHub account missing alert from 60 seconds to 1 second (to minimize missing alerts)
