@@ -3,7 +3,7 @@ from chalice import UnauthorizedError
 import re
 from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, InfoMetrics
 import time
-from .payments import check_valid_subscriber
+from .payments import check_valid_subscriber, ExtendedAccountBillingError
 
 
 class ExtendedUnauthorizedError(UnauthorizedError):
@@ -147,11 +147,14 @@ def validate_request_lambda(request_json, context, correlation_id):
         raise ExtendedUnauthorizedError("Error: please login to github to use this service", reason="GitHubAccessNotFound")
 
     # if we got this far, we got a valid email. now check that the email is subscribed
-
     validated, account = check_valid_subscriber(email, organization)
 
+    # if not validated, we need to see if we have a billing error, or if the user is not subscribed
     if not validated:
-        raise ExtendedUnauthorizedError("Error: please subscribe to use this service", reason="InvalidSubscriber")
+        if (account and account.expired):
+            raise ExtendedAccountBillingError("Billing error: Please check your credit card on file and that you have an active subscription")
+        else:
+            raise ExtendedUnauthorizedError("Error: please subscribe to use this service", reason="InvalidSubscriber")
 
     return True, account
 

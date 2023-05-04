@@ -4,6 +4,7 @@ import uuid
 import time
 import os
 
+from chalice import UnauthorizedError
 from . import pvsecret
 
 secret_json = pvsecret.get_secrets()
@@ -13,6 +14,12 @@ if (service_stage == "prod" or service_stage == "staging"):
     stripe.api_key = secret_json["stripe_prod"]
 else:  # dev, test, or local
     stripe.api_key = secret_json["stripe_dev"]
+
+
+class ExtendedAccountBillingError(UnauthorizedError):
+    def __init__(self, message, reason=None):
+        super().__init__(message)
+        self.reason = reason
 
 
 def create_price(email):
@@ -195,6 +202,7 @@ def check_trial_expired(customer):
     return False
 
 
+# if we fail validation, caller can stop call. if we pass validation, caller can continue
 def check_valid_subscriber(email, organization):
 
     if (email is None):
@@ -212,10 +220,10 @@ def check_valid_subscriber(email, organization):
 
     # return a dict with the customer, subscription, and subscription_item
     expired = check_trial_expired(customer=customer)
-    if not expired:
-        return True, {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
-    else:
-        return False, None
+    account = {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
+    if expired:
+        account['expired'] = True
+    return expired, account
 
 
 def customer_portal_url(account):
