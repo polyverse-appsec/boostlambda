@@ -223,7 +223,7 @@ def check_valid_subscriber(email, organization):
     account = {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
     if expired:
         account['expired'] = True
-    return expired, account
+    return not expired, account
 
 
 def customer_portal_url(account):
