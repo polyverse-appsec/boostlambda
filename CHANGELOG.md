@@ -3,6 +3,13 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.4.8: May 5, 2023
+
+# Enhancements
+- Removed duplicative account error paths
+- Added account status in response headers and exceptions - trial, active, suspended, etc.
+- Added API version string to customerportal and user_organizations
+
 ## Version 0.4.7: May 2, 2023
 
 ### Bug Fixes

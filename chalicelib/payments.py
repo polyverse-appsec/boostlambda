@@ -3,9 +3,12 @@ import math
 import uuid
 import time
 import os
-
+from version import API_VERSION
 from chalice import UnauthorizedError
 from . import pvsecret
+
+customerportal_api_version = API_VERSION  # API version is global for now, not service specific
+print("customerportal_api_version: ", customerportal_api_version)
 
 secret_json = pvsecret.get_secrets()
 
@@ -178,28 +181,41 @@ def update_usage(subscription_item, bytes):
     return subscription_item
 
 
-def update_usage_for_code(account, code):
+def update_usage_for_text(account, text):
     # get the subscription item
     subscription_item = account['subscription_item']
-    # get the bytes from the code (the length of the code)
-    bytes = len(code)
+    # get the bytes from the code (the length of the text)
+    bytes = len(text)
     # update the usage
     update_usage(subscription_item, bytes)
 
 
-def check_trial_expired(customer):
-    # Check if the customer has a non-zero balance and if they do NOT have a payment method
-    # in this case, we know their trial has expired.
-    # there are two ways to check balance, balance and a pending invoice. it's not clear which is the better way yet
-    # so we will check both
+# Check if the customer has a non-zero balance and if they do NOT have a payment method
+# in this case, we know their trial has expired.
+# there are two ways to check balance, balance and a pending invoice. it's not clear which is the better way yet
+# so we will check both
+# account_status result:
+#   - suspended: the customer does not have a payment method, and has pending invoice > 0
+#   - trial: the customer does not have a payment method, and has pending invoice = 0
+#   - paid: the customer has a payment method
+#   - active: the customer has no usage, no invoice, no balance, no payment method
+def check_customer_account_status(customer):
     invoice = stripe.Invoice.upcoming(customer=customer.id)
-    if customer['balance'] > 0 or invoice.amount_due > 0:
-        # Check if the customer has a default payment method
-        if not customer['invoice_settings']['default_payment_method']:
-            return True
 
-    # If we got here, the trial has not expired or they have a payment method
-    return False
+    # Check if the customer has a default payment method
+    if customer['invoice_settings']['default_payment_method']:
+        return True, "paid"
+
+    # if they have an active non-pending invoice, and no payment method, we'll assume trial expired
+    if invoice.amount_due > 0:
+        return False, "suspended"
+
+    # it seems like a non-zero balance also implies a trial license
+    if (customer['balance'] > 0 or invoice.amount_due > 0):
+        return True, "trial"
+
+    # no usage, no invoice, no balance, no payment method, so we'll assume new customer
+    return True, "active"
 
 
 # if we fail validation, caller can stop call. if we pass validation, caller can continue
@@ -219,11 +235,11 @@ def check_valid_subscriber(email, organization):
         return False, None
 
     # return a dict with the customer, subscription, and subscription_item
-    expired = check_trial_expired(customer=customer)
+    active, account_status = check_customer_account_status(customer=customer)
     account = {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
-    if expired:
-        account['expired'] = True
-    return not expired, account
+    account['status'] = account_status
+
+    return active, account
 
 
 def customer_portal_url(account):

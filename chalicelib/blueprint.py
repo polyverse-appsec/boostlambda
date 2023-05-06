@@ -5,7 +5,7 @@ import os
 from chalicelib.version import API_VERSION
 from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
 from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
-from chalicelib.payments import update_usage_for_code
+from chalicelib.payments import update_usage_for_text
 
 blueprint_api_version = API_VERSION  # API version is global for now, not service specific
 print("blueprint_api_version: ", blueprint_api_version)
@@ -97,7 +97,7 @@ def blueprint_code(json_data, account, context, correlation_id):
 
         try:
             # update the billing usage for this analysis
-            update_usage_for_code(account, prompt + blueprint)
+            update_usage_for_text(account, prompt + blueprint)
         except Exception:
             exception_info = traceback.format_exc()
             print("UPDATE_USAGE:FAILURE:{}:{}:{}:{}:Error updating ~${} usage: ".format(customer['name'], customer['id'], email, correlation_id, boost_cost), exception_info)

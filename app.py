@@ -9,8 +9,8 @@ from chalicelib.codeguidelines import guidelines_code, guidelines_api_version
 from chalicelib.customprocess import customprocess_code, customprocess_api_version
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
-from chalicelib.payments import customer_portal_url
-from chalicelib.auth import fetch_orgs, fetch_email_and_username, ExtendedUnauthorizedError
+from chalicelib.payments import customer_portal_url, customerportal_api_version
+from chalicelib.auth import fetch_orgs, fetch_email_and_username, userorganizations_api_version
 
 import json
 import uuid
@@ -46,9 +46,6 @@ def explain(event, context):
             validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
-
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
 
         # Extract the code from the json data
         code = json_data.get('code')
@@ -129,9 +126,6 @@ def generate(event, context):
             validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
-
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
 
         email = account['email']
         if email is None:
@@ -222,9 +216,6 @@ def testgen(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
-
         code = json_data['code']
         if code is None:
             raise BadRequestError("Error: please provide the code to write tests for")
@@ -314,9 +305,6 @@ def analyze(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
-
         # Extract the code from the json data
         code = json_data['code']
         if code is None:
@@ -398,9 +386,6 @@ def compliance(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
-
         # Extract the code from the json data
         code = json_data['code']
         if code is None:
@@ -480,9 +465,6 @@ def codeguidelines(event, context):
             validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
-
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
 
         # Extract the code from the json data
         code = json_data['code']
@@ -564,9 +546,6 @@ def blueprint(event, context):
             validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
-
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
 
         # Extract the code from the json data
         if 'code' not in json_data:
@@ -651,9 +630,6 @@ def customprocess(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
-        if (not validated):
-            raise ExtendedUnauthorizedError("Error: Unable to verify account status", reason="AccountVerificationFailed")
-
         # Extract the code from the json data
         code = json_data['code']
         if code is None:
@@ -737,7 +713,7 @@ def customer_portal(event, context):
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id, False)
+            _, account = validate_request_lambda(json_data, context, correlation_id, False)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -757,8 +733,9 @@ def customer_portal(event, context):
         # Record the error and re-raise the exception
         print("CustomerPortal {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            document = xray_recorder.current_segment()
+            document.put_annotation('correlation_id', correlation_id)
+            document.put_annotation('error', exception_info)
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -768,17 +745,20 @@ def customer_portal(event, context):
 
         return {
             'statusCode': status_code,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': customerportal_api_version},
             'body': json.dumps({"error": str(e)})
         }
 
     json_obj = {}
     json_obj["portal_url"] = session.url
+    json_obj["status"] = account['status']
 
     # Now return the json object in the response
     return {
         'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': customerportal_api_version},
         'body': json.dumps(json_obj)
     }
 
@@ -829,7 +809,8 @@ def user_organizations(event, context):
 
         return {
             'statusCode': status_code,
-            'headers': {'Content-Type': 'application/json'},
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': userorganizations_api_version},
             'body': json.dumps({"error": str(e)})
         }
 
@@ -841,6 +822,7 @@ def user_organizations(event, context):
     # Now return the json object in the response
     return {
         'statusCode': 200,
-        'headers': {'Content-Type': 'application/json'},
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': userorganizations_api_version},
         'body': json.dumps(json_obj)
     }

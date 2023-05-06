@@ -5,7 +5,7 @@ import os
 from chalicelib.version import API_VERSION
 from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
 from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
-from chalicelib.payments import update_usage_for_code
+from chalicelib.payments import update_usage_for_text
 
 secret_json = pvsecret.get_secrets()
 
@@ -80,7 +80,7 @@ def testgen_code(original_code, language, framework, account, context, correlati
 
         try:
             # update the billing usage for this analysis
-            update_usage_for_code(account, prompt + generated_code)
+            update_usage_for_text(account, prompt + generated_code)
         except Exception:
             exception_info = traceback.format_exc()
             print(f"UPDATE_USAGE:FAILURE:{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", exception_info)

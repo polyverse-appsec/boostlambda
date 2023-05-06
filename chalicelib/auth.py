@@ -4,6 +4,10 @@ import re
 from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, InfoMetrics
 import time
 from .payments import check_valid_subscriber, ExtendedAccountBillingError
+from version import API_VERSION
+
+userorganizations_api_version = API_VERSION  # API version is global for now, not service specific
+print("userorganizations_api_version: ", userorganizations_api_version)
 
 
 class ExtendedUnauthorizedError(UnauthorizedError):
@@ -128,7 +132,7 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
 
     # if no version or organization specified, then we need to ask the client to upgrade
     if version is None or organization is None:
-        raise ExtendedUnauthorizedError("Error: please upgrade to use this service", reason="UpgradeRequired")
+        raise ExtendedUnauthorizedError("Error: Please upgrade to use this service", reason="UpgradeRequired")
 
     # otherwise check to see if we have a valid github session token
     # parse the request body as json
@@ -143,22 +147,27 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
         capture_metric(organization, email, correlation_id, context,
                        {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
 
-        # if we got here, we failed, return an error
-        raise ExtendedUnauthorizedError("Error: please login to github to use this service", reason="GitHubAccessNotFound")
+        if raiseOnError:
+            # if we got here, we failed, return an error
+            raise ExtendedUnauthorizedError("Error: Please login to github to use this service", reason="GitHubAccessNotFound")
+        else:
+            print(f'Error:{email}: Please login to GitHub to use this service')
+            return False, {'status': 'unregistered'}
 
     # if we got this far, we got a valid email. now check that the email is subscribed
     validated, account = check_valid_subscriber(email, organization)
 
     # if not validated, we need to see if we have a billing error, or if the user is not subscribed
     if not validated:
-        if (account and account['expired']):
+        if account and account['status'] == 'suspended':
             if raiseOnError:
                 raise ExtendedAccountBillingError("Billing error: Please check your credit card on file and that you have an active Polyverse Boost subscription")
             else:
                 print(f'Billing error:{email}: Please check your credit card on file and that you have an active Polyverse Boost subscription')
         else:
+            account = {'status': 'unregistered'}
             if raiseOnError:
-                raise ExtendedUnauthorizedError("Error: please subscribe to use Polyverse Boost service", reason="InvalidSubscriber")
+                raise ExtendedUnauthorizedError("Error: Please subscribe to use Polyverse Boost service", reason="InvalidSubscriber")
             else:
                 print(f'Error:{email}: Please subscribe to Polyverse Boost service')
 
