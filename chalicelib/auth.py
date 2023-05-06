@@ -4,7 +4,7 @@ import re
 from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, InfoMetrics
 import time
 from .payments import check_valid_subscriber, ExtendedAccountBillingError
-from version import API_VERSION
+from chalicelib.version import API_VERSION
 
 userorganizations_api_version = API_VERSION  # API version is global for now, not service specific
 print("userorganizations_api_version: ", userorganizations_api_version)

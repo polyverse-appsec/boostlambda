@@ -3,7 +3,7 @@ import math
 import uuid
 import time
 import os
-from version import API_VERSION
+from chalicelib.version import API_VERSION
 from chalice import UnauthorizedError
 from . import pvsecret
 
