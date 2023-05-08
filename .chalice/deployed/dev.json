@@ -1,6 +1,11 @@
 {
   "resources": [
     {
+      "name": "managed-layer",
+      "resource_type": "lambda_layer",
+      "layer_version_arn": "arn:aws:lambda:us-west-2:507760724064:layer:boost-dev-managed-layer:14"
+    },
+    {
       "name": "default-role",
       "resource_type": "iam_role",
       "role_arn": "arn:aws:iam::507760724064:role/boost-dev",
