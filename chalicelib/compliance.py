@@ -10,18 +10,19 @@ from chalicelib.payments import update_usage_for_text
 compliance_api_version = API_VERSION  # API version is global for now, not service specific
 print("compliance_api_version: ", compliance_api_version)
 
-secret_json = pvsecret.get_secrets()
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+    secret_json = pvsecret.get_secrets()
 
-# TEMP - put this back to the polyverse key once gpt-4 access is approved there
-openai_key = secret_json["openai-personal"]
-openai.api_key = openai_key
+    # TEMP - put this back to the polyverse key once gpt-4 access is approved there
+    openai_key = secret_json["openai-personal"]
+    openai.api_key = openai_key
 
-# Define the directory where prompt files are stored
-PROMPT_DIR = "chalicelib/prompts"
+    # Define the directory where prompt files are stored
+    PROMPT_DIR = "chalicelib/prompts"
 
-# Define the filenames for each prompt file
-COMPLIANCE_PROMPT_FILENAME = "compliance.prompt"
-ROLE_SYSTEM_FILENAME = "compliance-role-system.prompt"
+    # Define the filenames for each prompt file
+    COMPLIANCE_PROMPT_FILENAME = "compliance.prompt"
+    ROLE_SYSTEM_FILENAME = "compliance-role-system.prompt"
 
 
 # Load the prompt files and replace the placeholders with the actual values
@@ -39,7 +40,8 @@ def load_prompts():
     return guidelines_prompt, role_system
 
 
-compliance_prompt, role_system = load_prompts()
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+    compliance_prompt, role_system = load_prompts()
 
 
 # a function to call openai to check code for data compliance

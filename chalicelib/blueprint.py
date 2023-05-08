@@ -10,19 +10,20 @@ from chalicelib.payments import update_usage_for_text
 blueprint_api_version = API_VERSION  # API version is global for now, not service specific
 print("blueprint_api_version: ", blueprint_api_version)
 
-secret_json = pvsecret.get_secrets()
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+    secret_json = pvsecret.get_secrets()
 
-# TEMP - put this back to the polyverse key once gpt-4 access is approved there
-openai_key = secret_json["openai-personal"]
-openai.api_key = openai_key
+    # TEMP - put this back to the polyverse key once gpt-4 access is approved there
+    openai_key = secret_json["openai-personal"]
+    openai.api_key = openai_key
 
-# Define the directory where prompt files are stored
-PROMPT_DIR = "chalicelib/prompts"
+    # Define the directory where prompt files are stored
+    PROMPT_DIR = "chalicelib/prompts"
 
-# Define the filenames for each prompt file
-SEED_PROMPT_FILENAME = "blueprint-seed.prompt"
-UPDATE_PROMPT_FILENAME = "blueprint-update.prompt"
-ROLE_SYSTEM_FILENAME = "blueprint-role-system.prompt"
+    # Define the filenames for each prompt file
+    SEED_PROMPT_FILENAME = "blueprint-seed.prompt"
+    UPDATE_PROMPT_FILENAME = "blueprint-update.prompt"
+    ROLE_SYSTEM_FILENAME = "blueprint-role-system.prompt"
 
 
 # Load the prompt files and replace the placeholders with the actual values
@@ -44,7 +45,8 @@ def load_prompts():
     return seed_prompt, update_prompt, role_system
 
 
-blueprint_seed_prompt, blueprint_update_prompt, role_system = load_prompts()
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+    blueprint_seed_prompt, blueprint_update_prompt, role_system = load_prompts()
 
 
 # a function to call openai to blueprint code for architecture

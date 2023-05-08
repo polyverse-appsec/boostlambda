@@ -8,26 +8,28 @@ from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
 from chalicelib.payments import update_usage_for_text
 
 
-secret_json = pvsecret.get_secrets()
-
 explain_api_version = API_VERSION  # API version is global for now, not service specific
 convert_api_version = API_VERSION  # API version is global for now, not service specific
 print("explain_api_version: ", explain_api_version)
 print("convert_api_version: ", convert_api_version)
 
-# TEMP - put this back to the polyverse key once gpt-4 access is approved there
-openai_key = secret_json["openai-personal"]
-openai.api_key = openai_key
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
 
-# Define the directory where prompt files are stored
-PROMPT_DIR = "chalicelib/prompts"
+    secret_json = pvsecret.get_secrets()
 
-# Define the filenames for each prompt file
-EXPLAIN_PROMPT_FILENAME = "explain.prompt"
-CONVERT_PROMPT_FILENAME = "convert.prompt"
-ROLE_SYSTEM_FILENAME = "convert-role-system.prompt"
-ROLE_USER_FILENAME = "convert-role-user.prompt"
-ROLE_ASSISTANT_FILENAME = "convert-role-assistant.prompt"
+    # TEMP - put this back to the polyverse key once gpt-4 access is approved there
+    openai_key = secret_json["openai-personal"]
+    openai.api_key = openai_key
+
+    # Define the directory where prompt files are stored
+    PROMPT_DIR = "chalicelib/prompts"
+
+    # Define the filenames for each prompt file
+    EXPLAIN_PROMPT_FILENAME = "explain.prompt"
+    CONVERT_PROMPT_FILENAME = "convert.prompt"
+    ROLE_SYSTEM_FILENAME = "convert-role-system.prompt"
+    ROLE_USER_FILENAME = "convert-role-user.prompt"
+    ROLE_ASSISTANT_FILENAME = "convert-role-assistant.prompt"
 
 
 # Load the prompt files and replace the placeholders with the actual values
@@ -56,7 +58,8 @@ def load_prompts():
     return explain_prompt, convert_prompt, role_system, role_user, role_assistant
 
 
-explain_prompt, convert_prompt, role_system, role_user, role_assistant = load_prompts()
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+    explain_prompt, convert_prompt, role_system, role_user, role_assistant = load_prompts()
 
 
 # a function to call openai to explain code

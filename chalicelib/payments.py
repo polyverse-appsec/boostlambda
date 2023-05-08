@@ -10,13 +10,14 @@ from . import pvsecret
 customerportal_api_version = API_VERSION  # API version is global for now, not service specific
 print("customerportal_api_version: ", customerportal_api_version)
 
-secret_json = pvsecret.get_secrets()
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+    secret_json = pvsecret.get_secrets()
 
-service_stage = variable_value = os.getenv('CHALICE_STAGE')
-if (service_stage == "prod" or service_stage == "staging"):
-    stripe.api_key = secret_json["stripe_prod"]
-else:  # dev, test, or local
-    stripe.api_key = secret_json["stripe_dev"]
+    service_stage = variable_value = os.getenv('CHALICE_STAGE')
+    if (service_stage == "prod" or service_stage == "staging"):
+        stripe.api_key = secret_json["stripe_prod"]
+    else:  # dev, test, or local
+        stripe.api_key = secret_json["stripe_dev"]
 
 
 class ExtendedAccountBillingError(UnauthorizedError):

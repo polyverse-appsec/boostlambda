@@ -7,21 +7,23 @@ from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
 from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
 from chalicelib.payments import update_usage_for_text
 
-secret_json = pvsecret.get_secrets()
-
 testgen_api_version = API_VERSION  # API version is global for now, not service specific
 print("testgen_api_version: ", testgen_api_version)
 
-# TEMP - put this back to the polyverse key once gpt-4 access is approved there
-openai_key = secret_json["openai-personal"]
-openai.api_key = openai_key
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
 
-# Define the directory where prompt files are stored
-PROMPT_DIR = "chalicelib/prompts"
+    secret_json = pvsecret.get_secrets()
 
-# Define the filenames for each prompt file
-TESTGEN_PROMPT_FILENAME = "testgen.prompt"
-ROLE_SYSTEM_FILENAME = "testgen-role-system.prompt"
+    # TEMP - put this back to the polyverse key once gpt-4 access is approved there
+    openai_key = secret_json["openai-personal"]
+    openai.api_key = openai_key
+
+    # Define the directory where prompt files are stored
+    PROMPT_DIR = "chalicelib/prompts"
+
+    # Define the filenames for each prompt file
+    TESTGEN_PROMPT_FILENAME = "testgen.prompt"
+    ROLE_SYSTEM_FILENAME = "testgen-role-system.prompt"
 
 
 # Load the prompt files and replace the placeholders with the actual values
@@ -39,7 +41,8 @@ def load_prompts():
     return testgen_prompt, role_system
 
 
-testgen_prompt, role_system = load_prompts()
+if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+    testgen_prompt, role_system = load_prompts()
 
 
 # a function to call openai to generate code from english
