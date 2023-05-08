@@ -19,6 +19,13 @@ import time
 
 app = Chalice(app_name='boost')
 
+# For future logging purposes, we can use the following:
+# https://aws.github.io/chalice/topics/logging.html
+# Default logging level is logging.ERROR
+# app.log.setLevel(logging.DEBUG)
+# app.log.debug("This is a debug statement")
+# app.log.error("This is an error statement")
+
 
 @app.lambda_function(name='explain')
 def explain(event, context):
@@ -72,8 +79,10 @@ def explain(event, context):
         # Record the error and re-raise the exception
         print("explain {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -85,7 +94,7 @@ def explain(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': explain_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     # Put this into a JSON object
@@ -159,8 +168,10 @@ def generate(event, context):
         # Record the error and re-raise the exception
         print("generate {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -172,7 +183,7 @@ def generate(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': convert_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     # Put this into a JSON object
@@ -252,8 +263,10 @@ def testgen(event, context):
         # Record the error and re-raise the exception
         print("testgen {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -264,7 +277,7 @@ def testgen(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': testgen_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     json_obj = {}
@@ -330,8 +343,10 @@ def analyze(event, context):
         # Record the error and re-raise the exception
         print("analyze {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -343,7 +358,7 @@ def analyze(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': analyze_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     # Put this into a json object
@@ -410,8 +425,10 @@ def compliance(event, context):
         # Record the error and re-raise the exception
         print("compliance {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -423,7 +440,7 @@ def compliance(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': compliance_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     # Put this into a json object
@@ -491,8 +508,10 @@ def codeguidelines(event, context):
         # Record the error and re-raise the exception
         print("codeguidelines {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -504,7 +523,7 @@ def codeguidelines(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': guidelines_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     # Put this into a json object
@@ -574,8 +593,10 @@ def blueprint(event, context):
         # Record the error and re-raise the exception
         print("blueprint {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -587,7 +608,7 @@ def blueprint(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': blueprint_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     # Put this into a json object
@@ -660,8 +681,10 @@ def customprocess(event, context):
         # Record the error and re-raise the exception
         print("customprocess {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -673,7 +696,7 @@ def customprocess(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': customprocess_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     # Put this into a json object
@@ -733,9 +756,10 @@ def customer_portal(event, context):
         # Record the error and re-raise the exception
         print("CustomerPortal {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            document = xray_recorder.current_segment()
-            document.put_annotation('correlation_id', correlation_id)
-            document.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -747,7 +771,7 @@ def customer_portal(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': customerportal_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     json_obj = {}
@@ -798,8 +822,10 @@ def user_organizations(event, context):
         # Record the error and re-raise the exception
         print("user_organizations {} failed with exception: {}".format(correlation_id, exception_info))
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         # if e has a status code, use it, otherwise use 500
         if hasattr(e, 'STATUS_CODE'):
@@ -811,7 +837,7 @@ def user_organizations(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': userorganizations_api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     json_obj = {}
