@@ -6,7 +6,7 @@ import os
 
 
 # If running under AWS Lambda - Patch all supported libraries for X-Ray tracing, enable CloudWatch
-if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+if 'AWS_CHALICE_CLI_MODE' not in os.environ and 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
     print('AWS Lambda Enabled: Setting up Telemetry, Tracing and CloudWatch')
     patch_all()
     print('patched all functions')
