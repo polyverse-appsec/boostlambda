@@ -10,6 +10,9 @@ Polyverse Boost Cloud Service
 - Added account status in response headers and exceptions - trial, active, suspended, etc.
 - Added API version string to customerportal and user_organizations
 
+# Bug Fixes
+- Fixed error handling for XRay exception reporting; was suppressing HTTP error codes
+
 ## Version 0.4.7: May 2, 2023
 
 ### Bug Fixes
