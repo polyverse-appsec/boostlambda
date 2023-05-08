@@ -33,6 +33,8 @@ def explain(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -63,7 +65,9 @@ def explain(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
-        # Now call the explain function
+        organization = json_data.get('organization')
+
+        # Now call the function
         if cloudwatch is not None:
             with xray_recorder.capture('explain_code'):
                 explanation = explain_code(code, account, context, correlation_id)
@@ -73,11 +77,12 @@ def explain(event, context):
             explanation = explain_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("explain {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -116,6 +121,8 @@ def generate(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -140,6 +147,8 @@ def generate(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
+        organization = json_data.get('organization')
+
         # Extract the explanation and original_code from the json data
         explanation = json_data.get('explanation')
         if explanation is None:
@@ -163,10 +172,12 @@ def generate(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
 
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("generate {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -205,6 +216,8 @@ def testgen(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -235,6 +248,8 @@ def testgen(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
+        organization = json_data.get('organization')
+
         language = json_data['language']
         outputlanguage = language
         if outputlanguage is None:
@@ -256,12 +271,12 @@ def testgen(event, context):
             start_time = time.monotonic()
             testcode = testgen_code(code, outputlanguage, framework, account, context, correlation_id)
             end_time = time.monotonic()
-            print(f'Execution time {correlation_id} testgen_code: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("testgen {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -297,6 +312,8 @@ def analyze(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -327,6 +344,8 @@ def analyze(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
+        organization = json_data.get('organization')
+
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('analyze_code'):
@@ -337,11 +356,12 @@ def analyze(event, context):
             analysis = analyze_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("analyze {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -380,6 +400,8 @@ def compliance(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -410,6 +432,8 @@ def compliance(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
+        organization = json_data.get('organization')
+
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('compliance_code'):
@@ -420,10 +444,12 @@ def compliance(event, context):
             analysis = compliance_code(json_data, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("compliance {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -462,6 +488,8 @@ def codeguidelines(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -492,6 +520,8 @@ def codeguidelines(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
+        organization = json_data.get('organization')
+
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
@@ -502,11 +532,12 @@ def codeguidelines(event, context):
             analysis = guidelines_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("codeguidelines {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -545,6 +576,8 @@ def blueprint(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -577,6 +610,8 @@ def blueprint(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
+        organization = json_data.get('organization')
+
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('blueprint_code'):
@@ -587,11 +622,12 @@ def blueprint(event, context):
             blueprint = blueprint_code(json_data, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} blueprint_code: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("blueprint {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -630,6 +666,8 @@ def customprocess(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -665,6 +703,8 @@ def customprocess(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
+        organization = json_data.get('organization')
+
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
@@ -675,11 +715,12 @@ def customprocess(event, context):
             analysis = customprocess_code(code, prompt, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("customprocess {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -719,6 +760,8 @@ def customer_portal(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -740,6 +783,8 @@ def customer_portal(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
+        organization = json_data.get('organization')
+
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('customer_portal'):
@@ -750,11 +795,12 @@ def customer_portal(event, context):
             session = customer_portal_url(account)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} portal: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("CustomerPortal {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -794,6 +840,8 @@ def user_organizations(event, context):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -802,6 +850,8 @@ def user_organizations(event, context):
             json_data = json.loads(event['body'])
         else:
             json_data = event
+
+        organization = json_data.get('organization')
 
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
@@ -816,11 +866,12 @@ def user_organizations(event, context):
             email, username = fetch_email_and_username(json_data["session"])
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print("user_organizations {} failed with exception: {}".format(correlation_id, exception_info))
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
