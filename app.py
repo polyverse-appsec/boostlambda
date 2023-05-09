@@ -77,7 +77,8 @@ def explain(event, context):
             explanation = explain_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -172,7 +173,7 @@ def generate(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
 
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -271,7 +272,8 @@ def testgen(event, context):
             start_time = time.monotonic()
             testcode = testgen_code(code, outputlanguage, framework, account, context, correlation_id)
             end_time = time.monotonic()
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -356,7 +358,8 @@ def analyze(event, context):
             analysis = analyze_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -444,7 +447,8 @@ def compliance(event, context):
             analysis = compliance_code(json_data, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -532,7 +536,8 @@ def codeguidelines(event, context):
             analysis = guidelines_code(code, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -622,7 +627,8 @@ def blueprint(event, context):
             blueprint = blueprint_code(json_data, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} blueprint_code: {end_time - start_time:.3f} seconds')
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -715,7 +721,8 @@ def customprocess(event, context):
             analysis = customprocess_code(code, prompt, account, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -795,7 +802,8 @@ def customer_portal(event, context):
             session = customer_portal_url(account)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} portal: {end_time - start_time:.3f} seconds')
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
@@ -866,7 +874,8 @@ def user_organizations(event, context):
             email, username = fetch_email_and_username(json_data["session"])
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
