@@ -1,0 +1,15 @@
+Please generate a control flow graph for this code, displaying the results in syntactically correct mermaid format. Do not use parenthesis or special characters.
+
+If there is control flow to the code, prefix the mermaid output with markdown code syntax to indicate a mermaid block, for example,
+
+```mermaid
+    graph TD;
+        Start-->Process1;
+        Start-->Process2;
+        Process1-->End;
+        Process2-->End;
+```
+
+If no control flow is present in the code (for example, the code is just comments), return the string "NO CONTROL FLOW FOUND".
+
+{code}

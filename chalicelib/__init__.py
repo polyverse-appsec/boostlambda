@@ -1,1 +1,1 @@
-__all__ = ["convert", "pvsecret", "auth", "testgen", "analyze", "compliance", "codeguidelines", "blueprint", "constants", "customprocess", "telemetry", "usage", "version"]
+__all__ = ["convert", "pvsecret", "auth", "testgen", "analyze", "compliance", "codeguidelines", "blueprint", "constants", "customprocess", "telemetry", "usage", "version", "flowdiagram", "genericprocessor"]
