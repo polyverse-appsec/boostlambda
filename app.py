@@ -11,6 +11,7 @@ from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
 from chalicelib.payments import customer_portal_url, customerportal_api_version
 from chalicelib.auth import fetch_orgs, fetch_email_and_username, userorganizations_api_version
+from chalicelib.flowdiagram import FlowDiagramProcessor
 
 import json
 import uuid
@@ -18,6 +19,67 @@ from chalicelib.telemetry import cloudwatch, xray_recorder
 import time
 
 app = Chalice(app_name='boost')
+
+
+def process_request(event, context, function, api_version):
+    # Generate a new UUID for the correlation ID
+    correlation_id = str(uuid.uuid4())
+    print("correlation_id is: " + correlation_id)
+
+    try:
+        # Extract parameters from the event object
+        if 'body' in event:
+            json_data = json.loads(event['body'])
+        else:
+            json_data = event
+
+        # Capture the duration of the validation step
+        if cloudwatch is not None:
+            with xray_recorder.capture('validate_request_lambda'):
+                validated, account = validate_request_lambda(json_data, context, correlation_id)
+        else:
+            start_time = time.monotonic()
+            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+
+        # Now call the function
+        if cloudwatch is not None:
+            with xray_recorder.capture(function.__name__):
+                result = function(json_data, account, context, correlation_id)
+        else:
+            start_time = time.monotonic()
+            result = function(json_data, account, context, correlation_id)
+            end_time = time.monotonic()
+            print(f'Execution time {correlation_id} {function.__name__}: {end_time - start_time:.3f} seconds')
+
+    except Exception as e:
+        exception_info = traceback.format_exc()
+        print(f"{function.__name__} {correlation_id} failed with exception: {exception_info}")
+        if cloudwatch is not None:
+            xray_recorder.put_annotation('correlation_id', correlation_id)
+            xray_recorder.put_annotation('error', exception_info)
+
+        status_code = getattr(e, 'STATUS_CODE', 500)
+
+        return {
+            'statusCode': status_code,
+            'headers': {'Content-Type': 'application/json',
+                        'X-API-Version': api_version},
+            'body': json.dumps({"error": str(e)})
+        }
+
+    return {
+        'statusCode': 200,
+        'headers': {'Content-Type': 'application/json',
+                    'X-API-Version': api_version},
+        'body': json.dumps(result)
+    }
+
+@app.lambda_function(name='flowdiagram')
+def flowdiagram(event, context):
+    processor = FlowDiagramProcessor()
+    return process_request(event, context, processor.flowdiagram_code, processor.api_version)
 
 
 @app.lambda_function(name='explain')
