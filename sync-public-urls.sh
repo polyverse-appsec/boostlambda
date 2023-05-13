@@ -14,10 +14,10 @@ NC='\033[0m' # No Color
 
 # Check if no parameters are passed
 if [[ -z "$cloud_stage" ]]; then
-    echo -e "${YELLOW}Usage: $0 <cloud_stage> [--whatif]${NC}"
+    echo -e "${YELLOW}Usage: $0 <cloud_stage> [--whatif] [client_src]${NC}"
     echo -e "${YELLOW}       cloud_stage: dev, test, staging, prod, all${NC}"
     echo -e "${YELLOW}       --whatif: Optional. Echo the actions without executing them.${NC}"
-    echo -e "${YELLOW}       client_src: Relative path to the location of client source code.${NC}"
+    echo -e "${YELLOW}       client_src: Optional. Relative path to the location of client source code.${NC}"
     exit 1
 fi
 
@@ -68,16 +68,16 @@ for stage in "${stages[@]}"; do
 
             else
                 if aws lambda create-function-url-config --function-name "$function" --auth-type NONE --output text --region "$aws_region" >/dev/null 2>&1; then
-                    echo "    Created public URI for function $function"
+                    echo -e "${GREEN}    Created public URI for function $function${NC}"
 
                     # Get the function configuration
                     config=$(aws lambda get-function-url-config --region "$aws_region" --function-name "$function")            
                     # Extract the function ARN
                     url=$(echo "$config" | jq -r '.FunctionUrl')
-                    echo "    Created $function public url: $url"
+                    echo "      New $function public url: $url"
 
                     if aws lambda add-permission --region "$aws_region" --function-name "$function" --statement-id 'public-access' --principal '*' --action 'lambda:InvokeFunction' >/dev/null 2>&1; then
-                        echo "    Created public URI for function $function"
+                        echo -e "${GREEN}      Set public-access for function $function${NC}"
 
                         if [[ -n "$client_src" ]]; then
                                 # Search for URI in source code files
@@ -151,6 +151,10 @@ for stage in "${stages[@]}"; do
     missing_client_src=0
 done
 
-echo -e "${RED}Errors - code $exit_code" >&2
+if [[ $exit_code -gt 0 ]]; then
+    echo -e "${RED}Errors - code $exit_code${NC}" >&2
+else
+    echo -e "${GREEN}Success${NC}"
+fi
 
 exit $exit_code
