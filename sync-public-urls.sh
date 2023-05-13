@@ -3,6 +3,7 @@
 aws_region="us-west-2"
 cloud_stage="$1"
 whatif="$2"
+client_src="$3"
 exit_code=0
 
 # Define colors
@@ -16,6 +17,7 @@ if [[ -z "$cloud_stage" ]]; then
     echo -e "${YELLOW}Usage: $0 <cloud_stage> [--whatif]${NC}"
     echo -e "${YELLOW}       cloud_stage: dev, test, staging, prod, all${NC}"
     echo -e "${YELLOW}       --whatif: Optional. Echo the actions without executing them.${NC}"
+    echo -e "${YELLOW}       client_src: Relative path to the location of client source code.${NC}"
     exit 1
 fi
 
@@ -48,10 +50,16 @@ for stage in "${stages[@]}"; do
 
     # Iterate over each function
     while IFS= read -r function; do
+        # Get the function configuration
+        config=$(aws lambda get-function-url-config --region "$aws_region" --function-name "$function" 2>/dev/null)
+
+        # Extract the function ARN
+        url=$(echo "$config" | jq -r '.FunctionUrl')
+
         # Check if the function already has public access
         existing_permissions=$(aws lambda get-policy --region "$aws_region" --function-name "$function" --query 'Policy' --output text 2>/dev/null)
 
-        if [[ -z "$existing_permissions" ]]; then
+        if [[ -z "$config" || -z "$existing_permissions" || -z "$url" ]]; then
             # Create public access for the function
             if [[ "$whatif" == "--whatif" ]]; then
                 echo -e "${RED}    Missing Public Uri for $function; would create via create-function-url-config and add-permission${NC}" >&2
@@ -70,6 +78,25 @@ for stage in "${stages[@]}"; do
 
                     if aws lambda add-permission --region "$aws_region" --function-name "$function" --statement-id 'public-access' --principal '*' --action 'lambda:InvokeFunction' >/dev/null 2>&1; then
                         echo "    Created public URI for function $function"
+
+                        if [[ -n "$client_src" ]]; then
+                                # Search for URI in source code files
+                            uri_found=0
+                            while IFS= read -r -d '' file; do
+                                if grep -q "$url" "$file"; then
+                                    echo "      Found in client $file"
+                                    uri_found=1
+                                    break
+                                fi
+                            done < <(find "$client_src" -type f -name "*.ts" -print0)
+
+                            if [[ $uri_found -eq 0 ]]; then
+                                echo -e "${RED}      URI $url not found in client source${NC}" >&2
+                                exit_code=1
+                                ((missing_client_src++))
+                            fi
+                        fi
+                        
                     else
                         echo -e "${RED}    Failed to create public URI for function $function${NC}" >&2
                         exit_code=1
@@ -83,13 +110,28 @@ for stage in "${stages[@]}"; do
                 fi
             fi
         else
-            # Get the function configuration
-            config=$(aws lambda get-function-url-config --region "$aws_region" --function-name "$function")
-    
-            # Extract the function ARN
-            url=$(echo "$config" | jq -r '.FunctionUrl')
     
             echo "    $function already public: $url"
+
+            if [[ -n "$client_src" ]]; then
+                # Search for URI in source code files
+                uri_found=0
+                while IFS= read -r -d '' file; do
+                    if grep -q "$url" "$file"; then
+                        echo "      Found in client $file"
+                        uri_found=1
+                        break
+                    fi
+                done < <(find "$client_src" -type f -name "*.ts" -print0)
+
+                if [[ $uri_found -eq 0 ]]; then
+                    echo -e "${RED}      URI $url not found in client source${NC}" >&2
+                    exit_code=1
+                    ((missing_client_src++))
+
+                fi
+            fi
+
         fi
     done <<< "$functions"
 
@@ -100,6 +142,13 @@ for stage in "${stages[@]}"; do
         echo -e "${GREEN}  All functions public in stage $stage${NC}"
     fi
     missing_functions=0
+
+    if [[ $missing_client_src -gt 0 ]]; then
+        echo -e "${RED}  Missing client references in stage $stage: $missing_client_src${NC}" >&2
+    else
+        echo -e "${GREEN}  All public functions referenced in client in stage $stage${NC}"
+    fi
+    missing_client_src=0
 done
 
 echo -e "${RED}Errors - code $exit_code" >&2
