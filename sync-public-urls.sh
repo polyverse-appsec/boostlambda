@@ -7,20 +7,23 @@ exit_code=0
 
 # Define colors
 RED='\033[0;31m'
+YELLOW='\033[0;33m'
+GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 # Check if no parameters are passed
 if [[ -z "$cloud_stage" ]]; then
-    echo -e "${RED}Usage: $0 <cloud_stage> [--whatif]${NC}" >&2
-    echo -e "${RED}       cloud_stage: dev, test, staging, prod, all${NC}" >&2
-    echo -e "${RED}       --whatif: Optional. Echo the actions without executing them.${NC}" >&2
+    echo -e "${YELLOW}Usage: $0 <cloud_stage> [--whatif]${NC}"
+    echo -e "${YELLOW}       cloud_stage: dev, test, staging, prod, all${NC}"
+    echo -e "${YELLOW}       --whatif: Optional. Echo the actions without executing them.${NC}"
     exit 1
 fi
 
 # Get a list of all Lambda functions in the specified stage(s)
 if [[ "$cloud_stage" == "all" ]]; then
     # Get all stages
-    stages=("dev" "test" "staging" "prod")
+    stages=("dev" "test" "prod")
+    # Exclude staging for now in 'all' checks, since it hasn't yet been published
 else
     # Use the specified stage
     stages=("$cloud_stage")
@@ -51,32 +54,52 @@ for stage in "${stages[@]}"; do
         if [[ -z "$existing_permissions" ]]; then
             # Create public access for the function
             if [[ "$whatif" == "--whatif" ]]; then
-                echo -e "${RED}Missing Public Uri for function $function; would be created via aws lambda add-permission${NC}" >&2
+                echo -e "${RED}    Missing Public Uri for $function; would create via create-function-url-config and add-permission${NC}" >&2
+                exit_code=1
+                ((missing_functions++))
+
             else
-                if aws lambda add-permission --region "$aws_region" --function-name "$function" --statement-id 'public-access' --principal '*' --action 'lambda:InvokeFunction' >/dev/null 2>&1; then
-                    echo "Created public URI for function $function"
+                if aws lambda create-function-url-config --function-name "$function" --auth-type NONE --output text --region "$aws_region" >/dev/null 2>&1; then
+                    echo "    Created public URI for function $function"
+
+                    # Get the function configuration
+                    config=$(aws lambda get-function-url-config --region "$aws_region" --function-name "$function")            
+                    # Extract the function ARN
+                    url=$(echo "$config" | jq -r '.FunctionUrl')
+                    echo "    Created $function public url: $url"
+
+                    if aws lambda add-permission --region "$aws_region" --function-name "$function" --statement-id 'public-access' --principal '*' --action 'lambda:InvokeFunction' >/dev/null 2>&1; then
+                        echo "    Created public URI for function $function"
+                    else
+                        echo -e "${RED}    Failed to create public URI for function $function${NC}" >&2
+                        exit_code=1
+                        ((missing_functions++))
+                    fi
+
                 else
-                    echo -e "${RED}Failed to create public URI for function $function${NC}" >&2
+                    echo -e "${RED}    Failed to create public URI for function $function${NC}" >&2
                     exit_code=1
+                    ((missing_functions++))
                 fi
             fi
-        
+        else
             # Get the function configuration
-            config=$(aws lambda get-function-configuration --region "$aws_region" --function-name "$function")
+            config=$(aws lambda get-function-url-config --region "$aws_region" --function-name "$function")
     
             # Extract the function ARN
-            arn=$(echo "$config" | jq -r '.FunctionArn')
+            url=$(echo "$config" | jq -r '.FunctionUrl')
     
-            # Create a public function URL
-            url="https://lambda.${aws_region}.amazonaws.com/2015-03-31/functions/${arn}/invocations"
-    
-            echo "Public URL for function $function: $url"
-        else
-            echo "Function $function already has public access."
+            echo "    $function already public: $url"
         fi
     done <<< "$functions"
 
-    echo "Finished processing functions in stage: $stage"
+    echo "  Finished processing functions in stage: $stage"
+    if [[ $missing_functions -gt 0 ]]; then
+        echo -e "${RED}  Missing functions count in stage $stage: $missing_functions${NC}" >&2
+    else
+        echo -e "${GREEN}  All functions public in stage $stage${NC}"
+    fi
+    missing_functions=0
 done
 
 echo -e "${RED}Errors - code $exit_code" >&2
