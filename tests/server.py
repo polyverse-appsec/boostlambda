@@ -35,6 +35,14 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         if verb in lambda_function_names:
             # Use the Chalice test client to invoke the corresponding Lambda function.
             with Client(app) as client:
+                # no way to pass HTTP headers through Client invoke, so we convert to json payload
+                user_agent = ''
+                for key, value in self.headers.items():
+                    if key == 'User-Agent':
+                        user_agent = value
+                        break
+                json_data['version'] = user_agent
+
                 response = client.lambda_.invoke(verb, json_data)
 
             # debug only local code for payload

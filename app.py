@@ -10,7 +10,7 @@ from chalicelib.customprocess import customprocess_code, customprocess_api_versi
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
 from chalicelib.payments import customer_portal_url, customerportal_api_version
-from chalicelib.auth import fetch_orgs, fetch_email_and_username, userorganizations_api_version
+from chalicelib.auth import fetch_orgs, fetch_email_and_username, userorganizations_api_version, extract_client_version
 from chalicelib.flowdiagram import FlowDiagramProcessor
 
 import json
@@ -39,6 +39,12 @@ def process_request(event, context, function, api_version):
             json_data = json.loads(event['body'])
         else:
             json_data = event
+
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
 
         # Capture the duration of the validation step
         if cloudwatch is not None:
@@ -107,6 +113,12 @@ def explain(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -141,12 +153,12 @@ def explain(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -195,6 +207,12 @@ def generate(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -236,12 +254,12 @@ def generate(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -292,6 +310,12 @@ def testgen(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -336,12 +360,12 @@ def testgen(event, context):
             testcode = testgen_code(code, outputlanguage, framework, account, context, correlation_id)
             end_time = time.monotonic()
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -388,6 +412,12 @@ def analyze(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -422,12 +452,12 @@ def analyze(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -477,6 +507,12 @@ def compliance(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -511,12 +547,12 @@ def compliance(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -566,6 +602,12 @@ def codeguidelines(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -600,12 +642,12 @@ def codeguidelines(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -655,6 +697,12 @@ def blueprint(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -691,12 +739,12 @@ def blueprint(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} blueprint_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -746,6 +794,12 @@ def customprocess(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -785,12 +839,12 @@ def customprocess(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -841,6 +895,12 @@ def customer_portal(event, context):
         else:
             json_data = event
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -866,12 +926,12 @@ def customer_portal(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} portal: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -924,6 +984,12 @@ def user_organizations(event, context):
 
         organization = json_data.get('organization')
 
+        client_version = extract_client_version(event)
+        if ('version' not in json_data):
+            json_data['version'] = client_version
+        else:
+            client_version = json_data['version']
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -938,12 +1004,12 @@ def user_organizations(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)

@@ -130,7 +130,7 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
 
     # if no version or organization specified, then we need to ask the client to upgrade
     if version is None or organization is None:
-        raise ExtendedUnauthorizedError("Error: Please upgrade to use this service", reason="UpgradeRequired")
+        raise ExtendedUnauthorizedError("Error: Please upgrade your client software to use Boost service", reason="UpgradeRequired")
 
     # otherwise check to see if we have a valid github session token
     # parse the request body as json
@@ -170,6 +170,24 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
                 print(f'Error:{email}: Please subscribe to Polyverse Boost service')
 
     return validated, account
+
+
+def extract_client_version(event_params):
+    if ('headers' not in event_params):
+        return None
+
+    headers = event_params['headers']
+
+    if ('User-Agent' not in event_params):
+        return None
+    user_agent = headers.get('User-Agent', '')
+
+    # Example: assuming the client version is appended to the user agent string
+    parts = user_agent.split('/')
+    if len(parts) > 1:
+        return parts[1]
+
+    return None
 
 
 def get_domain(email):
