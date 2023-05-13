@@ -5,6 +5,9 @@ Polyverse Boost Cloud Service
 
 ## Version 0.4.8: May 8, 2023
 
+### New Features
+- Development-only release of Flow Diagram Lambda service
+
 # Enhancements
 - Removed duplicative account error paths
 - Added account status in response headers and exceptions - trial, active, suspended, etc.
