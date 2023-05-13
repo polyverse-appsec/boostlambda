@@ -27,6 +27,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 .chalice/deployments/
+.chalice/deployed/
 **/*.zip
 
 # PyInstaller
