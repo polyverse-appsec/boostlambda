@@ -83,6 +83,7 @@ def process_request(event, context, function, api_version):
         'body': json.dumps(result)
     }
 
+
 @app.lambda_function(name='flowdiagram')
 def flowdiagram(event, context):
     processor = FlowDiagramProcessor()

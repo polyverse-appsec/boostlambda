@@ -3,7 +3,6 @@ import openai
 import traceback
 from . import pvsecret
 import os
-from chalicelib.version import API_VERSION
 from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
 from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
 from chalicelib.payments import update_usage_for_text
@@ -16,6 +15,7 @@ secret_json = pvsecret.get_secrets()
 # TEMP - put this back to the polyverse key once gpt-4 access is approved there
 openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
+
 
 class GenericProcessor:
 
@@ -63,4 +63,3 @@ class GenericProcessor:
         # This part seems identical in both files, so you can move it into this class without modifications
 
         return result
-
