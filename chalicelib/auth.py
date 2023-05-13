@@ -172,15 +172,16 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
     return validated, account
 
 
+# "user-agent": "Boost-VSCE/0.9.7"
 def extract_client_version(event_params):
     if ('headers' not in event_params):
         return None
 
     headers = event_params['headers']
 
-    if ('User-Agent' not in event_params):
+    if ('User-Agent' not in headers and 'user-agent' not in headers):
         return None
-    user_agent = headers.get('User-Agent', '')
+    user_agent = headers.get('User-Agent', headers.get('user-agent', ''))
 
     # Example: assuming the client version is appended to the user agent string
     parts = user_agent.split('/')
