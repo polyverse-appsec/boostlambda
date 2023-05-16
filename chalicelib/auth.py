@@ -129,8 +129,10 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
     version = request_json.get('version')
 
     # if no version or organization specified, then we need to ask the client to upgrade
-    if version is None or organization is None:
-        raise ExtendedUnauthorizedError("Error: Please upgrade your client software to use Boost service", reason="UpgradeRequired")
+    if version is None:
+        raise ExtendedUnauthorizedError("Please upgrade your client software to use Boost service", reason="UpgradeRequired")
+    elif organization is None:
+        raise ExtendedUnauthorizedError("Missing account organization from client request", reason="MissingOrganization")
 
     # otherwise check to see if we have a valid github session token
     # parse the request body as json
