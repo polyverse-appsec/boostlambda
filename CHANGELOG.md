@@ -3,6 +3,16 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.5.0: (Proposed) May 16, 2023
+
+### New Features
+- N/A
+
+# Enhancements
+- N/A
+
+# Bug Fixes
+- Fix FlowDiagram result/content body issue
 ## Version 0.4.9: (Proposed) May 13, 2023
 
 ### New Features
