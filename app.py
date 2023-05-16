@@ -919,6 +919,9 @@ def customer_portal(event, context):
 
         organization = json_data.get('organization')
 
+        if 'email' in account:
+            email = account['email']
+
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('customer_portal'):
