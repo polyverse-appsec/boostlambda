@@ -79,7 +79,7 @@ def process_request(event, context, function, api_version):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": e.args[0]})
         }
 
     # Put this into a JSON object
