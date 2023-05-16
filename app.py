@@ -82,11 +82,15 @@ def process_request(event, context, function, api_version):
             'body': json.dumps({"error": str(e)})
         }
 
+    # Put this into a JSON object
+    json_obj = {}
+    json_obj["analysis"] = result
+
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json',
                     'X-API-Version': api_version},
-        'body': json.dumps(result)
+        'body': json.dumps(json_obj)
     }
 
 

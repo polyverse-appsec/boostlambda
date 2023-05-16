@@ -1,11 +1,11 @@
 # generic.py
 import openai
-import traceback
+# import traceback
 from . import pvsecret
 import os
-from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
-from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
-from chalicelib.payments import update_usage_for_text
+# from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
+from chalicelib.usage import OpenAIDefaults  # , get_openai_usage, get_boost_cost,
+# from chalicelib.payments import update_usage_for_text
 
 # Define the directory where prompt files are stored
 PROMPT_DIR = "chalicelib/prompts"
