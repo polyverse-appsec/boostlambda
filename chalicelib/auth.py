@@ -36,6 +36,9 @@ def fetch_email(access_token):
 
         if match:
             return match.group(1)
+
+        print(f"ERROR: GitHub email query failure: {response.json()}")
+
         return None
 
 
@@ -63,6 +66,9 @@ def fetch_email_and_username(access_token):
 
         if match:
             return match.group(1), match.group(1)
+
+        print(f"ERROR: GitHub User query failure: {response.json()}")
+
         return None, None
 
 
@@ -91,6 +97,9 @@ def fetch_orgs(access_token):
             email = match.group(1)
             org = get_domain(email)
             return [org]
+
+        print(f"ERROR: GitHub Org query failure: {response.json()}")
+
         return None
 
 

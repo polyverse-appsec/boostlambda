@@ -13,6 +13,9 @@ Polyverse Boost Cloud Service
 
 # Bug Fixes
 - Fix FlowDiagram result/content body issue
+- Fix email logging in customer_portal
+- Add server logging for GitHub API failures (e.g. throttling, access, etc)
+
 ## Version 0.4.9: (Proposed) May 13, 2023
 
 ### New Features
