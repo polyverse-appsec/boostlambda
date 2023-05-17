@@ -5,6 +5,7 @@ from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, Info
 import time
 from .payments import check_valid_subscriber, ExtendedAccountBillingError
 from chalicelib.version import API_VERSION
+from cachetools import TTLCache
 
 userorganizations_api_version = API_VERSION  # API version is global for now, not service specific
 print("userorganizations_api_version: ", userorganizations_api_version)
@@ -16,7 +17,17 @@ class ExtendedUnauthorizedError(UnauthorizedError):
         self.reason = reason
 
 
+# Create a cache with a time-to-live (TTL) of 5 minutes
+token_2_email_cache = TTLCache(maxsize=100, ttl=300)
+
+
 def fetch_email(access_token):
+    # Check if the access token is already cached
+    if access_token in token_2_email_cache:
+        return token_2_email_cache[access_token]
+    else:
+        print("Refreshing Org Cache: *access token hidden*")
+
     headers = {
         'Authorization': f'token {access_token}',
         'Accept': 'application/vnd.github+json',
@@ -29,17 +40,28 @@ def fetch_email(access_token):
         emails = response.json()
         for email in emails:
             if email['primary']:
+                # Cache the access token and its corresponding email
+                print(f"Cached GitHub Auth Token: {email['email']}")
+                token_2_email_cache[access_token] = email['email']
                 return email['email']
     else:
         email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
         match = re.search(email_pattern, access_token)
 
         if match:
-            return match.group(1)
+            email = match.group(1)
+            # Cache the access token and its corresponding email
+            print(f"Cached GitHub Auth Token: {email}")
+            token_2_email_cache[access_token] = email
+            return email
 
         print(f"ERROR: GitHub email query failure: {response.json()}")
 
         return None
+
+
+# Create a cache with a time-to-live (TTL) of 5 minutes
+token_2_user_cache = TTLCache(maxsize=100, ttl=300)
 
 
 def fetch_email_and_username(access_token):
@@ -53,23 +75,47 @@ def fetch_email_and_username(access_token):
     if email is None:
         raise Exception("GitHub Email is required to access Boost account")
 
+    # Check if the username is already cached
+    if access_token in token_2_user_cache:
+        username = token_2_user_cache[access_token]
+        return email, username
+    else:
+        if access_token in token_2_email_cache:
+            print(f"Refreshing User Cache: {token_2_email_cache[access_token]}")
+        else:
+            print("Refreshing User Cache: *access token hidden*")
+
     # get login/username from github
     url = 'https://api.github.com/user'
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
         user = response.json()
-        return email, user['login']
+        username = user['login']
+
+        # Cache the username for future use
+        token_2_user_cache[access_token] = username
+
+        return email, username
     else:
         email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
         match = re.search(email_pattern, access_token)
 
         if match:
-            return match.group(1), match.group(1)
+            username = match.group(1)
+
+            # Cache the username for future use
+            token_2_user_cache[access_token] = username
+
+            return username, username
 
         print(f"ERROR: GitHub User query failure: {response.json()}")
 
         return None, None
+
+
+# Create a cache with a time-to-live (TTL) of 5 minutes
+token_2_org_cache = TTLCache(maxsize=100, ttl=300)
 
 
 def fetch_orgs(access_token):
@@ -77,8 +123,17 @@ def fetch_orgs(access_token):
         'Authorization': f'token {access_token}',
         'Accept': 'application/vnd.github+json',
     }
-    url = 'https://api.github.com/user/orgs'
 
+    # Check if the orgs are already cached for the given access_token
+    if access_token in token_2_org_cache:
+        return token_2_org_cache[access_token]
+    else:
+        if access_token in token_2_email_cache:
+            print(f"Refreshing Org Cache: {token_2_email_cache[access_token]}")
+        else:
+            print("Refreshing Org Cache: *access token hidden*")
+
+    url = 'https://api.github.com/user/orgs'
     response = requests.get(url, headers=headers)
     # if we got a 200, then we have a list of orgs, otherwise check for a testorg
     if response.status_code == 200:
@@ -87,6 +142,9 @@ def fetch_orgs(access_token):
         if isinstance(orgs, list):
             for i in range(len(orgs)):
                 orgs[i] = orgs[i]['login']
+                
+        # Cache the orgs for future use
+        token_2_org_cache[access_token] = orgs
 
         return orgs
     else:
@@ -96,7 +154,12 @@ def fetch_orgs(access_token):
         if match:
             email = match.group(1)
             org = get_domain(email)
-            return [org]
+            orgs = [org]
+
+            # Cache the orgs for future use
+            token_2_org_cache[access_token] = orgs
+
+            return orgs
 
         print(f"ERROR: GitHub Org query failure: {response.json()}")
 
@@ -106,7 +169,7 @@ def fetch_orgs(access_token):
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
 def validate_github_session(access_token, organization, correlation_id, context):
     if cloudwatch is not None:
-        with xray_recorder.capture('github_verify_email'):
+        with xray_recorder.capture('fetch_email_and_username'):
             email, username = fetch_email_and_username(access_token)
             orgs = fetch_orgs(access_token)
     else:
@@ -114,7 +177,7 @@ def validate_github_session(access_token, organization, correlation_id, context)
         email, username = fetch_email_and_username(access_token)
         orgs = fetch_orgs(access_token)
         end_time = time.monotonic()
-        print(f'Execution time {correlation_id} github_verify_email: {end_time - start_time:.3f} seconds')
+        print(f'Execution time {correlation_id} fetch_email_and_username: {end_time - start_time:.3f} seconds')
 
     # make sure that organization is in the list of orgs, make sure orgs is an array then loop through
     if orgs is not None:

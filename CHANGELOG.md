@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 # Enhancements
-- N/A
+- Added TTL-based Cache for GitHub API calls (to avoid throttling) - email, orgs, username
 
 # Bug Fixes
 - Fix FlowDiagram result/content body issue
