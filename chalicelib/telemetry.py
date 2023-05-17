@@ -24,6 +24,7 @@ else:
 class InfoMetrics:
     GITHUB_ACCESS_NOT_FOUND = 'GitHubAccessNotFound'
     BILLING_USAGE_FAILURE = 'BillingUsageFailure'
+    OPENAI_RATE_LIMIT = 'OpenAIRateLimit'
 
 
 class CostMetrics:

@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 # Enhancements
 - Added TTL-based Cache for GitHub API calls (to avoid throttling) - email, orgs, username
+- Add CloudWatch metric (alert-support) for OpenAI rate limiting errors
 
 # Bug Fixes
 - Fix FlowDiagram result/content body issue

@@ -50,20 +50,29 @@ def testgen_code(original_code, language, framework, account, context, correlati
 
     prompt = testgen_prompt.format(original_code=original_code, language=language, framework=framework)
 
-    response = openai.ChatCompletion.create(
-        model=OpenAIDefaults.boost_default_gpt_model,
-        messages=[
-            {
-                "role": "system",
-                "content": role_system
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
-    )
+    try:
+        response = openai.ChatCompletion.create(
+            model=OpenAIDefaults.boost_default_gpt_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": role_system
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
+        )
+    except Exception as e:
+        # check exception type for OpenAI rate limiting on API calls
+        if isinstance(e, openai.error.RateLimitError):
+            # if we hit the rate limit, send a cloudwatch alert and raise the error
+            capture_metric(account['customer'], account['email'], correlation_id, context,
+                           {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
+
+        raise e
     generated_code = response.choices[0].message.content
 
     # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}

@@ -3,7 +3,7 @@ import openai
 # import traceback
 from . import pvsecret
 import os
-# from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
+from chalicelib.telemetry import capture_metric, InfoMetrics  # , CostMetrics
 from chalicelib.usage import OpenAIDefaults  # , get_openai_usage, get_boost_cost,
 # from chalicelib.payments import update_usage_for_text
 
@@ -39,26 +39,32 @@ class GenericProcessor:
         prompt = self.prompts['main'].format(**prompt_format_args)
         role_system = self.prompts['role_system']
 
-        print("prompt is")
-        print(prompt)
-        response = openai.ChatCompletion.create(
-            model=OpenAIDefaults.boost_default_gpt_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": role_system
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
-        )
+        try:
+            response = openai.ChatCompletion.create(
+                model=OpenAIDefaults.boost_default_gpt_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": role_system
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
+            )
+        except Exception as e:
+            # check exception type for OpenAI rate limiting on API calls
+            if isinstance(e, openai.error.RateLimitError):
+                # if we hit the rate limit, send a cloudwatch alert and raise the error
+                capture_metric(account['customer'], account['email'], correlation_id, context,
+                               {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
+
+            raise e
+
         result = response.choices[0].message.content
 
-        print('result is')
-        print(result)
         # TODO: Insert the rest of the code for metrics and error handling
         # This part seems identical in both files, so you can move it into this class without modifications
 
