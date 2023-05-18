@@ -1,13 +1,17 @@
-Please generate a control flow graph for this code, displaying the results in syntactically correct mermaid format. Do not use parenthesis or special characters.
-
-If there is control flow to the code, prefix the mermaid output with markdown code syntax to indicate a mermaid block, for example,
+Please generate a control flow graph for this source code, displaying the results in syntactically correct mermaid format. In the mermaid code syntax, do not use parenthesis, invalid  or special characters. Highlight the main codepath with the color #228B22 and a thicker line width. Highlight the error paths with the color #B22222. If there is control flow to the source code, prefix the mermaid output with markdown code syntax to indicate a mermaid block. Example syntax should follow the form:
 
 ```mermaid
     graph TD;
-        Start-->Process1;
-        Start-->Process2;
-        Process1-->End;
-        Process2-->End;
+    style Start fill:#228B22, stroke:#000000, stroke-width:2px;
+    style ExampleProcess fill:#228B22, stroke:#000000, stroke-width:4px;
+    style ExampleError fill:#B22222, stroke:#000000, stroke-width:2px;
+    style ExampleProcess fill:#228B22, stroke:#000000, stroke-width:4px;
+    style ExampleError fill:#B22222, stroke:#000000, stroke-width:2px;
+
+        Start-->ExampleProcess;
+        Start-->ExampleErrorPath;
+        ExampleProcess-->End;
+        ExamplErrorPath-->End;
 ```
 
 If no control flow is present in the code (for example, the code is just comments), return the string "NO CONTROL FLOW FOUND".
