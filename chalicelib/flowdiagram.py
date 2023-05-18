@@ -28,7 +28,7 @@ class FlowDiagramProcessor(GenericProcessor):
 
         # replace end with ends - end is a reserved word in mermaid, or at least the mermaid renderer will fail
         cleanedMarkdown = re.sub(regex,
-                                 lambda match: "```" + re.sub(r'(?<=\W|_)end(?=\W|_|$)', 'ends',
+                                 lambda match: "```" + re.sub(r'(?<=[^\s\w]|_)end(?=[^\s\w]|_|$)', 'ends',
                                                               match.group(1)) + "```", cleanedMarkdown, flags=re.DOTALL)
 
         # repair broken colors, due to openai generation issues - e.g. color codes like #fff are broken when missing the #
