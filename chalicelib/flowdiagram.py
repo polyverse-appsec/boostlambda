@@ -19,11 +19,15 @@ class FlowDiagramProcessor(GenericProcessor):
         # only clean mermaid code
         regex = r"```([\s\S]*?)```"
 
+        # clean out inner brackets - replaced with spaces
+        # due to regex limitation with variable width lookbehind, we will perform the transform outside of the tick marks
         cleanedMarkdown = markdownCode
+        cleanedMarkdown = re.sub(r'\[.*?\]',
+                                 lambda match: re.sub(r'\[(.*?)\]', r' \1 ', match.group(0)), cleanedMarkdown, flags=re.DOTALL)
 
-        # clean out special characters
+        # clean out parantheses, replaced with spaces
         cleanedMarkdown = re.sub(regex,
-                                 lambda match: "```" + re.sub(r"[^\w\s=>,\[\]\(\)\{\}\+\-\*\/\|:\.]", "",
+                                 lambda match: "```" + re.sub(r"\((.*)\)]", " \1 ",
                                                               match.group(1)) + "```", cleanedMarkdown, flags=re.DOTALL)
 
         # replace end with ends - end is a reserved word in mermaid, or at least the mermaid renderer will fail
@@ -36,4 +40,8 @@ class FlowDiagramProcessor(GenericProcessor):
                                  lambda match: "```" + re.sub(r'(fill:|stroke:)(\w)', r'\1#\2',
                                                               match.group(1)) + "```", cleanedMarkdown, flags=re.DOTALL)
 
+        # repair broken equality, due to openai generation issues - e.g. === will not parse, but == will
+        cleanedMarkdown = re.sub(regex,
+                                 lambda match: "```" + re.sub(r'===', r'==',
+                                                              match.group(1)) + "```", cleanedMarkdown, flags=re.DOTALL)
         return cleanedMarkdown
