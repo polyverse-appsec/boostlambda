@@ -89,7 +89,7 @@ def process_request(event, context, function, api_version):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     # Put this into a JSON object
@@ -189,7 +189,7 @@ def explain(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': explain_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     # Put this into a JSON object
@@ -290,7 +290,7 @@ def generate(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': convert_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     # Put this into a JSON object
@@ -395,7 +395,7 @@ def testgen(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': testgen_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     json_obj = {}
@@ -488,7 +488,7 @@ def analyze(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': analyze_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     # Put this into a json object
@@ -583,7 +583,7 @@ def compliance(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': compliance_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     # Put this into a json object
@@ -678,7 +678,7 @@ def codeguidelines(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': guidelines_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     # Put this into a json object
@@ -775,7 +775,7 @@ def blueprint(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': blueprint_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     # Put this into a json object
@@ -875,7 +875,7 @@ def customprocess(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': customprocess_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     # Put this into a json object
@@ -925,23 +925,28 @@ def customer_portal(event, context):
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            _, account = validate_request_lambda(json_data, context, correlation_id, False)
+            validated, account = validate_request_lambda(json_data, context, correlation_id, False)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         if 'email' in account:
             email = account['email']
 
-        # Now call the openai function
-        if cloudwatch is not None:
-            with xray_recorder.capture('customer_portal'):
-                session = customer_portal_url(account)
+        if not validated:
+            status = account['status']
+            session = None
+            print(f'{status}: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) No Customer Portal generated')
         else:
-            # Otherwise, call the function directly
-            start_time = time.monotonic()
-            session = customer_portal_url(account)
-            end_time = time.monotonic()
-            print(f'Execution time {correlation_id} portal: {end_time - start_time:.3f} seconds')
+            # Now call the openai function
+            if cloudwatch is not None:
+                with xray_recorder.capture('customer_portal'):
+                    session = customer_portal_url(account)
+            else:
+                # Otherwise, call the function directly
+                start_time = time.monotonic()
+                session = customer_portal_url(account)
+                end_time = time.monotonic()
+                print(f'Execution time {correlation_id} portal: {end_time - start_time:.3f} seconds')
 
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
@@ -965,11 +970,14 @@ def customer_portal(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': customerportal_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     json_obj = {}
-    json_obj["portal_url"] = session.url
+    if session is None:
+        json_obj["portal_url"] = None
+    else:
+        json_obj["portal_url"] = session.url
     json_obj["status"] = account['status']
 
     # Now return the json object in the response
@@ -1022,8 +1030,7 @@ def user_organizations(event, context):
         if orgs is None:
             organizations = "NONE FOUND"
         else:
-            organization_dict = json_data.get('organization')
-            organizations = ','.join(organization_dict.values())
+            organizations = ','.join(orgs)
             organizations = f"({organizations})"
 
         print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
@@ -1048,7 +1055,7 @@ def user_organizations(event, context):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': userorganizations_api_version},
-            'body': json.dumps({"error": e.args[0]})
+            'body': json.dumps({"error": str(e)})
         }
 
     json_obj = {}
