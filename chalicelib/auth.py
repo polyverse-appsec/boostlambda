@@ -142,7 +142,7 @@ def fetch_orgs(access_token):
         if isinstance(orgs, list):
             for i in range(len(orgs)):
                 orgs[i] = orgs[i]['login']
-                
+
         # Cache the orgs for future use
         token_2_org_cache[access_token] = orgs
 
@@ -171,13 +171,25 @@ def validate_github_session(access_token, organization, correlation_id, context)
     if cloudwatch is not None:
         with xray_recorder.capture('fetch_email_and_username'):
             email, username = fetch_email_and_username(access_token)
-            orgs = fetch_orgs(access_token)
     else:
         start_time = time.monotonic()
         email, username = fetch_email_and_username(access_token)
+        end_time = time.monotonic()
+        print(f'Execution time {correlation_id} fetch_orgs: {end_time - start_time:.3f} seconds')
+
+    # if the username matches the user's requested org, then we'll use a "personal" org
+    if username == organization:
+        return True, email
+
+    # otherwise, we validate the user's requested organization against their GitHub org list
+    if cloudwatch is not None:
+        with xray_recorder.capture('fetch_orgs'):
+            orgs = fetch_orgs(access_token)
+    else:
+        start_time = time.monotonic()
         orgs = fetch_orgs(access_token)
         end_time = time.monotonic()
-        print(f'Execution time {correlation_id} fetch_email_and_username: {end_time - start_time:.3f} seconds')
+        print(f'Execution time {correlation_id} fetch_orgs: {end_time - start_time:.3f} seconds')
 
     # make sure that organization is in the list of orgs, make sure orgs is an array then loop through
     if orgs is not None:
