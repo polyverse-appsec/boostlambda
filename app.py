@@ -32,6 +32,8 @@ def process_request(event, context, function, api_version):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+    email = "unknown"  # in case we fail early and don't get the email address
+    organization = "unknown"
 
     try:
         # Extract parameters from the event object
@@ -46,6 +48,8 @@ def process_request(event, context, function, api_version):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
@@ -55,6 +59,10 @@ def process_request(event, context, function, api_version):
             validated, account = validate_request_lambda(json_data, context, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+
+        email = account['email']
+        if email is None:
+            raise BadRequestError("Error: Unable to determine email address for account")
 
         # Now call the function
         if cloudwatch is not None:
@@ -66,9 +74,11 @@ def process_request(event, context, function, api_version):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} {function.__name__}: {end_time - start_time:.3f} seconds')
 
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) SUCCEEDED')
+
     except Exception as e:
         exception_info = traceback.format_exc()
-        print(f"{function.__name__} {correlation_id} failed with exception: {exception_info}")
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             xray_recorder.put_annotation('correlation_id', correlation_id)
             xray_recorder.put_annotation('error', exception_info)
@@ -123,6 +133,8 @@ def explain(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -144,8 +156,6 @@ def explain(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
-        organization = json_data.get('organization')
-
         # Now call the function
         if cloudwatch is not None:
             with xray_recorder.capture('explain_code'):
@@ -161,7 +171,7 @@ def explain(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -217,6 +227,8 @@ def generate(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -232,8 +244,6 @@ def generate(event, context):
         email = account['email']
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
-
-        organization = json_data.get('organization')
 
         # Extract the explanation and original_code from the json data
         explanation = json_data.get('explanation')
@@ -262,7 +272,7 @@ def generate(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -320,6 +330,8 @@ def testgen(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -339,8 +351,6 @@ def testgen(event, context):
         email = account['email']
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
-
-        organization = json_data.get('organization')
 
         language = json_data['language']
         outputlanguage = language
@@ -368,7 +378,7 @@ def testgen(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -422,6 +432,8 @@ def analyze(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -443,8 +455,6 @@ def analyze(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
-        organization = json_data.get('organization')
-
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('analyze_code'):
@@ -460,7 +470,7 @@ def analyze(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -517,6 +527,8 @@ def compliance(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -538,8 +550,6 @@ def compliance(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
-        organization = json_data.get('organization')
-
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('compliance_code'):
@@ -555,7 +565,7 @@ def compliance(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -612,6 +622,8 @@ def codeguidelines(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -633,8 +645,6 @@ def codeguidelines(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
-        organization = json_data.get('organization')
-
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
@@ -650,7 +660,7 @@ def codeguidelines(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -707,6 +717,8 @@ def blueprint(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -730,8 +742,6 @@ def blueprint(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
-        organization = json_data.get('organization')
-
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('blueprint_code'):
@@ -747,7 +757,7 @@ def blueprint(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -804,6 +814,8 @@ def customprocess(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -830,8 +842,6 @@ def customprocess(event, context):
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
-        organization = json_data.get('organization')
-
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
@@ -847,7 +857,7 @@ def customprocess(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -905,6 +915,8 @@ def customer_portal(event, context):
         else:
             client_version = json_data['version']
 
+        organization = json_data.get('organization')
+
         # Capture the duration of the validation step
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
@@ -916,8 +928,6 @@ def customer_portal(event, context):
             _, account = validate_request_lambda(json_data, context, correlation_id, False)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
-
-        organization = json_data.get('organization')
 
         if 'email' in account:
             email = account['email']
@@ -937,7 +947,7 @@ def customer_portal(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -1020,7 +1030,7 @@ def user_organizations(event, context):
 
     except Exception as e:
         exception_info = traceback.format_exc()
-        # Record the error and re-raise the exception
+        # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')

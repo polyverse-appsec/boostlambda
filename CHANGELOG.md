@@ -10,6 +10,8 @@ Polyverse Boost Cloud Service
 
 # Enhancements
 - Log User Organizations retrieved in User Organizations Service, and improved org logging
+- Add server logging for Flow Diagram service
+- Better org logging on failure conditions across services
 
 # Bug Fixes
 - Fix bug when no Org or GitHub account is found and we failed to write CloudWatch alert
