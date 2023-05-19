@@ -6,7 +6,7 @@ Polyverse Boost Cloud Service
 ## Version 0.5.0: (Proposed) May 16, 2023
 
 ### New Features
-- N/A
+- Flow Diagram Lambda service
 
 # Enhancements
 - Added TTL-based Cache for GitHub API calls (to avoid throttling) - email, orgs, username
