@@ -3,16 +3,16 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.5.1: (Proposed) May 25, 2023
+## Version 0.5.1: May 19, 2023
 
 ### New Features
 - N/A
 
 # Enhancements
-- N/A
+- Log User Organizations retrieved in User Organizations Service, and improved org logging
 
 # Bug Fixes
-- N/A
+- Fix bug when no Org or GitHub account is found and we failed to write CloudWatch alert
 
 ## Version 0.5.0: May 18, 2023
 
