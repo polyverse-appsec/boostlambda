@@ -3,7 +3,18 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.5.0: (Proposed) May 16, 2023
+## Version 0.5.1: (Proposed) May 25, 2023
+
+### New Features
+- N/A
+
+# Enhancements
+- N/A
+
+# Bug Fixes
+- N/A
+
+## Version 0.5.0: May 18, 2023
 
 ### New Features
 - Flow Diagram Lambda service
