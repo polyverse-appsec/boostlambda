@@ -235,9 +235,9 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
 
         if raiseOnError:
             # if we got here, we failed, return an error
-            raise ExtendedUnauthorizedError("Error: Please login to github to use this service", reason="GitHubAccessNotFound")
+            raise ExtendedUnauthorizedError("Error: Please login to GitHub and select an Organization to use this service", reason="GitHubAccessNotFound")
         else:
-            print(f'Error:{email}: Please login to GitHub to use this service')
+            print(f'Error:{email}: Please login to GitHub and select an Organization to use this service')
             return False, {'status': 'unregistered'}
 
     # if we got this far, we got a valid email. now check that the email is subscribed
