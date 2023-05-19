@@ -225,7 +225,7 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
 
     # if we did not get a valid email, send a cloudwatch alert and raise the error
     if not validated:
-        capture_metric(organization, email, correlation_id, context,
+        capture_metric({"name": organization, "id": "UNKNOWN"}, email, correlation_id, context,
                        {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
 
         if raiseOnError:
