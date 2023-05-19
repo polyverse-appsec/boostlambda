@@ -12,9 +12,11 @@ Polyverse Boost Cloud Service
 - Log User Organizations retrieved in User Organizations Service, and improved org logging
 - Add server logging for Flow Diagram service
 - Better org logging on failure conditions across services
+- Enable customer portal to return account status structure on invalid accounts
 
 # Bug Fixes
 - Fix bug when no Org or GitHub account is found and we failed to write CloudWatch alert
+- Enable services to work for personal organization - was failing with missing GitHub error
 
 ## Version 0.5.0: May 18, 2023
 
