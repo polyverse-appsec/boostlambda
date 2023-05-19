@@ -979,7 +979,7 @@ def user_organizations(event, context):
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
-    organization = "unknown"
+    organizations = "UNKNOWN"
 
     try:
         # Extract parameters from the event object
@@ -988,8 +988,6 @@ def user_organizations(event, context):
             json_data = json.loads(event['body'])
         else:
             json_data = event
-
-        organization = json_data.get('organization')
 
         client_version = extract_client_version(event)
         if ('version' not in json_data):
@@ -1011,12 +1009,19 @@ def user_organizations(event, context):
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        if orgs is None:
+            organizations = "NONE FOUND"
+        else:
+            organization_dict = json_data.get('organization')
+            organizations = ','.join(organization_dict.values())
+            organizations = f"({organizations})"
+
+        print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and re-raise the exception
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
