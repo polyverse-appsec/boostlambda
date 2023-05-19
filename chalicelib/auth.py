@@ -188,6 +188,11 @@ def validate_github_session(access_token, organization, correlation_id, context)
         else:
             if orgs == organization:
                 return True, email
+            else:
+                print(f'{correlation_id}:validate_github_session orgs for {email} unexpected: {orgs}')
+    else:
+        print(f'{correlation_id}:validate_github_session get orgs failed for {email}')
+
     return False, email
 
 
