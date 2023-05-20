@@ -3,6 +3,7 @@ from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.core import patch_all
 import boto3
 import os
+import traceback
 
 
 # If running under AWS Lambda - Patch all supported libraries for X-Ray tracing, enable CloudWatch
@@ -25,6 +26,8 @@ class InfoMetrics:
     GITHUB_ACCESS_NOT_FOUND = 'GitHubAccessNotFound'
     BILLING_USAGE_FAILURE = 'BillingUsageFailure'
     OPENAI_RATE_LIMIT = 'OpenAIRateLimit'
+    NEW_CUSTOMER = 'NewCustomer'
+    NEW_CUSTOMER_ERROR = 'NewCustomerERROR'
 
 
 class CostMetrics:
@@ -47,44 +50,51 @@ class CostMetrics:
 # metrics is a list of dicts with name, value and unit
 # unit: Seconds, Microseconds, Milliseconds, Bytes, Kilobytes, Megabytes, Gigabytes, Terabytes, Bits, Kilobits, Megabits, Gigabits, Terabits, Percent, Count, Count/Second, None
 def capture_metric(customer, email, correlation_id, context, *metrics):
-    if cloudwatch is not None:
-        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
-        metric_data = []
-        for metric in metrics:
-            metric_obj = {
-                'MetricName': metric['name'],
-                'Dimensions': [
-                    {
-                        'Name': 'Customer',
-                        'Value': customer['name']
-                    },
-                    {
-                        'Name': 'AccountID',
-                        'Value': customer['id']
-                    },
-                    {
-                        'Name': 'UserEmail',
-                        'Value': email
-                    },
-                    {
-                        'Name': 'LambdaFunctionName',
-                        'Value': lambda_function
-                    },
-                    {
-                        'Name': 'CorrelationID',
-                        'Value': correlation_id
-                    }
-                ],
-                'Unit': metric['unit'],
-                'Value': metric['value'],
-                'StorageResolution': 1  # Note that this is 1-second resolution, may be too high
-            }
-            metric_data.append(metric_obj)
-        cloudwatch.put_metric_data(Namespace='Boost/Lambda', MetricData=metric_data)
-    else:
-        for metric in metrics:
-            if isinstance(metric['value'], float) or isinstance(metric['value'], decimal.Decimal):
-                formatted_value = f"{metric['value']:.5f}"
-            else:
-                formatted_value = str(metric['value'])
-            print(f"METRIC::[{customer['name']}:{customer['id']}:{email}]{context.function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
+    try:
+        if cloudwatch is not None:
+            lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
+            metric_data = []
+            for metric in metrics:
+                metric_obj = {
+                    'MetricName': metric['name'],
+                    'Dimensions': [
+                        {
+                            'Name': 'Customer',
+                            'Value': customer['name']
+                        },
+                        {
+                            'Name': 'AccountID',
+                            'Value': customer['id']
+                        },
+                        {
+                            'Name': 'UserEmail',
+                            'Value': email
+                        },
+                        {
+                            'Name': 'LambdaFunctionName',
+                            'Value': lambda_function
+                        },
+                        {
+                            'Name': 'CorrelationID',
+                            'Value': correlation_id
+                        }
+                    ],
+                    'Unit': metric['unit'],
+                    'Value': metric['value'],
+                    'StorageResolution': 1  # Note that this is 1-second resolution, may be too high
+                }
+                metric_data.append(metric_obj)
+            cloudwatch.put_metric_data(Namespace='Boost/Lambda', MetricData=metric_data)
+        else:
+            for metric in metrics:
+                if isinstance(metric['value'], float) or isinstance(metric['value'], decimal.Decimal):
+                    formatted_value = f"{metric['value']:.5f}"
+                else:
+                    formatted_value = str(metric['value'])
+                print(f"METRIC::[{customer['name']}:{customer['id']}:{email}]{context.function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
+ 
+    # Never fail on metrics
+    except Exception:
+        exception_info = traceback.format_exc()
+        print(f"capture_metric:FAILED:ERROR: Failed to capture metric: {exception_info}")
+    
