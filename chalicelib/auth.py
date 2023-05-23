@@ -175,7 +175,7 @@ def validate_github_session(access_token, organization, function_name, correlati
         start_time = time.monotonic()
         email, username = fetch_email_and_username(access_token)
         end_time = time.monotonic()
-        print(f'Execution time {correlation_id} fetch_orgs: {end_time - start_time:.3f} seconds')
+        print(f'Execution time {correlation_id} fetch_email_and_username: {end_time - start_time:.3f} seconds')
 
     # if the username matches the user's requested org, then we'll use a "personal" org
     if username == organization:
