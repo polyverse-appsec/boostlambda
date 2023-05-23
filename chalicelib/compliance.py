@@ -45,7 +45,7 @@ if 'AWS_CHALICE_CLI_MODE' not in os.environ:
 
 
 # a function to call openai to check code for data compliance
-def compliance_code(code, account, context, correlation_id):
+def compliance_code(code, account, function_name, correlation_id):
 
     prompt = compliance_prompt.format(code=code)
 
@@ -68,7 +68,7 @@ def compliance_code(code, account, context, correlation_id):
         # check exception type for OpenAI rate limiting on API calls
         if isinstance(e, openai.error.RateLimitError):
             # if we hit the rate limit, send a cloudwatch alert and raise the error
-            capture_metric(account['customer'], account['email'], correlation_id, context,
+            capture_metric(account['customer'], account['email'], function_name, correlation_id,
                            {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
 
         raise e
@@ -96,12 +96,12 @@ def compliance_code(code, account, context, correlation_id):
         except Exception:
             exception_info = traceback.format_exc()
             print("UPDATE_USAGE:FAILURE:{}:{}:{}:{}:Error updating ~${} usage: ".format(customer['name'], customer['id'], email, correlation_id, boost_cost), exception_info)
-            capture_metric(customer, email, correlation_id, context,
+            capture_metric(customer, email, function_name, correlation_id,
                            {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
 
             pass  # Don't fail if we can't update usage / but that means we may have lost revenue
 
-        capture_metric(customer, email, correlation_id, context,
+        capture_metric(customer, email, function_name, correlation_id,
                        {'name': CostMetrics.PROMPT_SIZE, 'value': prompt_size, 'unit': 'Count'},
                        {'name': CostMetrics.RESPONSE_SIZE, 'value': explanation_size, 'unit': 'Count'},
                        {'name': CostMetrics.OPENAI_INPUT_COST, 'value': round(openai_input_cost, 5), 'unit': 'None'},

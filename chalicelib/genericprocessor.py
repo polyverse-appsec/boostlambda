@@ -35,7 +35,7 @@ class GenericProcessor:
 
         return prompts
 
-    def process_code(self, data, account, context, correlation_id, prompt_format_args):
+    def process_code(self, data, account, function_name, correlation_id, prompt_format_args):
         prompt = self.prompts['main'].format(**prompt_format_args)
         role_system = self.prompts['role_system']
 
@@ -58,7 +58,7 @@ class GenericProcessor:
             # check exception type for OpenAI rate limiting on API calls
             if isinstance(e, openai.error.RateLimitError):
                 # if we hit the rate limit, send a cloudwatch alert and raise the error
-                capture_metric(account['customer'], account['email'], correlation_id, context,
+                capture_metric(account['customer'], account['email'], function_name, correlation_id,
                                {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
 
             raise e

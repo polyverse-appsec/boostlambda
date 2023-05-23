@@ -31,7 +31,7 @@ def test_check_create_customer():
     email = generate_email("@" + org + ".com")
 
     # Call the checkCreateCustomer function with the test inputs
-    result = check_create_customer(email=email, org=org)
+    result = check_create_customer(email=email, org=org, correlation_id="test")
 
     # Assert that the result is a customer object
     assert result is not None
@@ -39,14 +39,14 @@ def test_check_create_customer():
     assert result.id is not None
 
     # now create a second customer with the same email and make sure we get the same customer back
-    result2 = check_create_customer(email=email, org=org)
+    result2 = check_create_customer(email=email, org=org, correlation_id="test")
     assert result2 is not None
     assert result2.id is not None
     assert result2.id == result.id
 
     # now create a third customer with a different email and the same org and make sure we get the same customer back
     email2 = generate_email("@" + org + ".com")
-    result3 = check_create_customer(email=email2, org=org)
+    result3 = check_create_customer(email=email2, org=org, correlation_id="test")
     assert result3 is not None
     assert result3.id is not None
     assert result3.id == result.id
@@ -54,7 +54,7 @@ def test_check_create_customer():
     # now create a fourth customer with a different email and a different org and make sure we get a different customer back
     org2 = generate_org()
     email3 = generate_email("@" + org2 + ".com")
-    result4 = check_create_customer(email=email3, org=org2)
+    result4 = check_create_customer(email=email3, org=org2, correlation_id="test")
     assert result4 is not None
     assert result4.id is not None
     assert result4.id != result.id
@@ -170,7 +170,7 @@ def test_check_valid_subscriber():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    valid, sub = check_valid_subscriber(email=email, organization=org)
+    valid, sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
     assert valid is True
     assert sub is not None
 
@@ -180,19 +180,19 @@ def test_multiple_emails_per_org():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    valid, sub = check_valid_subscriber(email=email, organization=org)
+    valid, sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
     assert valid is True
     assert sub is not None
 
     email = generate_email("@" + org + ".com")
 
-    valid, sub = check_valid_subscriber(email=email, organization=org)
+    valid, sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
     assert valid is True
     assert sub is not None
 
     # test a third email
     email = generate_email("@" + org + ".com")
 
-    valid, sub = check_valid_subscriber(email=email, organization=org)
+    valid, sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
     assert valid is True
     assert sub is not None

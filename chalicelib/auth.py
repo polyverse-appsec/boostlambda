@@ -167,7 +167,7 @@ def fetch_orgs(access_token):
 
 
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
-def validate_github_session(access_token, organization, correlation_id, context):
+def validate_github_session(access_token, organization, function_name, correlation_id):
     if cloudwatch is not None:
         with xray_recorder.capture('fetch_email_and_username'):
             email, username = fetch_email_and_username(access_token)
@@ -211,7 +211,7 @@ def validate_github_session(access_token, organization, correlation_id, context)
 # function to validate that the request came from a github logged in user or we are running on localhost
 # or that the session token is valid github oauth token for a subscribed email. This version is for the
 # raw lambda function and so has the session key passed in as a string
-def validate_request_lambda(request_json, context, correlation_id, raiseOnError=True):
+def validate_request_lambda(request_json, function_name, correlation_id, raiseOnError=True):
 
     session = request_json.get('session')
     organization = request_json.get('organization')
@@ -236,13 +236,13 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
     # parse the request body as json
     try:
         # extract the code from the json data
-        validated, email = validate_github_session(session, organization, correlation_id, context)
+        validated, email = validate_github_session(session, organization, function_name, correlation_id)
     except ValueError:
         pass
 
     # if we did not get a valid email, send a cloudwatch alert and raise the error
     if not validated:
-        capture_metric({"name": organization, "id": "UNKNOWN"}, email, correlation_id, context,
+        capture_metric({"name": organization, "id": "UNKNOWN"}, email, function_name, correlation_id,
                        {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
 
         if raiseOnError:
@@ -253,7 +253,7 @@ def validate_request_lambda(request_json, context, correlation_id, raiseOnError=
             return False, {'status': 'unregistered'}
 
     # if we got this far, we got a valid email. now check that the email is subscribed
-    validated, account = check_valid_subscriber(email, organization)
+    validated, account = check_valid_subscriber(email, organization, correlation_id)
 
     # if not validated, we need to see if we have a billing error, or if the user is not subscribed
     if not validated:

@@ -28,7 +28,7 @@ app = Chalice(app_name='boost')
 # app.log.error("This is an error statement")
 
 
-def process_request(event, context, function, api_version):
+def process_request(event, function, api_version):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
@@ -53,10 +53,10 @@ def process_request(event, context, function, api_version):
         # Capture the duration of the validation step
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function.__name__, correlation_id)
         else:
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function.__name__, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -67,10 +67,10 @@ def process_request(event, context, function, api_version):
         # Now call the function
         if cloudwatch is not None:
             with xray_recorder.capture(function.__name__):
-                result = function(json_data, account, context, correlation_id)
+                result = function(json_data, account, function.__name__, correlation_id)
         else:
             start_time = time.monotonic()
-            result = function(json_data, account, context, correlation_id)
+            result = function(json_data, account, function.__name__, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} {function.__name__}: {end_time - start_time:.3f} seconds')
 
@@ -107,7 +107,7 @@ def process_request(event, context, function, api_version):
 @app.lambda_function(name='flowdiagram')
 def flowdiagram(event, context):
     processor = FlowDiagramProcessor()
-    return process_request(event, context, processor.flowdiagram_code, processor.api_version)
+    return process_request(event, processor.flowdiagram_code, processor.api_version)
 
 
 @app.lambda_function(name='explain')
@@ -118,6 +118,7 @@ def explain(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -139,11 +140,11 @@ def explain(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -159,20 +160,20 @@ def explain(event, context):
         # Now call the function
         if cloudwatch is not None:
             with xray_recorder.capture('explain_code'):
-                explanation = explain_code(code, account, context, correlation_id)
+                explanation = explain_code(code, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            explanation = explain_code(code, account, context, correlation_id)
+            explanation = explain_code(code, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -213,6 +214,7 @@ def generate(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -233,11 +235,11 @@ def generate(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -260,20 +262,20 @@ def generate(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('generate_code'):
-                code = generate_code(explanation, original_code, outputlanguage, account, context, correlation_id)
+                code = generate_code(explanation, original_code, outputlanguage, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            code = generate_code(explanation, original_code, outputlanguage, account, context, correlation_id)
+            code = generate_code(explanation, original_code, outputlanguage, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -314,6 +316,7 @@ def testgen(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -336,11 +339,11 @@ def testgen(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -367,19 +370,19 @@ def testgen(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('testgen_code'):
-                testcode = testgen_code(code, outputlanguage, framework, account, context, correlation_id)
+                testcode = testgen_code(code, outputlanguage, framework, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            testcode = testgen_code(code, outputlanguage, framework, account, context, correlation_id)
+            testcode = testgen_code(code, outputlanguage, framework, account, function_name, correlation_id)
             end_time = time.monotonic()
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -417,6 +420,7 @@ def analyze(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -438,11 +442,11 @@ def analyze(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -458,20 +462,20 @@ def analyze(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('analyze_code'):
-                analysis = analyze_code(code, account, context, correlation_id)
+                analysis = analyze_code(code, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = analyze_code(code, account, context, correlation_id)
+            analysis = analyze_code(code, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -512,6 +516,7 @@ def compliance(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -533,11 +538,11 @@ def compliance(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -553,20 +558,20 @@ def compliance(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('compliance_code'):
-                analysis = compliance_code(code, account, context, correlation_id)
+                analysis = compliance_code(code, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = compliance_code(json_data, account, context, correlation_id)
+            analysis = compliance_code(json_data, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -607,6 +612,7 @@ def codeguidelines(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -628,11 +634,11 @@ def codeguidelines(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -648,20 +654,20 @@ def codeguidelines(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
-                analysis = guidelines_code(code, account, context, correlation_id)
+                analysis = guidelines_code(code, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = guidelines_code(code, account, context, correlation_id)
+            analysis = guidelines_code(code, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -702,6 +708,7 @@ def blueprint(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -723,11 +730,11 @@ def blueprint(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -745,20 +752,20 @@ def blueprint(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('blueprint_code'):
-                blueprint = blueprint_code(json_data, account, context, correlation_id)
+                blueprint = blueprint_code(json_data, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            blueprint = blueprint_code(json_data, account, context, correlation_id)
+            blueprint = blueprint_code(json_data, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} blueprint_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -799,6 +806,7 @@ def customprocess(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -820,11 +828,11 @@ def customprocess(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -845,20 +853,20 @@ def customprocess(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
-                analysis = customprocess_code(code, prompt, account, context, correlation_id)
+                analysis = customprocess_code(code, prompt, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = customprocess_code(code, prompt, account, context, correlation_id)
+            analysis = customprocess_code(code, prompt, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -900,6 +908,7 @@ def customer_portal(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -921,11 +930,11 @@ def customer_portal(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, context, correlation_id, False)
+                validated, account = validate_request_lambda(json_data, function_name, correlation_id, False)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, context, correlation_id, False)
+            validated, account = validate_request_lambda(json_data, function_name, correlation_id, False)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -935,7 +944,7 @@ def customer_portal(event, context):
         if not validated:
             status = account['status']
             session = None
-            print(f'{status}: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) No Customer Portal generated')
+            print(f'{status}: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) No Customer Portal generated')
         else:
             # Now call the openai function
             if cloudwatch is not None:
@@ -948,12 +957,12 @@ def customer_portal(event, context):
                 end_time = time.monotonic()
                 print(f'Execution time {correlation_id} portal: {end_time - start_time:.3f} seconds')
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -998,6 +1007,7 @@ def user_organizations(event, context):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organizations = "UNKNOWN"
+    function_name = context.function_name
 
     try:
         # Extract parameters from the event object
@@ -1033,12 +1043,12 @@ def user_organizations(event, context):
             organizations = ','.join(orgs)
             organizations = f"({organizations})"
 
-        print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({context.function_name}:{correlation_id}:{client_version}) SUCCEEDED')
+        print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
         exception_info = traceback.format_exc()
         # Record the error and return as HTTP result
-        print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({context.function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)

@@ -45,14 +45,14 @@ class CostMetrics:
 
 
 # Capture a metric to CloudWatch or local console
-# Usage: capture_metric(customer, email, correlation_id, context, {'name': 'PromptSize', 'value': prompt_size, 'unit': 'Bytes'})
+# Usage: capture_metric(customer, email, function_name, correlation_id, {'name': 'PromptSize', 'value': prompt_size, 'unit': 'Bytes'})
 # Customer is a dictionary of customer data from the billing database
 # metrics is a list of dicts with name, value and unit
 # unit: Seconds, Microseconds, Milliseconds, Bytes, Kilobytes, Megabytes, Gigabytes, Terabytes, Bits, Kilobits, Megabits, Gigabits, Terabits, Percent, Count, Count/Second, None
-def capture_metric(customer, email, correlation_id, context, *metrics):
+def capture_metric(customer, email, function_name: "capture_metric", correlation_id, *metrics):
     try:
         if cloudwatch is not None:
-            lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', context.function_name)
+            lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', function_name)
             metric_data = []
             for metric in metrics:
                 metric_obj = {
@@ -91,10 +91,9 @@ def capture_metric(customer, email, correlation_id, context, *metrics):
                     formatted_value = f"{metric['value']:.5f}"
                 else:
                     formatted_value = str(metric['value'])
-                print(f"METRIC::[{customer['name']}:{customer['id']}:{email}]{context.function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
- 
+                print(f"METRIC::[{customer['name']}:{customer['id']}:{email}]{function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
+
     # Never fail on metrics
     except Exception:
         exception_info = traceback.format_exc()
         print(f"capture_metric:FAILED:ERROR: Failed to capture metric: {exception_info}")
-    

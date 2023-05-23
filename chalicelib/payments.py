@@ -6,6 +6,8 @@ import os
 from chalicelib.version import API_VERSION
 from chalice import UnauthorizedError
 from . import pvsecret
+from chalicelib.telemetry import capture_metric, InfoMetrics
+import traceback
 
 customerportal_api_version = API_VERSION  # API version is global for now, not service specific
 print("customerportal_api_version: ", customerportal_api_version)
@@ -80,7 +82,7 @@ def create_price(email):
 
 
 # a function to call stripe to create a customer
-def check_create_customer(email, org):
+def check_create_customer(email, org, correlation_id):
     # the Stripe API is a bit goofy.  search does not guarantee results immediately, it can have up to an hour delay.
     # so we will first search.
     # if we can't find it, then we look to the last hour of customers and see if we can find it there.
@@ -102,11 +104,22 @@ def check_create_customer(email, org):
         if customer.metadata.org == org:
             return customer
 
-    customer = stripe.Customer.create(
-        name=org,
-        email=email,
-        metadata={"org": org},
-    )
+    try:
+        customer = stripe.Customer.create(
+            name=org,
+            email=email,
+            metadata={"org": org},
+        )
+        print(f"CREATE_CUSTOMER:SUCCEEDED:: email:{email}, org:{org}")
+        capture_metric(customer, email, correlation_id, "create_customer",
+                       {"name": InfoMetrics.NEW_CUSTOMER, "value": 1, "unit": "None"})
+
+    except Exception:
+        exception_info = traceback.format_exc()
+        print(f"CREATE_CUSTOMER:FAILED:: email:{email}, org:{org}, Error:{exception_info}")
+        capture_metric({"name": org, "id": exception_info}, email, correlation_id, "create_customer",
+                       {"name": InfoMetrics.NEW_CUSTOMER_ERROR, "value": 1, "unit": "None"})
+        raise
 
     return customer
 
@@ -220,12 +233,12 @@ def check_customer_account_status(customer):
 
 
 # if we fail validation, caller can stop call. if we pass validation, caller can continue
-def check_valid_subscriber(email, organization):
+def check_valid_subscriber(email, organization, correlation_id):
 
     if (email is None):
         raise Exception("Email is required to create a subscription account")
 
-    customer = check_create_customer(email=email, org=organization)
+    customer = check_create_customer(email=email, org=organization, correlation_id=correlation_id)
     if not customer:
         return False, None
     subscription = check_create_subscription(customer=customer, email=email)
