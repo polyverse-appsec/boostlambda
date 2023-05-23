@@ -3,6 +3,20 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.5.2: May 23, 2023
+
+### New Features
+- N/A
+
+# Enhancements
+- Print Exception callstacks on one line in log messages - easier to search in AWS Console
+- Simplify function_name passing through call chains
+- Print original Mermaid code in server log; in case we errantly change a result - use term "CLEANED" for log searches
+- Minor refactor of flow sanitization function for testing via unit test
+
+# Bug Fixes
+- Fixes for escaped and un-escaped quotes in generated Mermaid code
+
 ## Version 0.5.1: May 19, 2023
 
 ### New Features
