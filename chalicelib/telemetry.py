@@ -95,5 +95,5 @@ def capture_metric(customer, email, function_name: "capture_metric", correlation
 
     # Never fail on metrics
     except Exception:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         print(f"capture_metric:FAILED:ERROR: Failed to capture metric: {exception_info}")

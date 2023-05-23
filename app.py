@@ -77,7 +77,7 @@ def process_request(event, function, api_version):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
             xray_recorder.put_annotation('correlation_id', correlation_id)
@@ -171,7 +171,7 @@ def explain(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -273,7 +273,7 @@ def generate(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -380,7 +380,7 @@ def testgen(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -473,7 +473,7 @@ def analyze(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -569,7 +569,7 @@ def compliance(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -665,7 +665,7 @@ def codeguidelines(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -763,7 +763,7 @@ def blueprint(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -864,7 +864,7 @@ def customprocess(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -960,7 +960,7 @@ def customer_portal(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
@@ -1046,7 +1046,7 @@ def user_organizations(event, context):
         print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
     except Exception as e:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         # Record the error and return as HTTP result
         print(f'BOOST_USAGE: email:{email}, organization:{organizations}, function({function_name}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:

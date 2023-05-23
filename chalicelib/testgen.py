@@ -94,7 +94,7 @@ def testgen_code(original_code, language, framework, account, function_name, cor
             # update the billing usage for this analysis
             update_usage_for_text(account, prompt + generated_code)
         except Exception:
-            exception_info = traceback.format_exc()
+            exception_info = traceback.format_exc().replace('\n', ' ')
             print(f"UPDATE_USAGE:FAILURE:{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", exception_info)
             capture_metric(customer, email, function_name, correlation_id,
                            {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
@@ -115,7 +115,7 @@ def testgen_code(original_code, language, framework, account, function_name, cor
                        {'name': CostMetrics.OPENAI_TOKENS, 'value': openai_tokens, 'unit': 'Count'})
 
     except Exception:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         print(f"{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error capturing metrics: ", exception_info)
         pass  # Don't fail if we can't capture metrics
 

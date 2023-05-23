@@ -115,7 +115,7 @@ def check_create_customer(email, org, correlation_id):
                        {"name": InfoMetrics.NEW_CUSTOMER, "value": 1, "unit": "None"})
 
     except Exception:
-        exception_info = traceback.format_exc()
+        exception_info = traceback.format_exc().replace('\n', ' ')
         print(f"CREATE_CUSTOMER:FAILED:: email:{email}, org:{org}, Error:{exception_info}")
         capture_metric({"name": org, "id": exception_info}, email, correlation_id, "create_customer",
                        {"name": InfoMetrics.NEW_CUSTOMER_ERROR, "value": 1, "unit": "None"})
