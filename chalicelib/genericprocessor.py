@@ -55,6 +55,7 @@ class GenericProcessor:
         if OpenAIDefaults.boost_tuned_max_tokens != 0:
             params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens
 
+        # https://community.openai.com/t/cheat-sheet-mastering-temperature-and-top-p-in-chatgpt-api-a-few-tips-and-tricks-on-controlling-the-creativity-deterministic-output-of-prompt-responses/172683
         if 'top_p' in data:
             params["top_p"] = float(data['top_p'])
         elif 'temperature' in data:
