@@ -160,11 +160,11 @@ def explain(event, context):
         # Now call the function
         if cloudwatch is not None:
             with xray_recorder.capture('explain_code'):
-                explanation = explain_code(code, account, function_name, correlation_id)
+                explanation = explain_code(json_data, code, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            explanation = explain_code(code, account, function_name, correlation_id)
+            explanation = explain_code(json_data, code, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} explain_code: {end_time - start_time:.3f} seconds')
 
@@ -262,11 +262,11 @@ def generate(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('generate_code'):
-                code = generate_code(explanation, original_code, outputlanguage, account, function_name, correlation_id)
+                code = generate_code(json_data, explanation, original_code, outputlanguage, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            code = generate_code(explanation, original_code, outputlanguage, account, function_name, correlation_id)
+            code = generate_code(json_data, explanation, original_code, outputlanguage, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} generate_code: {end_time - start_time:.3f} seconds')
 
@@ -370,11 +370,11 @@ def testgen(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('testgen_code'):
-                testcode = testgen_code(code, outputlanguage, framework, account, function_name, correlation_id)
+                testcode = testgen_code(json_data, code, outputlanguage, framework, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            testcode = testgen_code(code, outputlanguage, framework, account, function_name, correlation_id)
+            testcode = testgen_code(json_data, code, outputlanguage, framework, account, function_name, correlation_id)
             end_time = time.monotonic()
 
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
@@ -462,11 +462,11 @@ def analyze(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('analyze_code'):
-                analysis = analyze_code(code, account, function_name, correlation_id)
+                analysis = analyze_code(json_data, code, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = analyze_code(code, account, function_name, correlation_id)
+            analysis = analyze_code(json_data, code, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} analyze_code: {end_time - start_time:.3f} seconds')
 
@@ -558,11 +558,11 @@ def compliance(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('compliance_code'):
-                analysis = compliance_code(code, account, function_name, correlation_id)
+                analysis = compliance_code(json_data, code, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = compliance_code(json_data, account, function_name, correlation_id)
+            analysis = compliance_code(json_data, code, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} compliance_code: {end_time - start_time:.3f} seconds')
 
@@ -654,11 +654,11 @@ def codeguidelines(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
-                analysis = guidelines_code(code, account, function_name, correlation_id)
+                analysis = guidelines_code(json_data, code, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = guidelines_code(code, account, function_name, correlation_id)
+            analysis = guidelines_code(json_data, code, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} guidelines_code: {end_time - start_time:.3f} seconds')
 
@@ -853,11 +853,11 @@ def customprocess(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
-                analysis = customprocess_code(code, prompt, account, function_name, correlation_id)
+                analysis = customprocess_code(json_data, code, prompt, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = customprocess_code(code, prompt, account, function_name, correlation_id)
+            analysis = customprocess_code(json_data, code, prompt, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
 

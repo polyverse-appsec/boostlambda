@@ -45,7 +45,7 @@ if 'AWS_CHALICE_CLI_MODE' not in os.environ:
 
 
 # a function to call openai to evaluate code for processing
-def customprocess_code(code, customprompt, account, function_name, correlation_id):
+def customprocess_code(data, code, customprompt, account, function_name, correlation_id):
 
     # if the user-provided prompt includes {code} block, then use that as the prompt
     if ("{{code}}" in customprompt):
@@ -54,21 +54,29 @@ def customprocess_code(code, customprompt, account, function_name, correlation_i
     else:
         prompt = customprocess_prompt.format(code=code, prompt=customprompt)
 
+    params = {
+        "model": OpenAIDefaults.boost_default_gpt_model,
+        "messages": [
+            {
+                "role": "system",
+                "content": role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]}
+
+    if OpenAIDefaults.boost_tuned_max_tokens != 0:
+        params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens
+
+    if 'top_p' in data:
+        params["top_p"] = float(data['top_p'])
+    elif 'temperature' in data:
+        params["temperature"] = float(data['temperature'])
+
     try:
-        response = openai.ChatCompletion.create(
-            model=OpenAIDefaults.boost_default_gpt_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": role_system
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
-        )
+        response = openai.ChatCompletion.create(**params)
     except Exception as e:
         # check exception type for OpenAI rate limiting on API calls
         if isinstance(e, openai.error.RateLimitError):

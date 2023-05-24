@@ -39,21 +39,29 @@ class GenericProcessor:
         prompt = self.prompts['main'].format(**prompt_format_args)
         role_system = self.prompts['role_system']
 
+        params = {
+            "model": OpenAIDefaults.boost_default_gpt_model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": role_system
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]}
+
+        if OpenAIDefaults.boost_tuned_max_tokens != 0:
+            params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens
+
+        if 'top_p' in data:
+            params["top_p"] = float(data['top_p'])
+        elif 'temperature' in data:
+            params["temperature"] = float(data['temperature'])
+
         try:
-            response = openai.ChatCompletion.create(
-                model=OpenAIDefaults.boost_default_gpt_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": role_system
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
-            )
+            response = openai.ChatCompletion.create(**params)
         except Exception as e:
             # check exception type for OpenAI rate limiting on API calls
             if isinstance(e, openai.error.RateLimitError):

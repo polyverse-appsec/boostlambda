@@ -44,25 +44,33 @@ if 'AWS_CHALICE_CLI_MODE' not in os.environ:
 
 
 # a function to call openai to explain code
-def analyze_code(code, account, function_name, correlation_id):
+def analyze_code(data, code, account, function_name, correlation_id):
 
     prompt = analyze_prompt.format(code=code)
 
+    params = {
+        "model": OpenAIDefaults.boost_default_gpt_model,
+        "messages": [
+            {
+                "role": "system",
+                "content": role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]}
+
+    if OpenAIDefaults.boost_tuned_max_tokens != 0:
+        params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens
+
+    if 'top_p' in data:
+        params["top_p"] = float(data['top_p'])
+    elif 'temperature' in data:
+        params["temperature"] = float(data['temperature'])
+
     try:
-        response = openai.ChatCompletion.create(
-            model=OpenAIDefaults.boost_default_gpt_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": role_system
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            max_tokens=OpenAIDefaults.boost_tuned_max_tokens if OpenAIDefaults.boost_tuned_max_tokens != 0 else None
-        )
+        response = openai.ChatCompletion.create(**params)
     except Exception as e:
         # check exception type for OpenAI rate limiting on API calls
         if isinstance(e, openai.error.RateLimitError):

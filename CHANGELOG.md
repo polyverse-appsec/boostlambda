@@ -6,7 +6,7 @@ Polyverse Boost Cloud Service
 ## Version 0.5.2: May 23, 2023
 
 ### New Features
-- N/A
+- Add support for temperature and ranked probablities in OpenAI completions
 
 # Enhancements
 - Print Exception callstacks on one line in log messages - easier to search in AWS Console
@@ -16,6 +16,7 @@ Polyverse Boost Cloud Service
 
 # Bug Fixes
 - Fixes for escaped and un-escaped quotes in generated Mermaid code
+- Fix for Compliance API when running locally
 
 ## Version 0.5.1: May 19, 2023
 
