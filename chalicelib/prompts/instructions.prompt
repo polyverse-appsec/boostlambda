@@ -1,0 +1,29 @@
+Goal: {goal}
+
+Update the following format of user instructions to help the user achieve the above goals.
+
+Steps to achieve your project goals using Polyverse Boost:
+
+Install the Polyverse Boost Visual Studio Code extension from the Visual Studio Marketplace. If necessary, restart Visual Studio Code after the installation.
+Launch Polyverse Boost for the first time and authorize access to your GitHub.com account to link your license to your email address. This is required for trial license activation. If you don't have a GitHub.com account, create one.
+Create your first Boost Notebook by using the Command dropdown and selecting Create Polyverse Boost Notebook (Ctrl+Shift+P or Cmd+Shift+P on Mac).
+Load your source code into Boost Notebook by using the Boost: Load File command. This will parse your source code into Boost Notebook cells for review and editing.
+Choose the appropriate modernization process by using the Boost: Select Kernel command and selecting the desired option based on your project goals. Here are some available options:
+Analyze code for bugs, defects, and security vulnerabilities
+Check code for data, privacy, and personal info compliance
+Generate code flow diagrams with color highlights from source
+Evaluate source code for best practices and guidelines
+Modernize code to a newer language
+Generate test cases
+Generate documentation
+Batch mode processing
+Generate code explanation
+If you choose code conversion, select the output language by using the Boost: Select Output Language command and choose from supported languages like Python, Java, C#, C++, TypeScript, and JavaScript.
+Run the AI-enabled analysis and processing by clicking the Boost button run-all to analyze all cells or select a specific cell and click the Boost button run to analyze individual cells.
+Review the results in each Boost Notebook cell. The results will vary depending on the selected processing task. You can review architectural blueprints, analyze defects and security issues, check data compliance, evaluate coding guidelines, review converted code, explore documentation and flow diagrams, and examine generated test cases.
+For batch mode processing, right-click on a folder or source file in the file explorer to launch "Batch Processing" on the target. Alternatively, use the "Command Menu" for project-wide analysis.
+If you encounter any issues or have further questions, please refer to the Polyverse Boost website for additional information and support options.
+
+Keep in mind that Polyverse Boost is a paid subscription service. Make sure to update your Polyverse Boost account with a credit card once your trial license expires to continue using Boost.
+
+Good luck with your project, and happy coding!
