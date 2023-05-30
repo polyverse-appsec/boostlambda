@@ -1,6 +1,8 @@
 from chalice.test import Client
 from app import app
-# import json
+import json
+
+client_version = '0.9.5'
 
 
 def test_explain():
@@ -9,7 +11,7 @@ def test_explain():
             'code': 'print("Hello, World!")',
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
 
         response = client.lambda_.invoke(
@@ -26,7 +28,7 @@ def test_generate_outputlanguage():
             'originalCode': 'print("Hello, World!")',
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
-            'version': '0.9.5',
+            'version': client_version,
             'output_language': output_language
         }
         response = client.lambda_.invoke(
@@ -42,7 +44,7 @@ def test_auth():
             'session': 'testemail: foo@bar.com',
             'code': 'print("Hello, World!")',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
 
         response = client.lambda_.invoke(
@@ -55,7 +57,7 @@ def test_auth():
             'session': 'testemail: alexgo@gmail.com',
             'code': 'print("Hello, World!")',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
 
         response = client.lambda_.invoke(
@@ -68,7 +70,7 @@ def test_auth():
             'session': 'testemail: jkthecjer@polytest.ai',
             'code': 'print("Hello, World!")',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
 
         response = client.lambda_.invoke(
@@ -81,7 +83,7 @@ def test_auth():
             'session': 'testemail: alex@polytest.ai',
             'code': 'print("Hello, World!")',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
         response = client.lambda_.invoke(
             'explain', request_body)
@@ -98,7 +100,7 @@ def test_testgen():
             'code': 'print("Hello, World!")',
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
         response = client.lambda_.invoke(
             'testgen', request_body)
@@ -112,7 +114,7 @@ def test_analyze():
             'code': 'print("Hello, World!")',
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
 
         response = client.lambda_.invoke(
@@ -127,7 +129,7 @@ def test_compliance():
             'code': 'print("Hello, World!")',
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
 
         response = client.lambda_.invoke(
@@ -142,7 +144,7 @@ def test_codeguidelines():
             'code': 'print("Hello, World!")',
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
 
         response = client.lambda_.invoke(
@@ -157,10 +159,38 @@ def test_blueprint():
             'code': 'print("Hello, World!")',
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
-            'version': '0.9.5'
+            'version': client_version
         }
 
         response = client.lambda_.invoke(
             'codeguidelines', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+
+def test_customprocess():
+    with Client(app) as client:
+        code = 'print("Hello, World!")'
+        prompt = "Analyze this code to identify use of code incompatible with a commercial license, such as any open source license.\n\nExamples of licenses include BSD, MIT, GPL, LGPL, Apache or other licenses that may conflict with commercial licenses.\n\nFor any identified licenses in the code, provide online web links to relevant license analysis.\n\n\n" + code
+        this_role_system = "I am a sofware architect bot. I will analyze the code for architectural, algorithmic and design issues."
+        request_body = {
+            'code': code,
+            'prompt': prompt,
+            'messages': json.dumps([
+                {
+                    "role": "system",
+                    "content": this_role_system
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }]),
+            'session': 'testemail: alex@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'customprocess', request_body)
 
         assert response.payload['statusCode'] == 200

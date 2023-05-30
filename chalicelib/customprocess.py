@@ -6,6 +6,8 @@ from chalicelib.version import API_VERSION
 from chalicelib.telemetry import capture_metric, CostMetrics, InfoMetrics
 from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
 from chalicelib.payments import update_usage_for_text
+import json
+
 
 customprocess_api_version = API_VERSION  # API version is global for now, not service specific
 print("customprocess_api_version: ", customprocess_api_version)
@@ -54,18 +56,27 @@ def customprocess_code(data, code, customprompt, account, function_name, correla
     else:
         prompt = customprocess_prompt.format(code=code, prompt=customprompt)
 
-    params = {
-        "model": OpenAIDefaults.boost_default_gpt_model,
-        "messages": [
+    if 'role_system' in data:
+        this_role_system = data['role_system']
+    else:
+        this_role_system = role_system
+
+    if 'messages' in data:
+        this_messages = json.loads(data['messages'])
+    else:
+        this_messages = [
             {
                 "role": "system",
-                "content": role_system
+                "content": this_role_system
             },
             {
                 "role": "user",
                 "content": prompt
-            }
-        ]}
+            }]
+
+    params = {
+        "model": OpenAIDefaults.boost_default_gpt_model,
+        "messages": this_messages}
 
     if OpenAIDefaults.boost_tuned_max_tokens != 0:
         params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens
