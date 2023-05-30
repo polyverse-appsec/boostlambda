@@ -3,13 +3,13 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.5.3: May 25, 2023
+## Version 0.5.4: May 30, 2023
 
 ### New Features
 - N/A
 
 # Enhancements
-- N/A
+- Enabled Custom Processor to also customize raw OpenAI API messages prompts and system role
 
 # Bug Fixes
 - N/A
