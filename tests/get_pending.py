@@ -5,6 +5,8 @@ import os
 import sys
 import pandas as pd
 import datetime
+import re
+
 
 # Determine the parent directory's path.
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,6 +37,18 @@ def extract_values(obj, key):
     return results
 
 
+def split_leading_number_from_description(description):
+    # Split the string by ' × '
+    parts = description.split(' × ')
+
+    # Extract number and plan name
+    number = int(parts[0])
+    plan = parts[1]
+    plan = re.sub(r'^Polyverse Boost \((.*)\)$', r'\1', plan)
+
+    return number, plan
+
+
 def main(show_test, debug, dev, printall):
 
     if not dev:
@@ -45,6 +59,9 @@ def main(show_test, debug, dev, printall):
 
     total_pending_invoices = 0
     total_paying_customers = 0
+    total_active_users = 0
+    total_calls = 0
+
     print("Retrieving Boost customer list")
     customers = stripe.Customer.list()
     customers_list = []
@@ -72,27 +89,29 @@ def main(show_test, debug, dev, printall):
                 print(customer)
                 print(invoice)
 
-            firstName = True
             for invoice_data in invoice.lines.data:
-                if firstName:
-                    customers_list.append([customer.metadata.org,
-                                           f"{invoice_data.price.metadata.email}",
-                                           f"${invoice.amount_due / 100:.2f}",
-                                           f"{customer.invoice_settings.default_payment_method is not None}",
-                                           f"{invoice_data.discount_amounts[0].amount / 100:.2f}",
-                                           f"{datetime.datetime.fromtimestamp(customer.created)}"])
-                    firstName = False
-                else:
-                    customers_list.append(['"',
-                                           f"{invoice_data.price.metadata.email}",
-                                           '"',
-                                           '"',
-                                           f"{invoice_data.discount_amounts[0].amount / 100:.2f}",
-                                           '"'])
+                calls, plan_name = split_leading_number_from_description(invoice_data.description)
+
+                total_calls += calls
+
+                customers_list.append([customer.metadata.org,
+                                       f"{invoice_data.price.metadata.email}",
+                                       f"{datetime.datetime.fromtimestamp(customer.created).date()}",
+                                       f"{customer.invoice_settings.default_payment_method is not None}",
+                                       f"{plan_name}",
+                                       f"{calls}",
+                                       f"${invoice_data.amount / 100:.2f}",
+                                       f"${invoice.amount_due / 100:.2f}",
+                                       f"${invoice.total_discount_amounts[0].amount / 100:.2f}",
+                                       f"${invoice.total / 100:.2f}"])
 
             total_pending_invoices += invoice.amount_due
+
             if customer.invoice_settings.default_payment_method:
                 total_paying_customers += 1
+
+            if calls > 0:
+                total_active_users += 1
 
         except Exception as e:
             if debug:
@@ -103,9 +122,32 @@ def main(show_test, debug, dev, printall):
 
     # customers_list.sort()  # sort by org name
 
-    table = PrettyTable(['Organization', 'Email', 'Pending Invoice Amount', 'Credit Card', 'Discount', 'Created'])
-    for org, email, amount, cc, discount, created in customers_list:
-        table.add_row([org, email, amount, cc, discount, created])
+    table = PrettyTable(['Organization', 'Email', 'Created', 'Credit Card', 'Plan', "Calls", '% Usage', 'Pending Amount', 'Amount Due', 'Discount', 'Total'])
+    lastCustomerEmail = ''
+    lastOrg = ''
+    for org, email, created, cc, plan, calls, pending, due, discount, total in customers_list:
+        newOrg = org != lastOrg
+        org = org if org != lastOrg else '"'
+        created = created if newOrg else '"'
+        cc = cc if newOrg else '"'
+        email = email if email != lastCustomerEmail else '"'
+        lastCustomerEmail = email
+        percent = "{:.2f}%".format(int(calls) / total_calls * 100)
+        percent = percent if percent != '0.00%' else '-'
+        calls = calls if calls != '0' else '-'
+        pending = pending if pending != '$0.00' else '-'
+        due = due if due != '$0.00' else '-'
+        due = due if newOrg else '"'
+        discount = discount if discount != '$0.00' else '-'
+        discount = discount if newOrg else '"'
+        total = total if total != '$0.00' else '-'
+        total = total if newOrg else '"'
+        cc = cc if cc != 'False' else ''
+        cc = cc if cc != 'True' else 'Yes'
+
+        lastOrg = org if org != '"' else lastOrg
+
+        table.add_row([org, email, created, cc, plan, calls, percent, pending, due, discount, total])
 
     print(table)
     print()
@@ -130,6 +172,9 @@ def main(show_test, debug, dev, printall):
     print()
     print(f"\nTotal Pending Invoice Amount for all Customers: ${total_pending_invoices / 100:.2f}")
     print(f"\nTotal Paying Customers: {total_paying_customers}")
+    print(f"\nTotal Active Customers: {total_active_users}")
+    print(f"Total # of Calls: {total_calls}")
+    print()
 
 
 if __name__ == "__main__":
