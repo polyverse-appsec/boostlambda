@@ -38,6 +38,15 @@
         ],
         "console": "integratedTerminal",
         "justMyCode": true
+    },
+    {
+        "name": "Invoice Report",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/tests/get_pending.py",
+        "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "justMyCode": true
     }
     ]
 }
