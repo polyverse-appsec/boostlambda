@@ -60,7 +60,8 @@ def main(show_test, debug, dev, printall):
     total_pending_invoices = 0
     total_paying_customers = 0
     total_active_users = 0
-    total_calls = 0
+    total_inactive_users = 0
+    total_usage_kb = 0
 
     print("Retrieving Boost customer list")
     customers = stripe.Customer.list()
@@ -89,17 +90,19 @@ def main(show_test, debug, dev, printall):
                 print(customer)
                 print(invoice)
 
+            thisCustomerUsage = 0
             for invoice_data in invoice.lines.data:
-                calls, plan_name = split_leading_number_from_description(invoice_data.description)
+                usageInKb, plan_name = split_leading_number_from_description(invoice_data.description)
+                thisCustomerUsage += usageInKb
 
-                total_calls += calls
+                total_usage_kb += usageInKb
 
                 customers_list.append([customer.metadata.org,
                                        f"{invoice_data.price.metadata.email}",
                                        f"{datetime.datetime.fromtimestamp(customer.created).date()}",
                                        f"{customer.invoice_settings.default_payment_method is not None}",
                                        f"{plan_name}",
-                                       f"{calls}",
+                                       f"{usageInKb}",
                                        f"${invoice_data.amount / 100:.2f}",
                                        f"${invoice.amount_due / 100:.2f}",
                                        f"${invoice.total_discount_amounts[0].amount / 100:.2f}",
@@ -110,8 +113,10 @@ def main(show_test, debug, dev, printall):
             if customer.invoice_settings.default_payment_method:
                 total_paying_customers += 1
 
-            if calls > 0:
+            if thisCustomerUsage > 0:
                 total_active_users += 1
+            else:
+                total_inactive_users += 1
 
         except Exception as e:
             if debug:
@@ -122,32 +127,33 @@ def main(show_test, debug, dev, printall):
 
     # customers_list.sort()  # sort by org name
 
-    table = PrettyTable(['Organization', 'Email', 'Created', 'Credit Card', 'Plan', "Calls", '% Usage', 'Pending Amount', 'Amount Due', 'Discount', 'Total'])
+    table = PrettyTable(['Organization', 'Email', 'Created', 'Credit Card', 'Plan', "Usage", 'Usage(%)', 'Pending', 'Due', 'Trial', 'Total'])
     lastCustomerEmail = ''
     lastOrg = ''
-    for org, email, created, cc, plan, calls, pending, due, discount, total in customers_list:
+    for org, email, created, cc, plan, usageInMb, pending, due, discount, total in customers_list:
         newOrg = org != lastOrg
         org = org if org != lastOrg else '"'
         created = created if newOrg else '"'
-        cc = cc if newOrg else '"'
         email = email if email != lastCustomerEmail else '"'
         lastCustomerEmail = email
-        percent = "{:.2f}%".format(int(calls) / total_calls * 100)
+        percent = "{:.2f}%".format(int(usageInMb) / total_usage_kb * 100)  # usageInMb is Kb at this point
         percent = percent if percent != '0.00%' else '-'
-        calls = calls if calls != '0' else '-'
+        usageInMb = "{:.0f} Kb".format((int(usageInMb))) if usageInMb != '0' else '-'
+        # usageInMb = "{:.3f} Mb".format((int(usageInMb) / 1024)) if usageInMb != '0' else '-'
         pending = pending if pending != '$0.00' else '-'
         due = due if due != '$0.00' else '-'
-        due = due if newOrg else '"'
+        due = due if newOrg and due != '$0.00' else ''
         discount = discount if discount != '$0.00' else '-'
         discount = discount if newOrg else '"'
         total = total if total != '$0.00' else '-'
-        total = total if newOrg else '"'
+        total = total if newOrg else ''
         cc = cc if cc != 'False' else ''
         cc = cc if cc != 'True' else 'Yes'
+        cc = cc if (newOrg and cc == 'Yes') else ''
 
         lastOrg = org if org != '"' else lastOrg
 
-        table.add_row([org, email, created, cc, plan, calls, percent, pending, due, discount, total])
+        table.add_row([org, email, created, cc, plan, usageInMb, percent, pending, due, discount, total])
 
     print(table)
     print()
@@ -171,9 +177,11 @@ def main(show_test, debug, dev, printall):
 
     print()
     print(f"\nTotal Pending Invoice Amount for all Customers: ${total_pending_invoices / 100:.2f}")
-    print(f"\nTotal Paying Customers: {total_paying_customers}")
-    print(f"\nTotal Active Customers: {total_active_users}")
-    print(f"Total # of Calls: {total_calls}")
+    print(f"\nTotal Paying Customers: {total_paying_customers} - {total_paying_customers / (total_active_users) * 100:.0f}% Converted to Paid")
+    print(f"\nTotal Trial Customers: {total_active_users - total_paying_customers} - {(total_active_users - total_paying_customers) / (total_active_users) * 100:.0f}% Active")
+    print(f"\nTotal Active Customers: {total_active_users} - {total_active_users / (total_inactive_users + total_active_users) * 100:.0f}%")
+    print(f"\nTotal Inactive Customers: {total_inactive_users}")
+    print(f"\nTotal Usage (MB): {total_usage_kb / 1024:.2f}")
     print()
 
 
