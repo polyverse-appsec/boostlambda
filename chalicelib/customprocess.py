@@ -74,8 +74,13 @@ def customprocess_code(data, code, customprompt, account, function_name, correla
                 "content": prompt
             }]
 
+    # enable user to override the model to gpt-3 or gpt-4
+    model = OpenAIDefaults.boost_default_gpt_model
+    if 'model' in data:
+        model = data['model']
+
     params = {
-        "model": OpenAIDefaults.boost_default_gpt_model,
+        "model": model,
         "messages": this_messages}
 
     if OpenAIDefaults.boost_tuned_max_tokens != 0:

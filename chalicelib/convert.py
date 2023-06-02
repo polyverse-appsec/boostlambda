@@ -67,8 +67,13 @@ def explain_code(data, code, account, function_name, correlation_id):
 
     prompt = explain_prompt.format(code=code)
 
+    # enable user to override the model to gpt-3 or gpt-4
+    model = OpenAIDefaults.boost_default_gpt_model
+    if 'model' in data:
+        model = data['model']
+
     params = {
-        "model": OpenAIDefaults.boost_default_gpt_model,
+        "model": model,
         "messages": [
             {
                 "role": "system",
@@ -156,8 +161,13 @@ def generate_code(data, summary, original_code, language, account, function_name
     this_role_user = role_user.format(original_code=original_code)
     this_role_assistant = role_assistant.format(summary=summary)
 
+    # enable user to override the model to gpt-3 or gpt-4
+    model = OpenAIDefaults.boost_default_gpt_model
+    if 'model' in data:
+        model = data['model']
+
     params = {
-        "model": OpenAIDefaults.boost_default_gpt_model,
+        "model": model,
         "messages": [
             {
                 "role": "system",

@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.5.5: June 2, 2023
+
+### New Features
+- Enable model customization by passing 'model' parameter in API calls - default is GPT-4
+
+# Enhancements
+- N/A
+
+# Bug Fixes
+- N/A
+
 ## Version 0.5.4: May 30, 2023
 
 ### New Features

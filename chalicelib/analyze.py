@@ -48,8 +48,13 @@ def analyze_code(data, code, account, function_name, correlation_id):
 
     prompt = analyze_prompt.format(code=code)
 
+    # enable user to override the model to gpt-3 or gpt-4
+    model = OpenAIDefaults.boost_default_gpt_model
+    if 'model' in data:
+        model = data['model']
+
     params = {
-        "model": OpenAIDefaults.boost_default_gpt_model,
+        "model": model,
         "messages": [
             {
                 "role": "system",

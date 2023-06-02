@@ -50,8 +50,13 @@ def testgen_code(data, original_code, language, framework, account, function_nam
 
     prompt = testgen_prompt.format(original_code=original_code, language=language, framework=framework)
 
+    # enable user to override the model to gpt-3 or gpt-4
+    model = OpenAIDefaults.boost_default_gpt_model
+    if 'model' in data:
+        model = data['model']
+
     params = {
-        "model": OpenAIDefaults.boost_default_gpt_model,
+        "model": model,
         "messages": [
             {
                 "role": "system",

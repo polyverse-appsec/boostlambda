@@ -39,8 +39,13 @@ class GenericProcessor:
         prompt = self.prompts['main'].format(**prompt_format_args)
         role_system = self.prompts['role_system']
 
+        # enable user to override the model to gpt-3 or gpt-4
+        model = OpenAIDefaults.boost_default_gpt_model
+        if 'model' in data:
+            model = data['model']
+
         params = {
-            "model": OpenAIDefaults.boost_default_gpt_model,
+            "model": model,
             "messages": [
                 {
                     "role": "system",
