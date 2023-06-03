@@ -220,8 +220,8 @@ def check_customer_account_status(customer):
     if customer['invoice_settings']['default_payment_method']:
         return True, "paid"
 
-    # if they have an active non-pending invoice, and no payment method, we'll assume trial expired
-    if invoice.amount_due > 0:
+    # if stripe thinks the customer is delinquent, then we will suspend them
+    if customer['delinquent'] == True:
         return False, "suspended"
 
     # it seems like a non-zero balance also implies a trial license
