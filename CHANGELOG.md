@@ -3,6 +3,18 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.5.6: June 2, 2023
+
+### New Features
+- N/A
+
+# Enhancements
+- N/A
+
+# Bug Fixes
+- Fix issue with 'delinquent' / suspended accounts not providing customer portal link
+- Fix missing usage reporting for flow diagram (generic processor missing usage reporting)
+
 ## Version 0.5.5: June 2, 2023
 
 ### New Features

@@ -1,11 +1,11 @@
 # generic.py
 import openai
-# import traceback
+import traceback
 from . import pvsecret
 import os
-from chalicelib.telemetry import capture_metric, InfoMetrics  # , CostMetrics
-from chalicelib.usage import OpenAIDefaults  # , get_openai_usage, get_boost_cost,
-# from chalicelib.payments import update_usage_for_text
+from chalicelib.telemetry import capture_metric, InfoMetrics, CostMetrics
+from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
+from chalicelib.payments import update_usage_for_text
 
 # Define the directory where prompt files are stored
 PROMPT_DIR = "chalicelib/prompts"
@@ -79,7 +79,56 @@ class GenericProcessor:
 
         result = response.choices[0].message.content
 
-        # TODO: Insert the rest of the code for metrics and error handling
-        # This part seems identical in both files, so you can move it into this class without modifications
+        # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
+        customer = account['customer']
+        email = account['email']
+
+        try:
+            # Get the cost of the prompting - so we have visibiity into our cost per user API
+            prompt_size = len(prompt) + len(role_system)
+            user_input = self.collate_all_user_input(data)
+            user_input_size = len(user_input)
+            boost_cost = get_boost_cost(prompt_size + user_input_size)
+            openai_input_tokens, openai_input_cost = get_openai_usage(prompt + role_system)
+            openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(user_input)
+            openai_output_tokens, openai_output_cost = get_openai_usage(result, False)
+            openai_tokens = openai_input_tokens + openai_output_tokens
+            openai_cost = openai_input_cost + openai_output_cost
+
+            try:
+                # update the billing usage for this analysis
+                update_usage_for_text(account, prompt + user_input)
+            except Exception:
+                exception_info = traceback.format_exc().replace('\n', ' ')
+                print(f"UPDATE_USAGE:FAILURE:{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", exception_info)
+                capture_metric(customer, email, function_name, correlation_id,
+                               {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
+
+                pass  # Don't fail if we can't update usage / but that means we may have lost revenue
+
+            capture_metric(customer, email, function_name, correlation_id,
+                           {'name': CostMetrics.PROMPT_SIZE, 'value': prompt_size, 'unit': 'Count'},
+                           {'name': CostMetrics.RESPONSE_SIZE, 'value': user_input_size, 'unit': 'Count'},
+                           {'name': CostMetrics.OPENAI_INPUT_COST, 'value': round(openai_input_cost, 5), 'unit': 'None'},
+                           {'name': CostMetrics.OPENAI_CUSTOMERINPUT_COST, 'value': round(openai_customerinput_cost, 5), 'unit': 'None'},
+                           {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
+                           {'name': CostMetrics.OPENAI_COST, 'value': round(openai_cost, 5), 'unit': 'None'},
+                           {'name': CostMetrics.BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
+                           {'name': CostMetrics.OPENAI_INPUT_TOKENS, 'value': openai_input_tokens, 'unit': 'Count'},
+                           {'name': CostMetrics.OPENAI_CUSTOMERINPUT_TOKENS, 'value': openai_customerinput_tokens, 'unit': 'Count'},
+                           {'name': CostMetrics.OPENAI_OUTPUT_TOKENS, 'value': openai_output_tokens, 'unit': 'Count'},
+                           {'name': CostMetrics.OPENAI_TOKENS, 'value': openai_tokens, 'unit': 'Count'})
+
+        except Exception:
+            exception_info = traceback.format_exc().replace('\n', ' ')
+            print(f"{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error capturing metrics: ", exception_info)
+            pass  # Don't fail if we can't capture metrics
 
         return result
+
+    # used for calculating usage on user input. The return string is virtually useless in this format
+    def collate_all_user_input(self, data):
+        # remove any keys used for control of the processing, so we only charge for user input
+        excluded_keys = ['model', 'top_p', 'temperature']
+        input_list = [str(value) for key, value in data.items() if key not in excluded_keys]
+        return ' '.join(input_list)
