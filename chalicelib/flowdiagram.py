@@ -10,8 +10,8 @@ class FlowDiagramProcessor(GenericProcessor):
             'role_system': 'flowdiagram-role-system.prompt'
         })
 
-    def flowdiagram_code(self, code, account, function_name, correlation_id):
-        result = self.process_code(code, account, function_name, correlation_id, {'code': code})
+    def flowdiagram_code(self, data, account, function_name, correlation_id):
+        result = self.process_code(data, account, function_name, correlation_id, {'code': data})
         cleanedResult = sanitize_mermaid_code(result)
 
         return cleanedResult
