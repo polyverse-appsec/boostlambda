@@ -12,6 +12,7 @@ from chalicelib.convert import explain_code, generate_code, convert_api_version,
 from chalicelib.payments import customer_portal_url, customerportal_api_version
 from chalicelib.auth import fetch_orgs, fetch_email_and_username, userorganizations_api_version, extract_client_version
 from chalicelib.flowdiagram import FlowDiagramProcessor
+from chalicelib.summarize import SummarizeProcessor
 
 import json
 import uuid
@@ -53,10 +54,10 @@ def process_request(event, function, api_version):
         # Capture the duration of the validation step
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, function.__name__, correlation_id)
+                _, account = validate_request_lambda(json_data, function.__name__, correlation_id)
         else:
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, function.__name__, correlation_id)
+            _, account = validate_request_lambda(json_data, function.__name__, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
@@ -105,9 +106,15 @@ def process_request(event, function, api_version):
 
 
 @app.lambda_function(name='flowdiagram')
-def flowdiagram(event, context):
+def flowdiagram(event, _):
     processor = FlowDiagramProcessor()
     return process_request(event, processor.flowdiagram_code, processor.api_version)
+
+
+@app.lambda_function(name='summarize')
+def summarize(event, _):
+    processor = SummarizeProcessor()
+    return process_request(event, processor.summarize_inputs, processor.api_version)
 
 
 @app.lambda_function(name='explain')

@@ -6,7 +6,7 @@ Polyverse Boost Cloud Service
 ## Version 0.5.6: June 2, 2023
 
 ### New Features
-- N/A
+- Added Summarize Service API - used for summarizing or compressing a series of text inputs
 
 # Enhancements
 - N/A
