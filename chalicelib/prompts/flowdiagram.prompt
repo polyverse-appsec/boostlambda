@@ -1,5 +1,6 @@
 Please generate a colored control flow graph for this source code, displaying the results in syntactically correct mermaid format.
 If you identify a primary path through the code, show it with the primary style below. Alternate non-error paths should use default non-colored style. Error paths should use the style below.
+The start of the graph should be the function name being analyzed, if available.
 If you identify a call to an external library or function, make sure it is shown in the diagram as a distinct flow block.
 If there is control flow to the source code, prefix the mermaid output with markdown code syntax to indicate a mermaid block. Example syntax should follow the form:
 

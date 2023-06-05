@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - Added Summarize Service API - used for summarizing or compressing a series of text inputs
 
 # Enhancements
-- Enable Flow Diagrams to show calls to external libraries or functions
+- Enable Flow Diagrams to start with function name, and show calls to external libraries or functions
 
 # Bug Fixes
 - Fix issue with 'delinquent' / suspended accounts not providing customer portal link
