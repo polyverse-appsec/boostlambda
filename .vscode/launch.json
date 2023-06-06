@@ -43,7 +43,7 @@
         "name": "Invoice Report",
         "type": "python",
         "request": "launch",
-        "program": "${workspaceFolder}/tests/get_pending.py",
+        "program": "${workspaceFolder}/tests/generate_invoice_report.py",
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "justMyCode": true
