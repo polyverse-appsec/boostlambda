@@ -93,6 +93,7 @@ def main(show_test, debug, dev, printall, exportcsv):
             past_invoices = stripe.Invoice.list(customer=customer.id, status='paid')
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
             customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
+            customer_discounts += invoice.total_discount_amounts[0].amount if invoice.total_discount_amounts else 0
 
             if debug:
                 print(customer)
@@ -120,7 +121,6 @@ def main(show_test, debug, dev, printall, exportcsv):
 
             total_pending_invoices += invoice.amount_due
             total_paid_invoices += customer_paid_invoices
-            total_customer_discounts += invoice.total_discount_amounts[0].amount if invoice.total_discount_amounts else 0
             total_customer_discounts += customer_discounts
 
             if customer.invoice_settings.default_payment_method:
@@ -140,7 +140,7 @@ def main(show_test, debug, dev, printall, exportcsv):
 
     # customers_list.sort()  # sort by org name
 
-    table = PrettyTable(['Organization', 'Email', 'Created', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discounted', 'Paid'])
+    table = PrettyTable(['Organization', 'Email', 'Created', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discount', 'Paid'])
     lastCustomerEmail = ''
     lastOrg = ''
     for org, email, created, cc, plan, usageInMb, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
