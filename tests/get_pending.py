@@ -44,7 +44,7 @@ def split_leading_number_from_description(description):
     # Extract number and plan name
     number = int(parts[0])
     plan = parts[1]
-    plan = re.sub(r'^Polyverse Boost \((.*)\)$', r'\1', plan)
+    plan = re.sub(r'^Polyverse Boost \(Tier (.*)\)$', r'T\1', plan)
 
     return number, plan
 
@@ -62,6 +62,8 @@ def main(show_test, debug, dev, printall):
     total_active_users = 0
     total_inactive_users = 0
     total_usage_kb = 0
+    total_paid_invoices = 0
+    total_customer_discounts = 0
 
     print("Retrieving Boost customer list")
     customers = stripe.Customer.list()
@@ -86,6 +88,11 @@ def main(show_test, debug, dev, printall):
             print(".", end="")
 
             invoice = stripe.Invoice.upcoming(customer=customer.id)
+
+            past_invoices = stripe.Invoice.list(customer=customer.id, status='paid')
+            customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
+            customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
+
             if debug:
                 print(customer)
                 print(invoice)
@@ -106,9 +113,14 @@ def main(show_test, debug, dev, printall):
                                        f"${invoice_data.amount / 100:.2f}",
                                        f"${invoice.amount_due / 100:.2f}",
                                        f"${invoice.total_discount_amounts[0].amount / 100:.2f}" if invoice.total_discount_amounts else "$0.00",
-                                       f"${invoice.total / 100:.2f}"])
+                                       f"${invoice.total / 100:.2f}",
+                                       f"${customer_discounts / 100:.2f}",
+                                       f"${customer_paid_invoices / 100:.2f}"])
 
             total_pending_invoices += invoice.amount_due
+            total_paid_invoices += customer_paid_invoices
+            total_customer_discounts += invoice.total_discount_amounts[0].amount if invoice.total_discount_amounts else 0
+            total_customer_discounts += customer_discounts
 
             if customer.invoice_settings.default_payment_method:
                 total_paying_customers += 1
@@ -127,10 +139,10 @@ def main(show_test, debug, dev, printall):
 
     # customers_list.sort()  # sort by org name
 
-    table = PrettyTable(['Organization', 'Email', 'Created', 'Credit Card', 'Plan', "Usage", 'Usage(%)', 'Pending', 'Due', 'Trial', 'Total'])
+    table = PrettyTable(['Organization', 'Email', 'Created', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discounted', 'Paid'])
     lastCustomerEmail = ''
     lastOrg = ''
-    for org, email, created, cc, plan, usageInMb, pending, due, discount, total in customers_list:
+    for org, email, created, cc, plan, usageInMb, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
         newOrg = org != lastOrg
         org = org if org != lastOrg else '"'
         created = created if newOrg else '"'
@@ -140,20 +152,24 @@ def main(show_test, debug, dev, printall):
         percent = percent if percent != '0.00%' else '-'
         usageInMb = "{:.0f} Kb".format((int(usageInMb))) if usageInMb != '0' else '-'
         # usageInMb = "{:.3f} Mb".format((int(usageInMb) / 1024)) if usageInMb != '0' else '-'
-        pending = pending if pending != '$0.00' else '-'
+        pending_item_cost = pending_item_cost if pending_item_cost != '$0.00' else '-'
         due = due if due != '$0.00' else '-'
         due = due if newOrg and due != '$0.00' else ''
         discount = discount if discount != '$0.00' else '-'
         discount = discount if newOrg else '"'
-        total = total if total != '$0.00' else '-'
-        total = total if newOrg else ''
+        total_pending = total_pending if total_pending != '$0.00' else '-'
+        total_pending = total_pending if newOrg else ''
+        total_paid = total_paid if total_paid != '$0.00' else '-'
+        total_paid = total_paid if newOrg else ''
+        customer_discounts = customer_discounts if customer_discounts != '$0.00' else '-'
+        customer_discounts = customer_discounts if newOrg else ''
         cc = cc if cc != 'False' else ''
         cc = cc if cc != 'True' else 'Yes'
         cc = cc if (newOrg and cc == 'Yes') else ''
 
         lastOrg = org if org != '"' else lastOrg
 
-        table.add_row([org, email, created, cc, plan, usageInMb, percent, pending, due, discount, total])
+        table.add_row([org, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
 
     print(table)
     print()
@@ -182,6 +198,8 @@ def main(show_test, debug, dev, printall):
     print(f"\nTotal Active Customers: {total_active_users} - {total_active_users / (total_inactive_users + total_active_users) * 100:.0f}%")
     print(f"\nTotal Inactive Customers: {total_inactive_users}")
     print(f"\nTotal Usage (MB): {total_usage_kb / 1024:.2f}")
+    print(f"\nTotal Customer Discounts: ${total_customer_discounts / 100:.2f}")
+    print(f"\nTotal Paid Invoice Amount for all Customers: ${total_paid_invoices / 100:.2f}")
     print()
 
 
