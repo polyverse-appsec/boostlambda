@@ -105,7 +105,7 @@ def main(show_test, debug, dev, printall):
                                        f"{usageInKb}",
                                        f"${invoice_data.amount / 100:.2f}",
                                        f"${invoice.amount_due / 100:.2f}",
-                                       f"${invoice.total_discount_amounts[0].amount / 100:.2f}",
+                                       f"${invoice.total_discount_amounts[0].amount / 100:.2f}" if invoice.total_discount_amounts else "$0.00",
                                        f"${invoice.total / 100:.2f}"])
 
             total_pending_invoices += invoice.amount_due
