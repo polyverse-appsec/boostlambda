@@ -6,6 +6,7 @@ import sys
 import pandas as pd
 import datetime
 import re
+import csv
 
 
 # Determine the parent directory's path.
@@ -49,7 +50,7 @@ def split_leading_number_from_description(description):
     return number, plan
 
 
-def main(show_test, debug, dev, printall):
+def main(show_test, debug, dev, printall, exportcsv):
 
     if not dev:
         os.environ['CHALICE_STAGE'] = 'prod'
@@ -171,7 +172,18 @@ def main(show_test, debug, dev, printall):
 
         table.add_row([org, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
 
-    print(table)
+    if exportcsv:
+        csvFile = 'customer_data.csv'
+        print(f"Writing CSV file: {csvFile}")
+        # If --csv switch is used, write data to CSV instead of table.
+        with open(csvFile, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Organization', 'Email', 'Created', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discounted', 'Paid'])
+            for org, email, created, cc, plan, usageInMb, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
+                writer.writerow([org, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
+    else:
+        # If --csv is not used, print the table.
+        print(table)
     print()
 
     # print all customer data record fields
@@ -209,10 +221,11 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action='store_true', help="Debug printing")
     parser.add_argument("--printAll", action='store_true', help="Print All Customer data in separate table")
     parser.add_argument("--dev", action='store_true', help="Use Dev Server")
+    parser.add_argument("--csv", action='store_true', help="Generate CSV file instead of printing table")
     args = parser.parse_args()
 
     try:
-        main(args.showTest, args.debug, args.dev, args.printAll)
+        main(args.showTest, args.debug, args.dev, args.printAll, args.csv)
     except KeyboardInterrupt:
         print('Canceling...')
         sys.exit(0)
