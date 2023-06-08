@@ -47,7 +47,7 @@ if 'AWS_CHALICE_CLI_MODE' not in os.environ:
 
 
 # a function to call openai to evaluate code for processing
-def customprocess_code(data, code, customprompt, account, function_name, correlation_id):
+def customprocess_input(data, code, customprompt, account, function_name, correlation_id):
 
     # if the user-provided prompt includes {code} block, then use that as the prompt
     if ("{{code}}" in customprompt):

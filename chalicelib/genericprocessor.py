@@ -35,7 +35,7 @@ class GenericProcessor:
 
         return prompts
 
-    def process_code(self, data, account, function_name, correlation_id, prompt_format_args):
+    def process_input(self, data, account, function_name, correlation_id, prompt_format_args):
         prompt = self.prompts['main'].format(**prompt_format_args)
         role_system = self.prompts['role_system']
 

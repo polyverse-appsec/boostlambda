@@ -12,7 +12,13 @@ class SummarizeProcessor(GenericProcessor):
     def summarize_inputs(self, data, account, function_name, correlation_id):
         inputs = data['inputs']
         analysis_type = data['analysis_type']
+        analysis_label = data['analysis_label']
 
-        result = self.process_code(data, account, function_name, correlation_id, {'inputs': inputs, 'analysis_type': analysis_type})
+        result = self.process_input(data, account, function_name, correlation_id,
+                                    {'inputs': inputs,
+                                     'analysis_type': analysis_type,
+                                     'analysis_label': analysis_label})
 
-        return result
+        return {"analysis": result,
+                "analysis_type": analysis_type,
+                "analysis_label": analysis_label}

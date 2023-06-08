@@ -6,7 +6,7 @@ from chalicelib.analyze import analyze_code, analyze_api_version
 from chalicelib.testgen import testgen_code, testgen_api_version
 from chalicelib.compliance import compliance_code, compliance_api_version
 from chalicelib.codeguidelines import guidelines_code, guidelines_api_version
-from chalicelib.customprocess import customprocess_code, customprocess_api_version
+from chalicelib.customprocess import customprocess_input, customprocess_api_version
 from chalicelib.blueprint import blueprint_code, blueprint_api_version
 from chalicelib.convert import explain_code, generate_code, convert_api_version, explain_api_version
 from chalicelib.payments import customer_portal_url, customerportal_api_version
@@ -93,9 +93,8 @@ def process_request(event, function, api_version):
             'body': json.dumps({"error": str(e)})
         }
 
-    # Put this into a JSON object
-    json_obj = {}
-    json_obj["analysis"] = result
+    # Put this into a JSON object - assuming the result is already an object
+    json_obj = result
 
     return {
         'statusCode': 200,
@@ -860,13 +859,13 @@ def customprocess(event, context):
         # Now call the openai function
         if cloudwatch is not None:
             with xray_recorder.capture('guidelines_code'):
-                analysis = customprocess_code(json_data, code, prompt, account, function_name, correlation_id)
+                analysis = customprocess_input(json_data, code, prompt, account, function_name, correlation_id)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            analysis = customprocess_code(json_data, code, prompt, account, function_name, correlation_id)
+            analysis = customprocess_input(json_data, code, prompt, account, function_name, correlation_id)
             end_time = time.monotonic()
-            print(f'Execution time {correlation_id} customProcess_code: {end_time - start_time:.3f} seconds')
+            print(f'Execution time {correlation_id} customProcess_input: {end_time - start_time:.3f} seconds')
 
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
