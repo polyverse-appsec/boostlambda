@@ -36,6 +36,8 @@ def process_request(event, function, api_version):
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
 
+    print(f'Inbound request {correlation_id} {function.__name__}')
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -125,6 +127,8 @@ def explain(event, context):
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
     function_name = context.function_name
+
+    print(f'Inbound request {correlation_id} {function_name}')
 
     try:
         # Extract parameters from the event object
@@ -221,6 +225,8 @@ def generate(event, context):
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
     function_name = context.function_name
+
+    print(f'Inbound request {correlation_id} {function_name}')
 
     try:
         # Extract parameters from the event object
@@ -323,6 +329,8 @@ def testgen(event, context):
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
     function_name = context.function_name
+
+    print(f'Inbound request {correlation_id} {function_name}')
 
     try:
         # Extract parameters from the event object
@@ -428,6 +436,8 @@ def analyze(event, context):
     organization = "unknown"
     function_name = context.function_name
 
+    print(f'Inbound request {correlation_id} {function_name}')
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -523,6 +533,8 @@ def compliance(event, context):
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
     function_name = context.function_name
+
+    print(f'Inbound request {correlation_id} {function_name}')
 
     try:
         # Extract parameters from the event object
@@ -620,6 +632,8 @@ def codeguidelines(event, context):
     organization = "unknown"
     function_name = context.function_name
 
+    print(f'Inbound request {correlation_id} {function_name}')
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -715,6 +729,8 @@ def blueprint(event, context):
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
     function_name = context.function_name
+
+    print(f'Inbound request {correlation_id} {function_name}')
 
     try:
         # Extract parameters from the event object
@@ -813,6 +829,8 @@ def customprocess(event, context):
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
     function_name = context.function_name
+
+    print(f'Inbound request {correlation_id} {function_name}')
 
     try:
         # Extract parameters from the event object
@@ -916,6 +934,8 @@ def customer_portal(event, context):
     organization = "unknown"
     function_name = context.function_name
 
+    print(f'Inbound request {correlation_id} {function_name}')
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -1014,6 +1034,8 @@ def user_organizations(event, context):
     email = "unknown"  # in case we fail early and don't get the email address
     organizations = "UNKNOWN"
     function_name = context.function_name
+
+    print(f'Inbound request {correlation_id} {function_name}')
 
     try:
         # Extract parameters from the event object

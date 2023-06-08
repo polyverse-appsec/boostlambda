@@ -3,6 +3,18 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.5.7: June 8, 2023
+
+### New Features
+- N/A
+
+# Enhancements
+- Add analysis type and label to Summary results (JSON)
+- Add inbound request logging to all services
+
+# Bug Fixes
+- N/A
+
 ## Version 0.5.6: June 2, 2023
 
 ### New Features
