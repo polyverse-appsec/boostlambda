@@ -262,6 +262,11 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
                 raise ExtendedAccountBillingError("Billing error: Please check your credit card on file and that you have an active Polyverse Boost subscription")
             else:
                 print(f'Billing error:{email}: Please check your credit card on file and that you have an active Polyverse Boost subscription')
+        elif account and account['status'] == 'expired':
+            if raiseOnError:
+                raise ExtendedAccountBillingError("Boost Trial Expired: Your Boost trial license has expired. To continue using Boost service, please visit your account dashboard and update your payment information.")
+            else:
+                print(f'Boost Trial Expired:{email}: Your Boost trial license has expired. To continue using Boost service, please visit your account dashboard and update your payment information.')
         else:
             account = {'status': 'unregistered'}
             if raiseOnError:
