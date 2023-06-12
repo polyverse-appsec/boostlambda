@@ -45,7 +45,7 @@ def split_leading_number_from_description(description):
     # Extract number and plan name
     number = int(parts[0])
     plan = parts[1]
-    plan = re.sub(r'^Polyverse Boost \(Tier (.*)\)$', r'T\1', plan)
+    plan = re.sub(r'^Polyverse Boost \(Tier (.*) at \$([\d.]+) \/ month\)$', r'T\1 at $\2', plan)
 
     return number, plan
 
@@ -57,6 +57,8 @@ def main(show_test, debug, dev, printall, exportcsv, user):
 
     secrets = get_secrets()
     stripe.api_key = secrets['stripe']
+
+    from chalicelib.payments import check_customer_account_status # noqa
 
     total_pending_invoices = 0
     total_paying_customers = 0
@@ -103,6 +105,8 @@ def main(show_test, debug, dev, printall, exportcsv, user):
                 print(customer)
                 print(invoice)
 
+            _, account_status = check_customer_account_status(customer)
+
             thisCustomerUsage = 0
             for invoice_data in invoice.lines.data:
                 usageInKb, plan_name = split_leading_number_from_description(invoice_data.description)
@@ -113,6 +117,7 @@ def main(show_test, debug, dev, printall, exportcsv, user):
                 customers_list.append([customer.metadata.org,
                                        f"{invoice_data.price.metadata.email}",
                                        f"{datetime.datetime.fromtimestamp(customer.created).date()}",
+                                       f"{account_status}",
                                        f"{customer.invoice_settings.default_payment_method is not None}",
                                        f"{plan_name}",
                                        f"{usageInKb}",
@@ -135,6 +140,8 @@ def main(show_test, debug, dev, printall, exportcsv, user):
             else:
                 total_inactive_users += 1
 
+            customer_iter = customers.auto_paging_iter()
+
         except Exception as e:
             if debug:
                 print(customer)
@@ -142,81 +149,87 @@ def main(show_test, debug, dev, printall, exportcsv, user):
 
     print()
 
-    # customers_list.sort()  # sort by org name
-
-    table = PrettyTable(['Organization', 'Email', 'Created', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discount', 'Paid'])
-    lastCustomerEmail = ''
-    lastOrg = ''
-    for org, email, created, cc, plan, usageInMb, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
-        newOrg = org != lastOrg
-        org = org if org != lastOrg else '"'
-        created = created if newOrg else '"'
-        email = email if email != lastCustomerEmail else '"'
-        lastCustomerEmail = email
-        percent = "{:.2f}%".format(int(usageInMb) / total_usage_kb * 100)  # usageInMb is Kb at this point
-        percent = percent if percent != '0.00%' else '-'
-        usageInMb = "{:.0f} Kb".format((int(usageInMb))) if usageInMb != '0' else '-'
-        # usageInMb = "{:.3f} Mb".format((int(usageInMb) / 1024)) if usageInMb != '0' else '-'
-        pending_item_cost = pending_item_cost if pending_item_cost != '$0.00' else '-'
-        due = due if due != '$0.00' else '-'
-        due = due if newOrg and due != '$0.00' else ''
-        discount = discount if discount != '$0.00' else '-'
-        discount = discount if newOrg else '"'
-        total_pending = total_pending if total_pending != '$0.00' else '-'
-        total_pending = total_pending if newOrg else ''
-        total_paid = total_paid if total_paid != '$0.00' else '-'
-        total_paid = total_paid if newOrg else ''
-        customer_discounts = customer_discounts if customer_discounts != '$0.00' else '-'
-        customer_discounts = customer_discounts if newOrg else ''
-        cc = cc if cc != 'False' else ''
-        cc = cc if cc != 'True' else 'Yes'
-        cc = cc if (newOrg and cc == 'Yes') else ''
-
-        lastOrg = org if org != '"' else lastOrg
-
-        table.add_row([org, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
-
     if exportcsv:
         csvFile = 'customer_data.csv'
         print(f"Writing CSV file: {csvFile}")
         # If --csv switch is used, write data to CSV instead of table.
         with open(csvFile, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Organization', 'Email', 'Created', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discounted', 'Paid'])
-            for org, email, created, cc, plan, usageInMb, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
+            writer.writerow(['Organization', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discounted', 'Paid'])
+            for org, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
                 writer.writerow([org, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
     else:
+
+        # customers_list.sort()  # sort by org name
+
+        table = PrettyTable(['Organization', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discount', 'Paid'])
+        lastCustomerEmail = ''
+        lastOrg = ''
+        for org, email, created, status, cc, plan, usageInMb, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
+            newOrg = org != lastOrg
+            org = org if org != lastOrg else '"'
+            created = created if newOrg else '"'
+            email = email if email != lastCustomerEmail else '"'
+            lastCustomerEmail = email
+            percent = "{:.2f}%".format(int(usageInMb) / total_usage_kb * 100)  # usageInMb is Kb at this point
+            percent = percent if percent != '0.00%' else '-'
+            usageInMb = "{:.0f} Kb".format((int(usageInMb))) if usageInMb != '0' else '-'
+            # usageInMb = "{:.3f} Mb".format((int(usageInMb) / 1024)) if usageInMb != '0' else '-'
+            pending_item_cost = pending_item_cost if pending_item_cost != '$0.00' else '-'
+            due = due if due != '$0.00' else '-'
+            due = due if newOrg and due != '$0.00' else ''
+            discount = discount if discount != '$0.00' else '-'
+            discount = discount if newOrg else '"'
+            total_pending = total_pending if total_pending != '$0.00' else '-'
+            total_pending = total_pending if newOrg else ''
+            total_paid = total_paid if total_paid != '$0.00' else '-'
+            total_paid = total_paid if newOrg else ''
+            customer_discounts = customer_discounts if customer_discounts != '$0.00' else '-'
+            customer_discounts = customer_discounts if newOrg else ''
+            cc = cc if cc != 'False' else ''
+            cc = cc if cc != 'True' else 'Yes'
+            cc = cc if (newOrg and cc == 'Yes') else ''
+
+            lastOrg = org if org != '"' else lastOrg
+
+            if len(org) > 20:
+                shortOrg = org[:20] + "..."
+            else:
+                shortOrg = org
+            table.add_row([shortOrg, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
+
         # If --csv is not used, print the table.
         print(table)
-    print()
 
-    # print all customer data record fields
-    if printall:
-        # Convert iterable of Customer objects to list of dictionaries
-        customers_dict_list = [customer.to_dict() for customer in customers]
+        print()
 
-        pd.set_option('display.max_columns', None)  # None means unlimited.
-        pd.set_option('display.max_colwidth', 25)  # Adjust as needed.
+        # print all customer data record fields
+        if printall:
+            # Convert iterable of Customer objects to list of dictionaries
+            customers_dict_list = [customer.to_dict() for customer in customers]
 
-        # Create a pandas DataFrame from the list of dictionaries
-        df = pd.json_normalize(customers_dict_list)
+            pd.set_option('display.max_columns', None)  # None means unlimited.
+            pd.set_option('display.max_colwidth', 25)  # Adjust as needed.
 
-        # Set 'email' column as the first column
-        column_order = ['email'] + [col for col in df.columns if col != 'email']
-        df = df[column_order]
+            # Create a pandas DataFrame from the list of dictionaries
+            df = pd.json_normalize(customers_dict_list)
 
-        print(df)
+            # Set 'email' column as the first column
+            column_order = ['email'] + [col for col in df.columns if col != 'email']
+            df = df[column_order]
 
-    print()
-    print(f"\nTotal Pending Invoice Amount for all Customers: ${total_pending_invoices / 100:.2f}")
-    print(f"\nTotal Paying Customers: {total_paying_customers} - {total_paying_customers / (total_active_users) * 100:.0f}% Converted to Paid")
-    print(f"\nTotal Trial Customers: {total_active_users - total_paying_customers} - {(total_active_users - total_paying_customers) / (total_active_users) * 100:.0f}% Active")
-    print(f"\nTotal Active Customers: {total_active_users} - {total_active_users / (total_inactive_users + total_active_users) * 100:.0f}%")
-    print(f"\nTotal Inactive Customers: {total_inactive_users}")
-    print(f"\nTotal Usage (MB): {total_usage_kb / 1024:.2f}")
-    print(f"\nTotal Customer Discounts: ${total_customer_discounts / 100:.2f}")
-    print(f"\nTotal Paid Invoice Amount for all Customers: ${total_paid_invoices / 100:.2f}")
-    print()
+            print(df)
+
+        print()
+        print(f"\nTotal Pending Invoice Amount for all Customers: ${total_pending_invoices / 100:.2f}")
+        print(f"\nTotal Paying Customers: {total_paying_customers} - {total_paying_customers / (total_active_users) * 100:.0f}% Converted to Paid")
+        print(f"\nTotal Trial Customers: {total_active_users - total_paying_customers} - {(total_active_users - total_paying_customers) / (total_active_users) * 100:.0f}% Active")
+        print(f"\nTotal Active Customers: {total_active_users} - {total_active_users / (total_inactive_users + total_active_users) * 100:.0f}%")
+        print(f"\nTotal Inactive Customers: {total_inactive_users}")
+        print(f"\nTotal Usage (MB): {total_usage_kb / 1024:.2f}")
+        print(f"\nTotal Customer Discounts: ${total_customer_discounts / 100:.2f}")
+        print(f"\nTotal Paid Invoice Amount for all Customers: ${total_paid_invoices / 100:.2f}")
+        print()
 
 
 if __name__ == "__main__":
