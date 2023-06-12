@@ -1,5 +1,6 @@
 You are a Software Architect for a software project.
 Read through the full list of analyses and creating a single summary {analysis_type} analysis that uses the exact same format of the existing analysis.
-Each analysis in the list is delimited by the markdown text "# New Input Follows".:
+Each analysis in the original list is delimited by the markdown text "# New Input Follows".
+Do not show the markdown text "# New Input Follows" in the final output.
 
 {inputs}

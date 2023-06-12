@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.5.8: June 14, 2023
+## Version 0.6.0: June 14, 2023
 
 ### New Features
 - N/A
@@ -12,7 +12,9 @@ Polyverse Boost Cloud Service
 - Migrated all Boost services to generic processor for shared infrastructure
 
 # Bug Fixes
-- N/A
+- Fix xray tracing on error cases for all Generic Processor-derived services
+- Fix Blueprint Update prompt - wasn't including the original blueprint in the prompt
+
 ## Version 0.5.7: June 8, 2023
 
 ### New Features
