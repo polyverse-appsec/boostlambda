@@ -14,6 +14,7 @@ Polyverse Boost Cloud Service
 # Bug Fixes
 - Fix xray tracing on error cases for all Generic Processor-derived services
 - Fix Blueprint Update prompt - wasn't including the original blueprint in the prompt
+- Fix bug that prevented completed Trial licenses from blocking unpaid new usage without a credit cardxwxw
 
 ## Version 0.5.7: June 8, 2023
 
