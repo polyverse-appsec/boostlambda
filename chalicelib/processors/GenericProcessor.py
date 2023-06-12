@@ -1,7 +1,7 @@
 # generic.py
 import openai
 import traceback
-from . import pvsecret
+from .. import pvsecret
 import os
 from chalicelib.telemetry import capture_metric, InfoMetrics, CostMetrics
 from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
@@ -35,27 +35,35 @@ class GenericProcessor:
 
         return prompts
 
-    def process_input(self, data, account, function_name, correlation_id, prompt_format_args):
+    def generate_messages(self, data, prompt_format_args):
+
         prompt = self.prompts['main'].format(**prompt_format_args)
         role_system = self.prompts['role_system']
 
+        this_messages = [
+            {
+                "role": "system",
+                "content": role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }]
+
+        return this_messages, prompt, role_system
+
+    def process_input(self, data, account, function_name, correlation_id, prompt_format_args):
         # enable user to override the model to gpt-3 or gpt-4
         model = OpenAIDefaults.boost_default_gpt_model
         if 'model' in data:
             model = data['model']
 
+        # And then in process_input
+        this_messages, prompt, role_system = self.generate_messages(data, prompt_format_args)
+
         params = {
             "model": model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": role_system
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]}
+            "messages": this_messages}
 
         if OpenAIDefaults.boost_tuned_max_tokens != 0:
             params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens

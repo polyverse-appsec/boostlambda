@@ -6,7 +6,7 @@
         "name": "Local Lambda Server",
         "type": "python",
         "request": "launch",
-        "program": "${workspaceFolder}/tests/server.py",
+        "program": "${workspaceFolder}/server/server.py",
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "justMyCode": true
@@ -43,7 +43,7 @@
         "name": "Invoice Report",
         "type": "python",
         "request": "launch",
-        "program": "${workspaceFolder}/tests/generate_invoice_report.py",
+        "program": "${workspaceFolder}/client/generate_invoice_report.py",
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "justMyCode": true

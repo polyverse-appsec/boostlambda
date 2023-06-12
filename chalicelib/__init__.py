@@ -1,1 +1,2 @@
-__all__ = ["convert", "pvsecret", "auth", "testgen", "analyze", "compliance", "codeguidelines", "blueprint", "constants", "customprocess", "telemetry", "usage", "version", "flowdiagram", "genericprocessor"]
+
+__all__ = ["GenerateProcessor", "pvsecret", "auth", "TestGeneratorProcessor", "AnalyzeProcessor", "ComplianceProcessor", "CodingGuidelinesProcessor", "BlueprintProcessor", "constants", "CustomProcessor", "telemetry", "usage", "version", "FlowDiagramProcessor", "GenericProcessor", "SummarizeProcessor", "ExplainProcessor"]

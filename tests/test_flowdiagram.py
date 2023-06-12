@@ -1,6 +1,6 @@
 from chalice.test import Client
 from app import app
-from chalicelib.flowdiagram import sanitize_mermaid_code
+from chalicelib.processors.FlowDiagramProcessor import sanitize_mermaid_code
 
 import re
 import pytest

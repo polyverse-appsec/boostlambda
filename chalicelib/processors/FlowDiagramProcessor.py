@@ -1,4 +1,4 @@
-from chalicelib.genericprocessor import GenericProcessor
+from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 import re
 
@@ -11,7 +11,9 @@ class FlowDiagramProcessor(GenericProcessor):
         })
 
     def flowdiagram_code(self, data, account, function_name, correlation_id):
-        result = self.process_input(data, account, function_name, correlation_id, {'code': data})
+        code = data['code']
+
+        result = self.process_input(data, account, function_name, correlation_id, {'code': code})
         cleanedResult = sanitize_mermaid_code(result)
 
         return {"analysis": cleanedResult}

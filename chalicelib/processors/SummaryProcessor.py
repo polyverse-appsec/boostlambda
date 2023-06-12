@@ -1,4 +1,4 @@
-from chalicelib.genericprocessor import GenericProcessor
+from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 
 

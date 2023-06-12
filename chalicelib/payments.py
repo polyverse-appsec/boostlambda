@@ -221,7 +221,7 @@ def check_customer_account_status(customer):
         return True, "paid"
 
     # if stripe thinks the customer is delinquent, then we will suspend them
-    if customer['delinquent'] == True:
+    if customer['delinquent'] is True:
         return False, "suspended"
 
     # it seems like a non-zero balance also implies a trial license
