@@ -65,8 +65,10 @@ def process_request(event, function, api_version):
         exception_info = traceback.format_exc().replace('\n', ' ')
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
         if cloudwatch is not None:
-            xray_recorder.put_annotation('correlation_id', correlation_id)
-            xray_recorder.put_annotation('error', exception_info)
+            subsegment = xray_recorder.begin_subsegment('exception')
+            subsegment.put_annotation('correlation_id', correlation_id)
+            subsegment.put_annotation('error', exception_info)
+            xray_recorder.end_subsegment()
 
         status_code = getattr(e, 'STATUS_CODE', 500)
 
