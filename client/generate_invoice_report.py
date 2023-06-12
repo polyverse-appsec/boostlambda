@@ -50,7 +50,7 @@ def split_leading_number_from_description(description):
     return number, plan
 
 
-def main(show_test, debug, dev, printall, exportcsv):
+def main(show_test, debug, dev, printall, exportcsv, user):
 
     if not dev:
         os.environ['CHALICE_STAGE'] = 'prod'
@@ -78,6 +78,10 @@ def main(show_test, debug, dev, printall, exportcsv):
             if 'metadata' not in customer or 'org' not in customer.metadata:
                 # if debug:
                 #     print(f"Non-Boost Customer: {customer.email}")
+                continue
+
+            # In your 'Processing customer data' loop, add a check for the user email
+            if user and customer.email != user:
                 continue
 
             # exclude any customer with polyverse in email address, unless the command line argument "showTest" is specified
@@ -222,10 +226,11 @@ if __name__ == "__main__":
     parser.add_argument("--printAll", action='store_true', help="Print All Customer data in separate table")
     parser.add_argument("--dev", action='store_true', help="Use Dev Server")
     parser.add_argument("--csv", action='store_true', help="Generate CSV file instead of printing table")
+    parser.add_argument("--user", type=str, help="Show invoice data for a single user")
     args = parser.parse_args()
 
     try:
-        main(args.showTest, args.debug, args.dev, args.printAll, args.csv)
+        main(args.showTest, args.debug, args.dev, args.printAll, args.csv, args.user)
     except KeyboardInterrupt:
         print('Canceling...')
         sys.exit(0)
