@@ -216,6 +216,10 @@ def update_usage_for_text(account, text):
 def check_customer_account_status(customer):
     invoice = stripe.Invoice.upcoming(customer=customer.id)
 
+    # We're going to treat polyverse accounts as paid, even though no credit card on file
+    if customer['email'].endswith("@polyverse.io"):
+        return True, "paid"
+
     # Check if the customer has a default payment method
     if customer['invoice_settings']['default_payment_method']:
         return True, "paid"
