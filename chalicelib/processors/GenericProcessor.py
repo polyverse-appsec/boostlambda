@@ -74,15 +74,14 @@ class GenericProcessor:
 
         return chunks, input_token_buffer - chunk_size
 
+    def calculate_input_token_buffer(self, total_max) -> int:
+        return math.floor(total_max * 0.5)
+
     def reprocess_inputs_against_token_limit(self, params, prompt, function_name, tuned_max_tokens, total_max, input_tokens) -> Tuple[bool, str, int]:
         # if we're doing 'summarize', we'll leave most buffer for the input, and a small amount for the output - fixed
         # if we're doing any other input, we'll roughly split the token buffer into 50/50 for input and output
 
-        if function_name == 'summarize':
-            # we'll leave 90% of the buffer for the input, and 10% for the output
-            input_token_buffer = math.floor(total_max * 0.9)
-        else:
-            input_token_buffer = math.floor(total_max * 0.5)
+        input_token_buffer = self.calculate_input_token_buffer(total_max)
 
         # If we are over the token limit, we need to reprocess the input
         remaining_input_buffer = input_token_buffer - input_tokens
@@ -113,6 +112,20 @@ class GenericProcessor:
                 message['content'] = prompt   # Replace with new prompt
 
         return this_messages
+
+    def runAnalysis(self, params, account, function_name, correlation_id) -> str:
+        try:
+            response = openai.ChatCompletion.create(**params)
+        except Exception as e:
+            # check exception type for OpenAI rate limiting on API calls
+            if isinstance(e, openai.error.RateLimitError):
+                # if we hit the rate limit, send a cloudwatch alert and raise the error
+                capture_metric(account['customer'], account['email'], function_name, correlation_id,
+                               {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
+
+            raise e
+
+        return response.choices[0].message.content
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
         # enable user to override the model to gpt-3 or gpt-4
@@ -156,18 +169,7 @@ class GenericProcessor:
 
             params["max_tokens"] = this_boost_tuned_max_tokens
 
-        try:
-            response = openai.ChatCompletion.create(**params)
-        except Exception as e:
-            # check exception type for OpenAI rate limiting on API calls
-            if isinstance(e, openai.error.RateLimitError):
-                # if we hit the rate limit, send a cloudwatch alert and raise the error
-                capture_metric(account['customer'], account['email'], function_name, correlation_id,
-                               {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
-
-            raise e
-
-        result = response.choices[0].message.content
+        result = self.runAnalysis(**params)
 
         if truncated:
             truncation = markdown_emphasize(f"Truncated input, discarded ~{OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} words\n\n")

@@ -1,3 +1,5 @@
+import math
+
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 
@@ -8,6 +10,10 @@ class SummarizeProcessor(GenericProcessor):
             'main': 'summarize.prompt',
             'role_system': 'summarize-role-system.prompt'
         })
+
+    def calculate_input_token_buffer(self, total_max) -> int:
+        # we'll leave 90% of the buffer for the input, and 10% for the output
+        return math.floor(total_max * 0.9)
 
     def summarize_inputs(self, data, account, function_name, correlation_id):
         inputs = data['inputs']
