@@ -50,7 +50,7 @@ class GenericProcessor:
                 "content": prompt
             }]
 
-        return this_messages, prompt, role_system
+        return this_messages, prompt
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args):
         # enable user to override the model to gpt-3 or gpt-4
@@ -59,20 +59,20 @@ class GenericProcessor:
             model = data['model']
 
         # And then in process_input
-        this_messages, prompt, role_system = self.generate_messages(data, prompt_format_args)
+        this_messages, prompt = self.generate_messages(data, prompt_format_args)
 
         params = {
             "model": model,
             "messages": this_messages}
-
-        if OpenAIDefaults.boost_tuned_max_tokens != 0:
-            params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens
 
         # https://community.openai.com/t/cheat-sheet-mastering-temperature-and-top-p-in-chatgpt-api-a-few-tips-and-tricks-on-controlling-the-creativity-deterministic-output-of-prompt-responses/172683
         if 'top_p' in data:
             params["top_p"] = float(data['top_p'])
         elif 'temperature' in data:
             params["temperature"] = float(data['temperature'])
+
+        if OpenAIDefaults.boost_tuned_max_tokens != 0:
+            params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens
 
         try:
             response = openai.ChatCompletion.create(**params)
@@ -93,11 +93,11 @@ class GenericProcessor:
 
         try:
             # Get the cost of the prompting - so we have visibiity into our cost per user API
-            prompt_size = len(prompt) + len(role_system)
+            prompt_size = len(this_messages)
             user_input = self.collate_all_user_input(data)
             user_input_size = len(user_input)
             boost_cost = get_boost_cost(prompt_size + user_input_size)
-            openai_input_tokens, openai_input_cost = get_openai_usage(prompt + role_system)
+            openai_input_tokens, openai_input_cost = get_openai_usage(this_messages)
             openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(user_input)
             openai_output_tokens, openai_output_cost = get_openai_usage(result, False)
             openai_tokens = openai_input_tokens + openai_output_tokens

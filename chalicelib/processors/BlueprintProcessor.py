@@ -38,7 +38,7 @@ class BlueprintProcessor(GenericProcessor):
                 "content": prompt
             }]
 
-        return this_messages, prompt, role_system
+        return this_messages, prompt
 
     def blueprint_code(self, data, account, function_name, correlation_id):
 

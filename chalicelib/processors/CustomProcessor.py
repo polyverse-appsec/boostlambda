@@ -41,7 +41,7 @@ class CustomProcessor(GenericProcessor):
                     "content": prompt
                 }]
 
-        return this_messages, prompt, this_role_system
+        return this_messages, prompt
 
     def customprocess_code(self, data, account, function_name, correlation_id):
         # Extract the code from the json data
