@@ -14,7 +14,7 @@ class FlowDiagramProcessor(GenericProcessor):
         code = data['code']
 
         result = self.process_input(data, account, function_name, correlation_id, {'code': code})
-        cleanedResult = sanitize_mermaid_code(result)
+        cleanedResult = sanitize_mermaid_code(result.output)
 
         return {"analysis": cleanedResult}
 

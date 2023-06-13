@@ -1,9 +1,16 @@
 import tiktoken
 import os
+from typing import Tuple, List
 
 
 class OpenAIDefaults:
-    boost_max_tokens_default = 0  # 0 is disabled max, 32768 for gpt-4-32k, 4000 for gpt3.5 and 8192 for gpt4
+    boost_max_tokens_unlimited = 0
+    boost_max_tokens_gpt_4 = 8192
+    boost_max_tokens_gpt_4_32k = 32768
+    boost_max_tokens_gpt_35 = 4096
+
+    boost_max_tokens_default = boost_max_tokens_gpt_4  # 0 is disabled max, 32768 for gpt-4-32k, 4000 for gpt3.5 and 8192 for gpt4
+
     boost_tuned_max_tokens = boost_max_tokens_default  # could be 1000 based on OpenAI recommendation, no obvious response time difference
 
     # Models to choose from
@@ -59,35 +66,54 @@ if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
     print("Loaded OpenAI encodings")
 
 
-def num_tokens_from_string(string: str) -> int:
-    """Returns the number of tokens in a text string."""
+def num_tokens_from_string(string: str) -> Tuple[int, List[int]]:
+    # Returns the number of tokens in a text string, and the encoded string
     if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4):
         if (code_encoding is None):
-            return len(string)
+            raise Exception("No encoding available")
 
-        num_tokens = len(code_encoding.encode(string))
-        return num_tokens
+        tokenized = code_encoding.encode(string)
+        num_tokens = len(tokenized)
+        return num_tokens, tokenized
 
     # else we assume we are using gpt3.5 or older
     if (text_encoding is None):
-        return len(string)
+        raise Exception("No encoding available")
 
-    num_tokens = len(text_encoding.encode(string))
-    return num_tokens
+    tokenized = text_encoding.encode(string)
+    num_tokens = len(tokenized)
+    return num_tokens, tokenized
+
+
+def decode_string_from_input(input: list[int]) -> str:
+    # Returns the number of tokens in a text string, and the encoded string
+    if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4):
+        if (code_encoding is None):
+            raise Exception("No encoding available")
+
+        output = code_encoding.decode(input)
+        return output
+
+    # else we assume we are using gpt3.5 or older
+    if (text_encoding is None):
+        raise Exception("No encoding available")
+
+    output = text_encoding.decode(input)
+    return output
 
 
 def get_openai_usage(payload, input: bool = True):
 
-    token_count = num_tokens_from_string(payload)
+    token_count, _ = num_tokens_from_string(payload)
 
     if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4):
         if (input):
-            if (token_count < 8000):
+            if (token_count < OpenAIDefaults.boost_max_tokens_gpt_4):
                 cost_per_token = cost_gpt4_per_prompt_token_lt_8000
             else:
                 cost_per_token = cost_gpt4_per_prompt_token_lt_32000
         else:
-            if (token_count < 8000):
+            if (token_count < OpenAIDefaults.boost_max_tokens_gpt_4):
                 cost_per_token = cost_gpt4_per_completion_token_lt_8000
             else:
                 cost_per_token = cost_gpt4_per_completion_token_lt_32000

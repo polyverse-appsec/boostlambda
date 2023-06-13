@@ -29,4 +29,4 @@ class TestGeneratorProcessor(GenericProcessor):
                                      'language': outputlanguage,
                                      'framework': framework})
 
-        return {"testcode": result}
+        return {"testcode": result['output']}

@@ -19,6 +19,6 @@ class SummarizeProcessor(GenericProcessor):
                                      'analysis_type': analysis_type,
                                      'analysis_label': analysis_label})
 
-        return {"analysis": result,
+        return {"analysis": result['output'],
                 "analysis_type": analysis_type,
                 "analysis_label": analysis_label}

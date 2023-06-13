@@ -44,4 +44,4 @@ class BlueprintProcessor(GenericProcessor):
 
         result = self.process_input(data, account, function_name, correlation_id, {})
 
-        return {"blueprint": result}
+        return {"blueprint": result['output']}

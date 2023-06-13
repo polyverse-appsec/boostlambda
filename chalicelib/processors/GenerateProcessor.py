@@ -30,4 +30,4 @@ class GenerateProcessor(GenericProcessor):
                                      'original_code': original_code,
                                      'language': outputlanguage})
 
-        return {"code": result}
+        return {"code": result['output']}

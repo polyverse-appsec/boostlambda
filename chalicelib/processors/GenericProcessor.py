@@ -3,8 +3,13 @@ import openai
 import traceback
 from .. import pvsecret
 import os
+import math
+from typing import List, Tuple
+
+from markdown import markdown_emphasize
+
 from chalicelib.telemetry import capture_metric, InfoMetrics, CostMetrics
-from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults
+from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults, num_tokens_from_string, decode_string_from_input
 from chalicelib.payments import update_usage_for_text
 
 # Define the directory where prompt files are stored
@@ -52,7 +57,64 @@ class GenericProcessor:
 
         return this_messages, prompt
 
-    def process_input(self, data, account, function_name, correlation_id, prompt_format_args):
+    def calculate_chunk_size(self, input_tokens, buffer_size) -> int:
+        n_chunks = math.ceil(input_tokens / buffer_size)
+        chunk_size = math.ceil(input_tokens / n_chunks)
+        return chunk_size
+
+    def chunk_input_based_on_token_limit(self, prompt, input_token_buffer, input_tokens) -> Tuple[List[str], int]:
+        chunk_size = self.calculate_chunk_size(input_tokens, input_token_buffer)
+        _, tokens = num_tokens_from_string(prompt)
+
+        chunks = []
+        for i in range(0, len(tokens), chunk_size):
+            chunk_tokens = tokens[i:i + chunk_size]
+            chunk_text = decode_string_from_input(chunk_tokens)
+            chunks.append(chunk_text)
+
+        return chunks, input_token_buffer - chunk_size
+
+    def reprocess_inputs_against_token_limit(self, params, prompt, function_name, tuned_max_tokens, total_max, input_tokens) -> Tuple[bool, str, int]:
+        # if we're doing 'summarize', we'll leave most buffer for the input, and a small amount for the output - fixed
+        # if we're doing any other input, we'll roughly split the token buffer into 50/50 for input and output
+
+        if function_name == 'summarize':
+            # we'll leave 90% of the buffer for the input, and 10% for the output
+            input_token_buffer = math.floor(total_max * 0.9)
+        else:
+            input_token_buffer = math.floor(total_max * 0.5)
+
+        # If we are over the token limit, we need to reprocess the input
+        remaining_input_buffer = input_token_buffer - input_tokens
+        if remaining_input_buffer < 0:
+            # If we are over the token limit, we're going to need to truncate the original input by enough to create
+            # enough buffer to get a useful result - say 20% - 50% of the original input
+            prompts, max_chunk_size = self.chunk_input_based_on_token_limit(prompt, input_token_buffer, input_tokens)
+
+            # update output max tokens to be the remaining buffer after the max chunk size
+            tuned_max_tokens = tuned_max_tokens - max_chunk_size
+
+            # we may be discarding / truncating the rest of the input, but we'll retain the first chunk for processing
+            prompt = prompts[0]
+
+            truncated = True
+        else:
+            # since we have remaining input buffer, use it for the output buffer
+            tuned_max_tokens = tuned_max_tokens - input_tokens
+            truncated = False
+
+        return truncated, prompt, tuned_max_tokens
+
+    def update_messages(self, this_messages, prompt) -> any:
+
+        # Replace the 'user' 'content' with the new prompt
+        for message in this_messages:
+            if message['role'] == 'user':
+                message['content'] = prompt   # Replace with new prompt
+
+        return this_messages
+
+    def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
         # enable user to override the model to gpt-3 or gpt-4
         model = OpenAIDefaults.boost_default_gpt_model
         if 'model' in data:
@@ -71,8 +133,28 @@ class GenericProcessor:
         elif 'temperature' in data:
             params["temperature"] = float(data['temperature'])
 
+        # Get the cost of the inputs - so we have can manage our token limits
+        prompt_size = len(str(this_messages))
+        user_input = self.collate_all_user_input(data)
+        user_input_size = len(user_input)
+        openai_input_tokens, openai_input_cost = get_openai_usage(str(this_messages))
+        openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(user_input)
+
+        truncated = False
+        chunked = False
         if OpenAIDefaults.boost_tuned_max_tokens != 0:
-            params["max_tokens"] = OpenAIDefaults.boost_tuned_max_tokens
+            # subtract our constructed input from our total token limit and set that as max tokens
+            this_boost_tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - openai_input_tokens
+            chunked = True
+
+            truncated, prompt, this_boost_tuned_max_tokens = self.reprocess_inputs_against_token_limit(
+                params, prompt, function_name, this_boost_tuned_max_tokens, OpenAIDefaults.boost_tuned_max_tokens, openai_input_tokens)
+
+            if truncated:
+                print(f"{function_name}:Truncation:{account['email']}:{correlation_id}:Truncated user input, discarded {OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} tokens")
+                params['messages'] = self.update_messages(params['messages'], prompt)
+
+            params["max_tokens"] = this_boost_tuned_max_tokens
 
         try:
             response = openai.ChatCompletion.create(**params)
@@ -87,18 +169,20 @@ class GenericProcessor:
 
         result = response.choices[0].message.content
 
+        if truncated:
+            truncation = markdown_emphasize(f"Truncated input, discarded ~{OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} words\n\n")
+            result = truncation + result
+
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
         email = account['email']
 
         try:
-            # Get the cost of the prompting - so we have visibiity into our cost per user API
-            prompt_size = len(this_messages)
-            user_input = self.collate_all_user_input(data)
-            user_input_size = len(user_input)
-            boost_cost = get_boost_cost(prompt_size + user_input_size)
-            openai_input_tokens, openai_input_cost = get_openai_usage(this_messages)
-            openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(user_input)
+            # Get the cost of the outputs and prior inputs - so we have visibiity into our cost per user API
+            output_size = len(result)
+
+            boost_cost = get_boost_cost(user_input_size + output_size)
+
             openai_output_tokens, openai_output_cost = get_openai_usage(result, False)
             openai_tokens = openai_input_tokens + openai_output_tokens
             openai_cost = openai_input_cost + openai_output_cost
@@ -132,7 +216,11 @@ class GenericProcessor:
             print(f"{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error capturing metrics: ", exception_info)
             pass  # Don't fail if we can't capture metrics
 
-        return result
+        return {
+            "output": result,
+            "truncated": truncated,
+            "chunked": chunked
+        }
 
     # used for calculating usage on user input. The return string is virtually useless in this format
     def collate_all_user_input(self, data):
