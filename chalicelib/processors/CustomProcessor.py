@@ -58,4 +58,9 @@ class CustomProcessor(GenericProcessor):
                                     {'code': code,
                                      'customprompt': prompt})
 
-        return {"analysis": result['output']}
+        return {
+            "analysis": result['output'],
+            "truncated": result['truncated'],
+            "chunked": result['chunked'],
+        }
+

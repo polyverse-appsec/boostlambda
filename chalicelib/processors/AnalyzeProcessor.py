@@ -20,4 +20,8 @@ class AnalyzeProcessor(GenericProcessor):
         result = self.process_input(data, account, function_name, correlation_id,
                                     {'code': code})
 
-        return {"analysis": result['output']}
+        return {
+            "analysis": result['output'],
+            "truncated": result['truncated'],
+            "chunked": result['chunked'],
+        }

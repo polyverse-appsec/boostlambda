@@ -30,4 +30,9 @@ class GenerateProcessor(GenericProcessor):
                                      'original_code': original_code,
                                      'language': outputlanguage})
 
-        return {"code": result['output']}
+        return {
+            "code": result['output'],
+            "truncated": result['truncated'],
+            "chunked": result['chunked'],
+        }
+

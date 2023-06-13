@@ -15,4 +15,9 @@ class ExplainProcessor(GenericProcessor):
         result = self.process_input(data, account, function_name, correlation_id,
                                     {'code': code})
 
-        return {"explanation": result['output']}
+        return {
+            "explanation": result['output'],
+            "truncated": result['truncated'],
+            "chunked": result['chunked'],
+        }
+

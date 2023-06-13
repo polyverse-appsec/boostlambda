@@ -29,4 +29,9 @@ class TestGeneratorProcessor(GenericProcessor):
                                      'language': outputlanguage,
                                      'framework': framework})
 
-        return {"testcode": result['output']}
+        return {
+            "testcode": result['output'],
+            "truncated": result['truncated'],
+            "chunked": result['chunked'],
+        }
+

@@ -20,5 +20,7 @@ class SummarizeProcessor(GenericProcessor):
                                      'analysis_label': analysis_label})
 
         return {"analysis": result['output'],
+                "truncated": result['truncated'],
+                "chunked": result['chunked'],
                 "analysis_type": analysis_type,
                 "analysis_label": analysis_label}
