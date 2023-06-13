@@ -185,6 +185,8 @@ def main(show_test, debug, dev, printall, exportcsv, user):
             total_paid = total_paid if total_paid != '$0.00' else '-'
             total_paid = total_paid if newOrg else ''
             customer_discounts = customer_discounts if customer_discounts != '$0.00' else '-'
+            plan = plan if newOrg else ''
+            status = status if newOrg else ''
             customer_discounts = customer_discounts if newOrg else ''
             cc = cc if cc != 'False' else ''
             cc = cc if cc != 'True' else 'Yes'
