@@ -1,12 +1,15 @@
 # generic.py
 import openai
 import traceback
-from .. import pvsecret
 import os
 import math
-from typing import List, Tuple
+import time
 import requests
+import concurrent.futures
+import threading
+from typing import List, Tuple
 
+from .. import pvsecret
 
 from chalicelib.markdown import markdown_emphasize
 from chalicelib.telemetry import capture_metric, InfoMetrics, CostMetrics
@@ -78,32 +81,30 @@ class GenericProcessor:
     def calculate_input_token_buffer(self, total_max) -> int:
         return math.floor(total_max * 0.5)
 
-    def reprocess_inputs_against_token_limit(self, params, prompt, function_name, tuned_max_tokens, total_max, input_tokens) -> Tuple[bool, str, int]:
+    def reprocess_inputs_against_token_limit(self, params, prompt, function_name, tuned_max_tokens, total_max, input_tokens) -> Tuple[bool, List[str], int]:
         # if we're doing 'summarize', we'll leave most buffer for the input, and a small amount for the output - fixed
         # if we're doing any other input, we'll roughly split the token buffer into 50/50 for input and output
 
         input_token_buffer = self.calculate_input_token_buffer(total_max)
+        truncated = False
 
         # If we are over the token limit, we need to reprocess the input
         remaining_input_buffer = input_token_buffer - input_tokens
         if remaining_input_buffer < 0:
-            # If we are over the token limit, we're going to need to truncate the original input by enough to create
+            # If we are over the token limit, we're going to need to split it into chunks to process in parallel and then reassemble
             # enough buffer to get a useful result - say 20% - 50% of the original input
             prompts, max_chunk_size = self.chunk_input_based_on_token_limit(prompt, input_token_buffer, input_tokens)
 
             # update output max tokens to be the remaining buffer after the max chunk size
             tuned_max_tokens = tuned_max_tokens - max_chunk_size
 
-            # we may be discarding / truncating the rest of the input, but we'll retain the first chunk for processing
-            prompt = prompts[0]
-
-            truncated = True
         else:
             # since we have remaining input buffer, use it for the output buffer
             tuned_max_tokens = tuned_max_tokens - input_tokens
-            truncated = False
 
-        return truncated, prompt, tuned_max_tokens
+            prompts = [prompt]
+
+        return truncated, prompts, tuned_max_tokens
 
     def update_messages(self, this_messages, prompt) -> any:
 
@@ -162,6 +163,21 @@ class GenericProcessor:
             if attempt > 0:
                 print(f'{function_name}:{correlation_id}:Succeeded after {attempt + 1} retries')
 
+    def runAnalysisForPrompt(self, i, prompt, params_template, account, function_name, correlation_id) -> str:
+        params = params_template.copy()  # Create a copy of the template to avoid side effects
+        params['messages'] = self.update_messages(params['messages'], prompt)
+        start_time = time.monotonic()
+        print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Starting")
+        try:
+            result = self.runAnalysis(params, account, function_name, correlation_id)
+            end_time = time.monotonic()
+            print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:SUCCESS processing chunked prompt {i} in {end_time - start_time:.3f} seconds")
+            return result
+        except Exception as e:
+            end_time = time.monotonic()
+            print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Error processing chunked prompt {i} after {end_time - start_time:.3f} seconds::error:{e}")
+            raise
+
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
         # enable user to override the model to gpt-3 or gpt-4
         model = OpenAIDefaults.boost_default_gpt_model
@@ -188,31 +204,56 @@ class GenericProcessor:
         openai_input_tokens, openai_input_cost = get_openai_usage(str(this_messages))
         openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(user_input)
 
+        # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
+        customer = account['customer']
+        email = account['email']
+
         truncated = False
         chunked = False
         if OpenAIDefaults.boost_tuned_max_tokens != 0:
             # subtract our constructed input from our total token limit and set that as max tokens
             this_boost_tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - openai_input_tokens
-            chunked = True
 
-            truncated, prompt, this_boost_tuned_max_tokens = self.reprocess_inputs_against_token_limit(
+            truncated, prompts, this_boost_tuned_max_tokens = self.reprocess_inputs_against_token_limit(
                 params, prompt, function_name, this_boost_tuned_max_tokens, OpenAIDefaults.boost_tuned_max_tokens, openai_input_tokens)
-
-            if truncated:
-                print(f"{function_name}:Truncation:{account['email']}:{correlation_id}:Truncated user input, discarded {OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} tokens")
-                params['messages'] = self.update_messages(params['messages'], prompt)
+            if (len(prompts) > 1):
+                chunked = True
 
             params["max_tokens"] = this_boost_tuned_max_tokens
 
-        result = self.runAnalysis(params, account, function_name, correlation_id)
+        # if truncated user input, report it out, and update the OpenAI input with the truncated input
+        if truncated:
+            print(f"{function_name}:Truncation:{account['email']}:{correlation_id}:Truncated user input, discarded {OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} tokens")
+            params['messages'] = self.update_messages(params['messages'], prompt)
 
+        # if chunked, we're going to run all chunks in parallel and then concatenate the results at end
+        elif chunked:
+            print(f"{function_name}:Chunked:{account['email']}:{correlation_id}:Chunked user input - {len(prompts)} chunks")
+
+            # create a generatic params_template with all the data, and we'll update the messages field for each
+            params_template = params.copy()
+
+            # launch all the parallel threads to run analysis with the unique chunked prompt for each
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                results = list(
+                    executor.map(
+                        # prompt_iteration is an expansion of the tuple resulting from enumerate(prompts)
+                        # prompts enumeration tuple is index into prompts, and the prompt member in prompts
+                        lambda prompt_iteration: self.runAnalysisForPrompt(
+                            prompt_iteration[0], prompt_iteration[1], params_template, account, function_name, correlation_id), enumerate(prompts)))
+
+        # not chunked or truncated - just run it
+        else:
+            result = self.runAnalysis(params, account, function_name, correlation_id)
+
+        # after we run the analysis, we need to update the result with the truncation warning
         if truncated:
             truncation = markdown_emphasize(f"Truncated input, discarded ~{OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} words\n\n")
             result = truncation + result
 
-        # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
-        customer = account['customer']
-        email = account['email']
+        # if chunked, we're going to reassemble all the chunks
+        elif chunked:
+            result = "\n\n".join(results)  # by concatenating all results into a single string
 
         try:
             # Get the cost of the outputs and prior inputs - so we have visibiity into our cost per user API
