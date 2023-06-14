@@ -185,7 +185,13 @@ class GenericProcessor:
             model = data['model']
 
         # And then in process_input
-        this_messages, prompt = self.generate_messages(data, prompt_format_args)
+        try:
+            this_messages, prompt = self.generate_messages(data, prompt_format_args)
+        except KeyError as e:
+            # if we got a key error doing the prompt update, we likely have extra tags in the prompt that aren't
+            # in the data or not in prompt_format_args. We're going to raise a more specific helpful message and
+            # log the full error
+            raise KeyError(f"Invalid prompt or prompt data for {function_name}: {e}")
 
         params = {
             "model": model,
