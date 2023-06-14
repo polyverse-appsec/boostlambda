@@ -5,9 +5,10 @@ from .. import pvsecret
 import os
 import math
 from typing import List, Tuple
+import requests
 
-from markdown import markdown_emphasize
 
+from chalicelib.markdown import markdown_emphasize
 from chalicelib.telemetry import capture_metric, InfoMetrics, CostMetrics
 from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults, num_tokens_from_string, decode_string_from_input
 from chalicelib.payments import update_usage_for_text
@@ -114,18 +115,52 @@ class GenericProcessor:
         return this_messages
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> str:
-        try:
-            response = openai.ChatCompletion.create(**params)
-        except Exception as e:
-            # check exception type for OpenAI rate limiting on API calls
-            if isinstance(e, openai.error.RateLimitError):
-                # if we hit the rate limit, send a cloudwatch alert and raise the error
-                capture_metric(account['customer'], account['email'], function_name, correlation_id,
-                               {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
+        max_retries = 1
+        # we're going to retry on intermittent network issues
+        # e.g. throttling, connection issues, service down, etc..
+        # Note that with RateLimit error, we could actually make it worse...
+        #    So don't retry on rate limit
+        # https://platform.openai.com/docs/guides/error-codes/python-library-error-types
+        for attempt in range(max_retries + 1):
+            try:
+                try:
+                    response = openai.ChatCompletion.create(**params)
+                    return response.choices[0].message.content
+                except requests.exceptions.Timeout:
+                    if attempt >= max_retries:  # If not the last attempt
+                        raise
+                    else:
+                        pass  # Try again
+                except openai.error.APIConnectionError:
+                    if attempt >= max_retries:  # If not the last attempt
+                        raise
+                    else:
+                        pass  # Try again
+                except openai.error.APIError:
+                    if attempt >= max_retries:  # If not the last attempt
+                        raise
+                    else:
+                        pass  # Try again
+                except openai.error.ServiceUnavailableError:
+                    if attempt >= max_retries:  # If not the last attempt
+                        raise
+                    else:
+                        pass  # Try again
+                except openai.error.RateLimitError:
+                    # if we hit the rate limit, send a cloudwatch alert and raise the error
+                    capture_metric(
+                        account['customer'], account['email'], function_name, correlation_id,
+                        {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
+                    raise
+                except Exception:
+                    raise
 
-            raise e
+            except Exception:
+                print(f'{function_name}:{correlation_id}:FAILED after {attempt} retries')
+                raise
 
-        return response.choices[0].message.content
+            if attempt > 0:
+                print(f'{function_name}:{correlation_id}:Succeeded after {attempt + 1} retries')
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
         # enable user to override the model to gpt-3 or gpt-4
@@ -169,7 +204,7 @@ class GenericProcessor:
 
             params["max_tokens"] = this_boost_tuned_max_tokens
 
-        result = self.runAnalysis(**params)
+        result = self.runAnalysis(params, account, function_name, correlation_id)
 
         if truncated:
             truncation = markdown_emphasize(f"Truncated input, discarded ~{OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} words\n\n")
