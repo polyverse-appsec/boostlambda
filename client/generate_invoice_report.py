@@ -185,7 +185,7 @@ def main(show_test, debug, dev, printall, exportcsv, user):
             total_paid = total_paid if total_paid != '$0.00' else '-'
             total_paid = total_paid if newOrg else ''
             customer_discounts = customer_discounts if customer_discounts != '$0.00' else '-'
-            plan = plan if newOrg else ''
+
             status = status if newOrg else ''
             customer_discounts = customer_discounts if newOrg else ''
             cc = cc if cc != 'False' else ''
@@ -223,14 +223,28 @@ def main(show_test, debug, dev, printall, exportcsv, user):
             print(df)
 
         print()
-        print(f"\nTotal Pending Invoice Amount for all Customers: ${total_pending_invoices / 100:.2f}")
-        print(f"\nTotal Paying Customers: {total_paying_customers} - {total_paying_customers / (total_active_users) * 100:.0f}% Converted to Paid")
-        print(f"\nTotal Trial Customers: {total_active_users - total_paying_customers} - {(total_active_users - total_paying_customers) / (total_active_users) * 100:.0f}% Active")
-        print(f"\nTotal Active Customers: {total_active_users} - {total_active_users / (total_inactive_users + total_active_users) * 100:.0f}%")
-        print(f"\nTotal Inactive Customers: {total_inactive_users}")
-        print(f"\nTotal Usage (MB): {total_usage_kb / 1024:.2f}")
-        print(f"\nTotal Customer Discounts: ${total_customer_discounts / 100:.2f}")
-        print(f"\nTotal Paid Invoice Amount for all Customers: ${total_paid_invoices / 100:.2f}")
+        totalTable = PrettyTable(['Total Revenue', 'Amount', '%'])
+        totalTable.add_row(["DUE Amount (All Customer Invoices)", f"${total_pending_invoices / 100:.2f}", f"{total_pending_invoices / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
+        totalTable.add_row(["PAID Amount (All Customer Invoices)", f"${total_paid_invoices / 100:.2f}", f"{total_paid_invoices / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
+        totalTable.add_row(["DISCOUNTED Amount (All Customer Invoices)", f"${total_customer_discounts / 100:.2f}", f"{total_customer_discounts / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
+        totalTable.add_row(["-------------------------------------------", "---------", "-----"])
+        totalTable.add_row(["TOTAL Revenue/Usage (All Customer Invoices)", f"${(total_pending_invoices + total_paid_invoices + total_customer_discounts) / 100:.2f}", ""])
+        print(totalTable)
+        print()
+
+        customerTable = PrettyTable(['Total Customers', 'Amount', "%"])
+        customerTable.add_row(["Paying Customers", f"{total_paying_customers}", f"{total_paying_customers / (total_active_users) * 100:.0f}% Converted"])
+        customerTable.add_row(["Trial Customers", f"{total_active_users - total_paying_customers}", f"{(total_active_users - total_paying_customers) / (total_active_users) * 100:.0f}% of Active"])
+        customerTable.add_row(["Active Customers", f"{total_active_users}", f"{total_active_users / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
+        customerTable.add_row(["New/Inactive Customers", f"{total_inactive_users}", f"{total_inactive_users / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
+        customerTable.add_row(["----------------------", "-----", "-----------"])
+        customerTable.add_row(["TOTAL Customers", f"{total_active_users + total_inactive_users}", ""])
+        print(customerTable)
+        print()
+
+        usageTable = PrettyTable(['Usage', 'Amount'])
+        usageTable.add_row(["Total (MB)", f"{total_usage_kb / 1024:.2f}mb"])
+        print(usageTable)
         print()
 
 
