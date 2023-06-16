@@ -272,8 +272,8 @@ class GenericProcessor:
             openai_cost = openai_input_cost + openai_output_cost
 
             try:
-                # update the billing usage for this analysis
-                update_usage_for_text(account, prompt + user_input)
+                # update the billing usage for this analysis (we charge for inputs and outputs, as long as successful analysis)
+                update_usage_for_text(account, user_input + result)
             except Exception:
                 exception_info = traceback.format_exc().replace('\n', ' ')
                 print(f"UPDATE_USAGE:FAILURE:{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", exception_info)
