@@ -64,18 +64,23 @@ def process_request(event, function, api_version):
 
     except Exception as e:
         exception_info = traceback.format_exc().replace('\n', ' ')
+        serviceFailureDetails = str(e)
 
-        # Use the get() method to retrieve the value of CHALICE_STAGE, with a default value of 'dev'
+        # Use the get() method to retrieve the value of CHALICE_STAGE, with a default value of 'local' - e.g. local debugging
         service_stage = os.environ.get('CHALICE_STAGE', 'local')
 
+        serviceLogFailurePrefix = "BOOST_USAGE: "
         # we want to catch internal implementation errors and return a 500
-        if (service_stage in ('prod', 'staging')) and isinstance(e, (TypeError, ValueError, KeyError, IndexError, AttributeError, RuntimeError, NotImplementedError)):
-            genericServiceFailure = "Internal Boost Service error has occurred. Please retry or contact Polyverse Boost Support if the error continues"
-            print(f'SERVICE_IMPL_FAILURE: {str(event)}, function({function.__name__}: FAILED with exception: {exception_info}')
-        else:
-            # everything else we'll pass through
-            genericServiceFailure = str(e)
-            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+        if isinstance(e, (TypeError, ValueError, KeyError, IndexError, AttributeError, RuntimeError, NotImplementedError)):
+            serviceLogFailurePrefix = "SERVICE_IMPL_FAILURE: " + serviceLogFailurePrefix
+
+            if service_stage in ('prod', 'staging'):
+                serviceFailureDetails = "Internal Boost Service error has occurred. Please retry or contact Polyverse Boost Support if the error continues"
+
+        print(f'{serviceLogFailurePrefix}email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+
+        if service_stage in ('dev', "test"):
+            serviceFailureDetails = exception_info
 
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
@@ -89,7 +94,7 @@ def process_request(event, function, api_version):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': api_version},
-            'body': json.dumps({"error": genericServiceFailure})
+            'body': json.dumps({"error": serviceFailureDetails})
         }
 
     # Put this into a JSON object - assuming the result is already an object
