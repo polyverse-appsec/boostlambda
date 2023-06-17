@@ -11,7 +11,7 @@ def get_upcoming_invoice(customer_id):
         invoice = stripe.Invoice.upcoming(customer=customer_id)
         return invoice
     except stripe.error.StripeError as e:
-        print(f"Stripe error: {e}")
+        print(f"Stripe error: {str(e)}")
         return None
 
 
