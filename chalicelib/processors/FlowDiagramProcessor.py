@@ -50,7 +50,7 @@ def sanitize_mermaid_code(markdownCode):
 
     # clean out parantheses, replaced with spaces
     cleanedMarkdown = re.sub(regex,
-                             lambda match: "```" + re.sub(r"\((.*)\)]", " \1 ",
+                             lambda match: "```" + re.sub(r"\((.*)\)", " \1 ",
                                                           match.group(1)) + "```", cleanedMarkdown, flags=re.DOTALL)
 
     # replace end with ends - end is a reserved word in mermaid, or at least the mermaid renderer will fail
