@@ -7,7 +7,9 @@ import time
 import requests
 import concurrent.futures
 import threading
+import random
 from typing import List, Tuple
+
 from chalice import UnprocessableEntityError
 
 from .. import pvsecret
@@ -217,52 +219,68 @@ class GenericProcessor:
                 try:
                     response = openai.ChatCompletion.create(**params)
 
+                    if attempt > 0:
+                        print(f"{function_name}:{account['email']}:{correlation_id}:Succeeded after {attempt} retries")
+
                     return dict(
                         response=response.choices[0].message.content,
                         finish=response.choices[0].finish_reason,
                         input_tokens=response.usage.prompt_tokens,
                         output_tokens=response.usage.completion_tokens)
 
-                except openai.error.Timeout:
+                except openai.error.Timeout as e:
                     if attempt >= max_retries:  # If not the last attempt
                         raise
                     else:
+                        recoverableError = e
                         pass  # Try again
-                except requests.exceptions.Timeout:
+                except requests.exceptions.Timeout as e:
                     if attempt >= max_retries:  # If not the last attempt
                         raise
                     else:
+                        recoverableError = e
                         pass  # Try again
-                except openai.error.APIConnectionError:
+                except openai.error.APIConnectionError as e:
                     if attempt >= max_retries:  # If not the last attempt
                         raise
                     else:
+                        recoverableError = e
                         pass  # Try again
-                except openai.error.APIError:
+                except openai.error.APIError as e:
                     if attempt >= max_retries:  # If not the last attempt
                         raise
                     else:
+                        recoverableError = e
                         pass  # Try again
-                except openai.error.ServiceUnavailableError:
+                except openai.error.ServiceUnavailableError as e:
                     if attempt >= max_retries:  # If not the last attempt
                         raise
                     else:
+                        recoverableError = e
                         pass  # Try again
-                except openai.error.RateLimitError:
+                except openai.error.RateLimitError as e:
                     # if we hit the rate limit, send a cloudwatch alert and raise the error
                     capture_metric(
                         account['customer'], account['email'], function_name, correlation_id,
                         {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
-                    raise
+                    if attempt >= max_retries:  # If not the last attempt
+                        raise
+                    else:
+                        randomSleep = random.uniform(5, 15)
+                        print(f"{function_name}:{correlation_id}:RateLimitError, sleeping for {randomSleep} seconds before retry")
+                        time.sleep(randomSleep)  # Sleep for 5-15 seconds to throttle, and avoid stampeding on retry
+                        recoverableError = e
+                        pass  # Try again
                 except Exception:
                     raise
 
-            except Exception:
-                print(f'{function_name}:{correlation_id}:FAILED after {attempt} retries')
+            except Exception as e:
+                print(f"{function_name}:{account['email']}:{correlation_id}:FAILED after {attempt} retries:Error: {str(e)}")
                 raise
 
-            if attempt > 0:
-                print(f'{function_name}:{correlation_id}:Succeeded after {attempt + 1} retries')
+            randomSleep = random.uniform(2, 5)
+            print(f"{function_name}:{account['email']}:{correlation_id}:Retrying in {randomSleep} seconds after recoverable error: {str(recoverableError)}")
+            time.sleep(randomSleep)  # Sleep for 2-5 seconds to throttle, and avoid stampeding on retry
 
     def runAnalysisForPrompt(self, i, this_messages, max_output_tokens, params_template, account, function_name, correlation_id) -> dict:
         params = params_template.copy()  # Create a copy of the template to avoid side effects
@@ -286,7 +304,7 @@ class GenericProcessor:
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
                   f"Error processing chunked prompt {i} after {end_time - start_time:.3f} seconds:"
-                  f"Finish:{result['finish'] if result is not None and 'finish' in result and result['finish'] is not None else 'Incomplete'}::error:{e}")
+                  f"Finish:{result['finish'] if result is not None and 'finish' in result and result['finish'] is not None else 'Incomplete'}::error:{str(e)}")
             raise
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
