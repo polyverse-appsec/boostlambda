@@ -107,8 +107,10 @@ class GenericProcessor:
             prompt_format_args_copy[self.get_chunkable_input()] = user_chunk_text
             this_messages = self.generate_messages(data_copy, prompt_format_args_copy)
 
+            these_tokens_count = sum(num_tokens_from_string(message["content"])[0] for message in this_messages)
+
             # get the new remaining max tokens we can accomodate with output
-            tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - len(user_chunk_tokens)
+            tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - these_tokens_count
 
             # store the updated message to be processed
             this_messages_chunked.append((this_messages, tuned_max_tokens))
@@ -272,6 +274,7 @@ class GenericProcessor:
 
         start_time = time.monotonic()
         print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Starting")
+        result = None
         try:
             result = self.runAnalysis(params, account, function_name, correlation_id)
             end_time = time.monotonic()
@@ -283,7 +286,7 @@ class GenericProcessor:
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
                   f"Error processing chunked prompt {i} after {end_time - start_time:.3f} seconds:"
-                  f"Finish:{result['finish'] if result['finish'] is not None else 'Incomplete'}::error:{e}")
+                  f"Finish:{result['finish'] if result is not None and 'finish' in result and result['finish'] is not None else 'Incomplete'}::error:{e}")
             raise
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
@@ -312,6 +315,8 @@ class GenericProcessor:
 
         success = False
         try:
+            results = None
+            result = None
             # if chunked, we're going to run all chunks in parallel and then concatenate the results at end
             if chunked:
                 print(f"{function_name}:Chunked:{account['email']}:{correlation_id}:Chunked user input - {len(prompt_set)} chunks")
@@ -354,14 +359,16 @@ class GenericProcessor:
                 user_input = self.collate_all_user_input(prompt_format_args)
                 user_input_size = len(user_input)
                 openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage_per_string(user_input, True)
-                openai_input_tokens, openai_input_cost = get_openai_usage_per_token(sum([r['input_tokens'] for r in results]), True)
+                openai_input_tokens, openai_input_cost = get_openai_usage_per_token(
+                    sum([r['input_tokens'] for r in results]), True) if results is not None else (0, 0)
 
                 # Get the cost of the outputs and prior inputs - so we have visibiity into our cost per user API
-                output_size = len(result)
+                output_size = len(result) if result is not None else 0
 
                 boost_cost = get_boost_cost(user_input_size + output_size)
 
-                openai_output_tokens, openai_output_cost = get_openai_usage_per_token(sum([r['output_tokens'] for r in results]), False)
+                openai_output_tokens, openai_output_cost = get_openai_usage_per_token(
+                    sum([r['output_tokens'] for r in results]), False) if results is not None else (0, 0)
                 openai_tokens = openai_input_tokens + openai_output_tokens
                 openai_cost = openai_input_cost + openai_output_cost
 
