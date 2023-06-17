@@ -12,22 +12,35 @@ class GenerateProcessor(GenericProcessor):
             'role_user': 'convert-role-user.prompt'
         })
 
+    # we are going to chunk the explanation, since its bigger than the code presumptively
+    # However - realistically, we should be chunking both. But they segment independently - e.g.
+    # 1 line of code could be a paragraph of explanation. Harder to slice and dice them blindly
+    # into coordinated chunks. But there's a good chance chunking one or the other only will break
+    # both the conversion and ability to chunk (e.g. if the code is over the buffer size, and we chunk
+    # only the explanation, we'll never be able to process the code, and vice versa)
+    def get_chunkable_input(self) -> str:
+        return 'explanation'
+
     def convert_code(self, data, account, function_name, correlation_id):
         # Extract the explanation and original_code from the json data
-        explanation = data.get('explanation')
+        explanation = data.get(self.get_chunkable_input())
         if explanation is None:
             raise BadRequestError("Error: please provide the initial code explanation")
 
-        original_code = data.get('originalCode')
-        if original_code is None:
+        # old client version compatibility shim (can be removed once all clients upgraded to 1.0.1 or better)
+        if 'originalCode' in data:
+            data['code'] = data['originalCode']
+
+        code = data.get('code')
+        if code is None:
             raise BadRequestError("Error: please provide the original code")
 
         # The output language is optional; if not set, then default to Python
         outputlanguage = data.get('language', 'python')
 
         result = self.process_input(data, account, function_name, correlation_id,
-                                    {'explanation': explanation,
-                                     'original_code': original_code,
+                                    {self.get_chunkable_input(): explanation,
+                                     'code': code,
                                      'language': outputlanguage})
 
         return {
@@ -35,4 +48,3 @@ class GenerateProcessor(GenericProcessor):
             "truncated": result['truncated'],
             "chunked": result['chunked'],
         }
-

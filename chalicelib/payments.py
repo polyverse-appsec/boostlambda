@@ -195,13 +195,11 @@ def update_usage(subscription_item, bytes):
     return subscription_item
 
 
-def update_usage_for_text(account, text):
+def update_usage_for_text(account, bytes_of_text):
     # get the subscription item
     subscription_item = account['subscription_item']
-    # get the bytes from the code (the length of the text)
-    bytes = len(text)
     # update the usage
-    update_usage(subscription_item, bytes)
+    update_usage(subscription_item, bytes_of_text)
 
 
 # Check if the customer has a non-zero balance and if they do NOT have a payment method

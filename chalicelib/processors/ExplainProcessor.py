@@ -9,15 +9,17 @@ class ExplainProcessor(GenericProcessor):
             'role_system': 'explain-role-system.prompt'
         })
 
+    def get_chunkable_input(self) -> str:
+        return 'code'
+
     def explain_code(self, data, account, function_name, correlation_id):
-        code = data['code']
+        code = data[self.get_chunkable_input()]
 
         result = self.process_input(data, account, function_name, correlation_id,
-                                    {'code': code})
+                                    {self.get_chunkable_input(): code})
 
         return {
             "explanation": result['output'],
             "truncated": result['truncated'],
             "chunked": result['chunked'],
         }
-

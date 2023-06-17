@@ -9,9 +9,12 @@ class CodingGuidelinesProcessor(GenericProcessor):
             'role_system': 'guidelines-role-system.prompt'
         })
 
-    def checkguidelines_code(self, data, account, function_name, correlation_id):
-        code = data['code']
+    def get_chunkable_input(self) -> str:
+        return 'code'
 
-        result = self.process_input(data, account, function_name, correlation_id, {'code': code})
+    def checkguidelines_code(self, data, account, function_name, correlation_id):
+        code = data[self.get_chunkable_input()]
+
+        result = self.process_input(data, account, function_name, correlation_id, {self.get_chunkable_input(): code})
 
         return {"analysis": result['output']}

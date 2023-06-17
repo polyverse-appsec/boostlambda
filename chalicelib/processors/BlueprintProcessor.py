@@ -1,5 +1,6 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
+from typing import Tuple
 
 
 class BlueprintProcessor(GenericProcessor):
@@ -10,21 +11,32 @@ class BlueprintProcessor(GenericProcessor):
             'update': 'blueprint-update.prompt'
         })
 
-    def generate_messages(self, data, prompt_format_args):
+    def get_chunkable_input(self) -> str:
+        return 'code'
 
-        # Extract the code from the json data
-        code = data['code']
-
+    def generate_prompt(self, data, prompt_format_args):
         # Extract the prior blueprint from the json data
         if 'blueprint' in data:
-            prior_blueprint = data['blueprint']
+            prompt_format_args['prior_blueprint'] = data['blueprint']
             # If there is no prior blueprint, set the prompt is creating the seed blueprint from the ingested code
-            if prior_blueprint is None:
-                prompt = self.prompts['seed'].format(code=code)
+            if 'prior_blueprint' not in data:
+                return self.prompts['seed'].format(prompt_format_args)
             else:
-                prompt = self.prompts['update'].format(code=code, prior_blueprint=prior_blueprint)
+                prompt_format_args['prior_blueprint'] = data['prior_blueprint']
+                return self.prompts['update'].format(prompt_format_args)
         else:
-            prompt = self.prompts['seed'].format(code=code)
+            return self.prompts['seed'].format(prompt_format_args)
+
+    def generate_messages(self, data, prompt_format_args) -> Tuple[list[dict[str, any]]]:
+
+        # Extract the code from the json data
+        prompt_format_args[self.get_chunkable_input()] = data[self.get_chunkable_input()]
+
+        # if we aren't doing chunking, then just erase the tag from the prompt completely
+        if 'chunking' not in prompt_format_args:
+            prompt_format_args['chunking'] = ''
+
+        prompt = self.generate_prompt(data, prompt_format_args)
 
         role_system = self.prompts['role_system']
 
@@ -38,7 +50,7 @@ class BlueprintProcessor(GenericProcessor):
                 "content": prompt
             }]
 
-        return this_messages, prompt
+        return this_messages
 
     def blueprint_code(self, data, account, function_name, correlation_id):
 
@@ -49,4 +61,3 @@ class BlueprintProcessor(GenericProcessor):
             "truncated": result['truncated'],
             "chunked": result['chunked'],
         }
-

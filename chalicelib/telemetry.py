@@ -34,6 +34,7 @@ class CostMetrics:
     RESPONSE_SIZE = 'ResponseSize'
     PROMPT_SIZE = 'PromptSize'
     OPENAI_COST = 'OpenAICost'
+    LOST_BOOST_COST = 'LostBoostCost'
     BOOST_COST = 'BoostCost'
     OPENAI_INPUT_COST = 'OpenAIInputCost'
     OPENAI_CUSTOMERINPUT_COST = 'OpenAICustomerInputCost'

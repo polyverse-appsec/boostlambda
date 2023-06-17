@@ -12,16 +12,26 @@ class CustomProcessor(GenericProcessor):
             'role_system': 'customprocess-role-system.prompt'
         })
 
-    def generate_messages(self, data, prompt_format_args):
-        code = data['code']
-        customprompt = data['prompt']
+    def get_chunkable_input(self) -> str:
+        return 'code'
 
+    def generate_prompt(self, _, prompt_format_args):
         # if the user-provided prompt includes {code} block, then use that as the prompt
-        if "{{code}}" in customprompt:
-            prompt = customprompt.format(code=code, prompt=customprompt)
+        if "{{code}}" in prompt_format_args['customprompt']:
+            return prompt_format_args['customprompt'].format(prompt_format_args)
         # otherwise, use the default prompt to also inject {code} block into the prompt
         else:
-            prompt = self.prompts['main'].format(code=code, prompt=customprompt)
+            return self.prompts['main'].format(prompt_format_args)
+
+    def generate_messages(self, data, prompt_format_args):
+        prompt_format_args[self.get_chunkable_input()] = data[self.get_chunkable_input()]
+        prompt_format_args['customprompt'] = data['prompt']
+
+        # if we aren't doing chunking, then just erase the tag from the prompt completely
+        if 'chunking' not in prompt_format_args:
+            prompt_format_args['chunking'] = ' '
+
+        prompt = self.generate_prompt(prompt_format_args)
 
         if 'role_system' in data:
             this_role_system = data['role_system']
@@ -41,11 +51,11 @@ class CustomProcessor(GenericProcessor):
                     "content": prompt
                 }]
 
-        return this_messages, prompt
+        return this_messages
 
     def customprocess_code(self, data, account, function_name, correlation_id):
         # Extract the code from the json data
-        code = data['code']
+        code = data[self.get_chunkable_input()]
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze for coding guidelines")
 
@@ -55,7 +65,7 @@ class CustomProcessor(GenericProcessor):
             raise BadRequestError("Error: please provide a custom prompt to run against the code fragment")
 
         result = self.process_input(data, account, function_name, correlation_id,
-                                    {'code': code,
+                                    {self.get_chunkable_input(): code,
                                      'customprompt': prompt})
 
         return {
@@ -63,4 +73,3 @@ class CustomProcessor(GenericProcessor):
             "truncated": result['truncated'],
             "chunked": result['chunked'],
         }
-

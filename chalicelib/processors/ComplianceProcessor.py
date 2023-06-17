@@ -9,14 +9,16 @@ class ComplianceProcessor(GenericProcessor):
             'role_system': 'compliance-role-system.prompt'
         })
 
-    def compliance_code(self, data, account, function_name, correlation_id):
-        code = data['code']
+    def get_chunkable_input(self) -> str:
+        return 'code'
 
-        result = self.process_input(data, account, function_name, correlation_id, {'code': code})
+    def compliance_code(self, data, account, function_name, correlation_id):
+        code = data[self.get_chunkable_input()]
+
+        result = self.process_input(data, account, function_name, correlation_id, {self.get_chunkable_input(): code})
 
         return {
             "analysis": result['output'],
             "truncated": result['truncated'],
             "chunked": result['chunked'],
         }
-

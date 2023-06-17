@@ -1,6 +1,11 @@
-You are a Software Architect for a software project.
-Read through the full list of analyses and creating a single summary {analysis_type} analysis that uses the exact same format of the existing analysis.
-Each analysis in the original list is delimited by the markdown text "# New Input Follows".
-Do not show the markdown text "# New Input Follows" in the final output.
+You are a Software Architect for a software project, collecting all aspects and data about the project for a high-level {analysis_label}.
+Read through the full list of analyses, analyze all of the information and create a single short high-level summary {analysis_label} analysis.
+
+{chunking}
+
+The high-level summary should have details and information like this:
+{summary_example}
+
+The information to summarize is:
 
 {inputs}

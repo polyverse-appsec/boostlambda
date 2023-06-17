@@ -8,13 +8,21 @@ import requests
 import concurrent.futures
 import threading
 from typing import List, Tuple
+from chalice import UnprocessableEntityError
 
 from .. import pvsecret
 
 from chalicelib.markdown import markdown_emphasize
 from chalicelib.telemetry import capture_metric, InfoMetrics, CostMetrics
-from chalicelib.usage import get_openai_usage, get_boost_cost, OpenAIDefaults, num_tokens_from_string, decode_string_from_input
+from chalicelib.usage import (get_openai_usage_per_token, get_openai_usage_per_string,
+                              get_boost_cost, OpenAIDefaults, num_tokens_from_string, decode_string_from_input)
 from chalicelib.payments import update_usage_for_text
+
+key_ChunkedInputs = 'chunked_inputs'
+key_ChunkPrefix = 'chunk_prefix'
+key_NumberOfChunks = 'chunks'
+key_IsChunked = 'chunked'
+key_ChunkingPrompt = 'chunking'
 
 # Define the directory where prompt files are stored
 PROMPT_DIR = "chalicelib/prompts"
@@ -44,7 +52,141 @@ class GenericProcessor:
 
         return prompts
 
-    def generate_messages(self, data, prompt_format_args):
+    def chunk_input_based_on_token_limit(self, data, prompt_format_args, input_token_buffer) -> List[Tuple[List[dict[str, any]], int]]:
+
+        # get the ideal full prompt - then we'll figure out if we need to break it up further
+        this_messages = self.generate_messages(data, prompt_format_args)
+        fullMessageContentTokensCount = sum(num_tokens_from_string(message["content"])[0] for message in this_messages)
+
+        # if we can fit the chunk into one token buffer, we'll process and be done
+        tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - fullMessageContentTokensCount
+        if (fullMessageContentTokensCount < input_token_buffer):
+            return [(this_messages, tuned_max_tokens)]
+
+        # otherwise, we'll need to break the chunk into smaller chunks
+        # we're going to extract ONLY the bit of user-content (not the prompt wrapper) that we can try and break up
+        userContentTokenCount, userContentTokens = num_tokens_from_string(data[self.get_chunkable_input()])
+
+        # let's figure out how big the non-user content is... since we'll create user chunks that can accomodate the non-user content added back
+        nonUserContentTokenCount = fullMessageContentTokensCount - userContentTokenCount
+
+        # if the fixed non-user content (e.g. other parts of prompt messages) are beyond the buffer size, then
+        # we won't be able to process the user content at all, so raise an error and give up
+        if nonUserContentTokenCount > input_token_buffer:
+            print(f"ChunkingInputFailed: InputBuffer size={input_token_buffer}, Fixed non-User content size={nonUserContentTokenCount}, User content size={userContentTokenCount} ")
+            raise UnprocessableEntityError("Background context for analysis is too large to process. Please try again with less context.")
+
+        remainingBuffer = input_token_buffer - nonUserContentTokenCount
+
+        # Subtract 100 from the total buffer size to account for possible calculation errors (in the prompt engineering)
+        safe_buffer = remainingBuffer - 100
+
+        full_buffer_chunks = userContentTokenCount // safe_buffer  # How many full buffer chunks you can make
+        remainder = userContentTokenCount % safe_buffer  # What remains after consuming full buffers
+
+        # If the remainder is less than 20% of the full remaining buffer, switch to equal size chunks
+        if remainder < (safe_buffer * 0.2):
+            n_chunks = math.ceil(userContentTokenCount / safe_buffer)
+            chunk_size = math.ceil(userContentTokenCount / n_chunks)
+        else:
+            n_chunks = full_buffer_chunks + 1  # The full buffer chunks plus the remainder
+            chunk_size = safe_buffer  # Except for the last chunk, the chunks are the size of the full buffer
+
+        this_messages_chunked = []
+
+        for i in range(0, userContentTokenCount, chunk_size):
+
+            # decode this smaller chunk of the original user content
+            user_chunk_tokens = userContentTokens[i:i + chunk_size]
+            user_chunk_text = decode_string_from_input(user_chunk_tokens)
+
+            # rebuild the prompt with the smaller user input chunk
+            data_copy = data.copy()
+            data_copy[self.get_chunkable_input()] = user_chunk_text
+            prompt_format_args_copy = prompt_format_args.copy()
+            prompt_format_args_copy[self.get_chunkable_input()] = user_chunk_text
+            this_messages = self.generate_messages(data_copy, prompt_format_args_copy)
+
+            # get the new remaining max tokens we can accomodate with output
+            tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - len(user_chunk_tokens)
+
+            # store the updated message to be processed
+            this_messages_chunked.append((this_messages, tuned_max_tokens))
+
+        return this_messages_chunked
+
+    def calculate_input_token_buffer(self, total_max) -> int:
+        return math.floor(total_max * 0.5)
+
+    # returns true if truncation was done
+    # also returns a list of prompts to process - where each prompt includes the prompt text, and the max output tokens for that prompt
+    def build_prompts_from_input(self, data, prompt_format_args, function_name) -> Tuple[bool, List[Tuple[List[dict[str, any]], int]], int]:
+
+        # get the max input buffer for this function if we are tuning tokens
+        if OpenAIDefaults.boost_tuned_max_tokens != 0:
+            input_token_buffer = self.calculate_input_token_buffer(OpenAIDefaults.boost_tuned_max_tokens)
+        # otherwise, just send it all to the OpenAI endpoint, and ignore limits
+        else:
+            input_token_buffer = 0
+
+        truncated = False
+
+        # if single input, build the prompt to test length
+        if 'chunks' not in prompt_format_args:
+            this_messages = self.generate_messages(data, prompt_format_args)
+            these_tokens_count = sum(num_tokens_from_string(message["content"])[0] for message in this_messages)
+
+            if input_token_buffer == 0:
+                prompts_set = [(this_messages, 0)]
+
+            elif these_tokens_count < input_token_buffer:
+                tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - these_tokens_count
+                prompts_set = [(this_messages, tuned_max_tokens)]
+
+            else:  # this single input has blown the input buffer, so we'll need to chunk it
+                # If we are over the token limit, we're going to need to split it into chunks to process in parallel and then reassemble
+                # enough buffer to get a useful result - say 20% - 50% of the original input
+                prompts_set = self.chunk_input_based_on_token_limit(data, prompt_format_args, input_token_buffer)
+
+        else:  # we have input chunks we need to break up, which themselves could be broken up
+            cloned_prompt_format_args = prompt_format_args.copy()
+
+            del cloned_prompt_format_args[key_NumberOfChunks]
+
+            chunk_inputs = cloned_prompt_format_args[key_ChunkedInputs]
+            del cloned_prompt_format_args[key_ChunkedInputs]
+
+            del cloned_prompt_format_args[key_ChunkPrefix]
+
+            prompts_set = []
+            for i in range(len(chunk_inputs)):
+                cloned_prompt_format_args[key_ChunkingPrompt] = f"This is part {i} of {len(chunk_inputs)} of the inputs you are analyzing."
+
+                # inject the chunk into the input slot in the data and prompt fields
+                data[self.get_chunkable_input()] = chunk_inputs[i]
+                cloned_prompt_format_args[self.get_chunkable_input()] = chunk_inputs[i]
+
+                # recursively call ourselves per chunk
+                _, each_chunk_prompt_set, _ = self.build_prompts_from_input(data, cloned_prompt_format_args, function_name)
+
+                # add the newly build prompt and max tokens into the list
+                prompts_set.extend(each_chunk_prompt_set)
+
+        user_prompts_size = sum(len(message["content"])
+                                for prompt, _ in prompts_set
+                                for message in prompt
+                                if message["role"] == "user")
+
+        return truncated, prompts_set, user_prompts_size
+
+    def get_chunkable_input(self) -> str:
+        raise NotImplementedError
+
+    def generate_messages(self, _, prompt_format_args):
+
+        # if we aren't doing chunking, then just erase the tag from the prompt completely
+        if key_IsChunked not in prompt_format_args:
+            prompt_format_args[key_ChunkingPrompt] = ''
 
         prompt = self.prompts['main'].format(**prompt_format_args)
         role_system = self.prompts['role_system']
@@ -59,63 +201,9 @@ class GenericProcessor:
                 "content": prompt
             }]
 
-        return this_messages, prompt
-
-    def calculate_chunk_size(self, input_tokens, buffer_size) -> int:
-        n_chunks = math.ceil(input_tokens / buffer_size)
-        chunk_size = math.ceil(input_tokens / n_chunks)
-        return chunk_size
-
-    def chunk_input_based_on_token_limit(self, prompt, input_token_buffer, input_tokens) -> Tuple[List[str], int]:
-        chunk_size = self.calculate_chunk_size(input_tokens, input_token_buffer)
-        _, tokens = num_tokens_from_string(prompt)
-
-        chunks = []
-        for i in range(0, len(tokens), chunk_size):
-            chunk_tokens = tokens[i:i + chunk_size]
-            chunk_text = decode_string_from_input(chunk_tokens)
-            chunks.append(chunk_text)
-
-        return chunks, input_token_buffer - chunk_size
-
-    def calculate_input_token_buffer(self, total_max) -> int:
-        return math.floor(total_max * 0.5)
-
-    def reprocess_inputs_against_token_limit(self, params, prompt, function_name, tuned_max_tokens, total_max, input_tokens) -> Tuple[bool, List[str], int]:
-        # if we're doing 'summarize', we'll leave most buffer for the input, and a small amount for the output - fixed
-        # if we're doing any other input, we'll roughly split the token buffer into 50/50 for input and output
-
-        input_token_buffer = self.calculate_input_token_buffer(total_max)
-        truncated = False
-
-        # If we are over the token limit, we need to reprocess the input
-        remaining_input_buffer = input_token_buffer - input_tokens
-        if remaining_input_buffer < 0:
-            # If we are over the token limit, we're going to need to split it into chunks to process in parallel and then reassemble
-            # enough buffer to get a useful result - say 20% - 50% of the original input
-            prompts, max_chunk_size = self.chunk_input_based_on_token_limit(prompt, input_token_buffer, input_tokens)
-
-            # update output max tokens to be the remaining buffer after the max chunk size
-            tuned_max_tokens = tuned_max_tokens - max_chunk_size
-
-        else:
-            # since we have remaining input buffer, use it for the output buffer
-            tuned_max_tokens = tuned_max_tokens - input_tokens
-
-            prompts = [prompt]
-
-        return truncated, prompts, tuned_max_tokens
-
-    def update_messages(self, this_messages, prompt) -> any:
-
-        # Replace the 'user' 'content' with the new prompt
-        for message in this_messages:
-            if message['role'] == 'user':
-                message['content'] = prompt   # Replace with new prompt
-
         return this_messages
 
-    def runAnalysis(self, params, account, function_name, correlation_id) -> str:
+    def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
         max_retries = 1
         # we're going to retry on intermittent network issues
         # e.g. throttling, connection issues, service down, etc..
@@ -126,7 +214,18 @@ class GenericProcessor:
             try:
                 try:
                     response = openai.ChatCompletion.create(**params)
-                    return response.choices[0].message.content
+
+                    return dict(
+                        response=response.choices[0].message.content,
+                        finish=response.choices[0].finish_reason,
+                        input_tokens=response.usage.prompt_tokens,
+                        output_tokens=response.usage.completion_tokens)
+
+                except openai.error.Timeout:
+                    if attempt >= max_retries:  # If not the last attempt
+                        raise
+                    else:
+                        pass  # Try again
                 except requests.exceptions.Timeout:
                     if attempt >= max_retries:  # If not the last attempt
                         raise
@@ -163,39 +262,38 @@ class GenericProcessor:
             if attempt > 0:
                 print(f'{function_name}:{correlation_id}:Succeeded after {attempt + 1} retries')
 
-    def runAnalysisForPrompt(self, i, prompt, params_template, account, function_name, correlation_id) -> str:
+    def runAnalysisForPrompt(self, i, this_messages, max_output_tokens, params_template, account, function_name, correlation_id) -> dict:
         params = params_template.copy()  # Create a copy of the template to avoid side effects
-        params['messages'] = self.update_messages(params['messages'], prompt)
+
+        if max_output_tokens != 0:
+            params["max_tokens"] = max_output_tokens
+
+        params['messages'] = this_messages
+
         start_time = time.monotonic()
         print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Starting")
         try:
             result = self.runAnalysis(params, account, function_name, correlation_id)
             end_time = time.monotonic()
-            print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:SUCCESS processing chunked prompt {i} in {end_time - start_time:.3f} seconds")
+            print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
+                  f"SUCCESS processing chunked prompt {i} in {end_time - start_time:.3f} seconds:"
+                  f"Finish:{result['finish'] if result['finish'] is not None else 'Incomplete'}")
             return result
         except Exception as e:
             end_time = time.monotonic()
-            print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Error processing chunked prompt {i} after {end_time - start_time:.3f} seconds::error:{e}")
+            print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
+                  f"Error processing chunked prompt {i} after {end_time - start_time:.3f} seconds:"
+                  f"Finish:{result['finish'] if result['finish'] is not None else 'Incomplete'}::error:{e}")
             raise
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
+
+        params = {}
         # enable user to override the model to gpt-3 or gpt-4
-        model = OpenAIDefaults.boost_default_gpt_model
         if 'model' in data:
-            model = data['model']
-
-        # And then in process_input
-        try:
-            this_messages, prompt = self.generate_messages(data, prompt_format_args)
-        except KeyError as e:
-            # if we got a key error doing the prompt update, we likely have extra tags in the prompt that aren't
-            # in the data or not in prompt_format_args. We're going to raise a more specific helpful message and
-            # log the full error
-            raise KeyError(f"Invalid prompt or prompt data for {function_name}: {e}")
-
-        params = {
-            "model": model,
-            "messages": this_messages}
+            params["model"] = data['model']
+        else:
+            params["model"] = OpenAIDefaults.boost_default_gpt_model
 
         # https://community.openai.com/t/cheat-sheet-mastering-temperature-and-top-p-in-chatgpt-api-a-few-tips-and-tricks-on-controlling-the-creativity-deterministic-output-of-prompt-responses/172683
         if 'top_p' in data:
@@ -203,102 +301,101 @@ class GenericProcessor:
         elif 'temperature' in data:
             params["temperature"] = float(data['temperature'])
 
-        # Get the cost of the inputs - so we have can manage our token limits
-        prompt_size = len(str(this_messages))
-        user_input = self.collate_all_user_input(data)
-        user_input_size = len(user_input)
-        openai_input_tokens, openai_input_cost = get_openai_usage(str(this_messages))
-        openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage(user_input)
-
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
         email = account['email']
 
-        truncated = False
-        chunked = False
-        if OpenAIDefaults.boost_tuned_max_tokens != 0:
-            # subtract our constructed input from our total token limit and set that as max tokens
-            this_boost_tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - openai_input_tokens
+        prompt_set: List[Tuple[str, int]] = []
 
-            truncated, prompts, this_boost_tuned_max_tokens = self.reprocess_inputs_against_token_limit(
-                params, prompt, function_name, this_boost_tuned_max_tokens, OpenAIDefaults.boost_tuned_max_tokens, openai_input_tokens)
-            if (len(prompts) > 1):
-                chunked = True
+        truncated, prompt_set, prompts_size = self.build_prompts_from_input(data, prompt_format_args, function_name)
+        chunked = len(prompt_set) > 1
 
-            params["max_tokens"] = this_boost_tuned_max_tokens
-
-        # if truncated user input, report it out, and update the OpenAI input with the truncated input
-        if truncated:
-            print(f"{function_name}:Truncation:{account['email']}:{correlation_id}:Truncated user input, discarded {OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} tokens")
-            params['messages'] = self.update_messages(params['messages'], prompt)
-
-        # if chunked, we're going to run all chunks in parallel and then concatenate the results at end
-        elif chunked:
-            print(f"{function_name}:Chunked:{account['email']}:{correlation_id}:Chunked user input - {len(prompts)} chunks")
-
-            # create a generatic params_template with all the data, and we'll update the messages field for each
-            params_template = params.copy()
-
-            # launch all the parallel threads to run analysis with the unique chunked prompt for each
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                results = list(
-                    executor.map(
-                        # prompt_iteration is an expansion of the tuple resulting from enumerate(prompts)
-                        # prompts enumeration tuple is index into prompts, and the prompt member in prompts
-                        lambda prompt_iteration: self.runAnalysisForPrompt(
-                            prompt_iteration[0], prompt_iteration[1], params_template, account, function_name, correlation_id), enumerate(prompts)))
-
-        # not chunked or truncated - just run it
-        else:
-            result = self.runAnalysis(params, account, function_name, correlation_id)
-
-        # after we run the analysis, we need to update the result with the truncation warning
-        if truncated:
-            truncation = markdown_emphasize(f"Truncated input, discarded ~{OpenAIDefaults.boost_tuned_max_tokens - this_boost_tuned_max_tokens} words\n\n")
-            result = truncation + result
-
-        # if chunked, we're going to reassemble all the chunks
-        elif chunked:
-            result = "\n\n".join(results)  # by concatenating all results into a single string
-
+        success = False
         try:
-            # Get the cost of the outputs and prior inputs - so we have visibiity into our cost per user API
-            output_size = len(result)
+            # if chunked, we're going to run all chunks in parallel and then concatenate the results at end
+            if chunked:
+                print(f"{function_name}:Chunked:{account['email']}:{correlation_id}:Chunked user input - {len(prompt_set)} chunks")
 
-            boost_cost = get_boost_cost(user_input_size + output_size)
+                # launch all the parallel threads to run analysis with the unique chunked prompt for each
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    results = list(
+                        executor.map(
+                            # prompt_iteration is an expansion of the tuple resulting from enumerate(prompts)
+                            # prompts enumeration tuple is index into prompts, and the prompt member in prompts
+                            lambda prompt_iteration: self.runAnalysisForPrompt(
+                                prompt_iteration[0], prompt_iteration[1][0], prompt_iteration[1][1], params, account,
+                                function_name, correlation_id), enumerate(prompt_set)))
+            # otherwise, run once
+            else:
+                # if truncated user input, report it out, and update the OpenAI input with the truncated input
+                if truncated:
+                    print(f"{function_name}:Truncation:{account['email']}:{correlation_id}:"
+                          f"Truncated user input, discarded {OpenAIDefaults.boost_tuned_max_tokens - prompt_set[0][1]} tokens")
 
-            openai_output_tokens, openai_output_cost = get_openai_usage(result, False)
-            openai_tokens = openai_input_tokens + openai_output_tokens
-            openai_cost = openai_input_cost + openai_output_cost
+                # run the analysis with single input
+                singleIndex = 0
+                results = [self.runAnalysisForPrompt(singleIndex, prompt_set[singleIndex][0],
+                                                     prompt_set[singleIndex][1], params, account, function_name, correlation_id)]
+                result = results[0]['response']
+
+            # after we run the analysis, we need to update the result with the truncation warning
+            if truncated:
+                truncation = markdown_emphasize(f"Truncated input, discarded ~{OpenAIDefaults.boost_tuned_max_tokens - prompt_set[0][1]} words\n\n")
+                result = f"{truncation}{results[0]['response']}"
+
+            # if chunked, we're going to reassemble all the chunks
+            elif chunked:
+                result = "\n\n".join([r['response'] for r in results])  # by concatenating all results into a single string
+
+            success = True
+        finally:
 
             try:
-                # update the billing usage for this analysis (we charge for inputs and outputs, as long as successful analysis)
-                update_usage_for_text(account, user_input + result)
+                user_input = self.collate_all_user_input(prompt_format_args)
+                user_input_size = len(user_input)
+                openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage_per_string(user_input, True)
+                openai_input_tokens, openai_input_cost = get_openai_usage_per_token(sum([r['input_tokens'] for r in results]), True)
+
+                # Get the cost of the outputs and prior inputs - so we have visibiity into our cost per user API
+                output_size = len(result)
+
+                boost_cost = get_boost_cost(user_input_size + output_size)
+
+                openai_output_tokens, openai_output_cost = get_openai_usage_per_token(sum([r['output_tokens'] for r in results]), False)
+                openai_tokens = openai_input_tokens + openai_output_tokens
+                openai_cost = openai_input_cost + openai_output_cost
+
+                try:
+                    if success:
+                        # update the billing usage for this analysis (charge for input + output) as long as analysis is successful
+                        update_usage_for_text(account, user_input_size + output_size)
+                except Exception:
+                    success = False
+                    exception_info = traceback.format_exc().replace('\n', ' ')
+                    print(f"UPDATE_USAGE:FAILURE:{customer['name']}:{customer['id']}:{email}:{correlation_id}:"
+                          f"Error updating ~${boost_cost} usage: ", exception_info)
+                    capture_metric(customer, email, function_name, correlation_id,
+                                   {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
+
+                    pass  # Don't fail if we can't update usage / but that means we may have lost revenue
+
+                capture_metric(customer, email, function_name, correlation_id,
+                               {'name': CostMetrics.PROMPT_SIZE, 'value': prompts_size, 'unit': 'Count'},
+                               {'name': CostMetrics.RESPONSE_SIZE, 'value': user_input_size, 'unit': 'Count'},
+                               {'name': CostMetrics.OPENAI_INPUT_COST, 'value': round(openai_input_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.OPENAI_CUSTOMERINPUT_COST, 'value': round(openai_customerinput_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.OPENAI_COST, 'value': round(openai_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.BOOST_COST if success else CostMetrics.LOST_BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.OPENAI_INPUT_TOKENS, 'value': openai_input_tokens, 'unit': 'Count'},
+                               {'name': CostMetrics.OPENAI_CUSTOMERINPUT_TOKENS, 'value': openai_customerinput_tokens, 'unit': 'Count'},
+                               {'name': CostMetrics.OPENAI_OUTPUT_TOKENS, 'value': openai_output_tokens, 'unit': 'Count'},
+                               {'name': CostMetrics.OPENAI_TOKENS, 'value': openai_tokens, 'unit': 'Count'})
+
             except Exception:
                 exception_info = traceback.format_exc().replace('\n', ' ')
-                print(f"UPDATE_USAGE:FAILURE:{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error updating ~${boost_cost} usage: ", exception_info)
-                capture_metric(customer, email, function_name, correlation_id,
-                               {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
-
-                pass  # Don't fail if we can't update usage / but that means we may have lost revenue
-
-            capture_metric(customer, email, function_name, correlation_id,
-                           {'name': CostMetrics.PROMPT_SIZE, 'value': prompt_size, 'unit': 'Count'},
-                           {'name': CostMetrics.RESPONSE_SIZE, 'value': user_input_size, 'unit': 'Count'},
-                           {'name': CostMetrics.OPENAI_INPUT_COST, 'value': round(openai_input_cost, 5), 'unit': 'None'},
-                           {'name': CostMetrics.OPENAI_CUSTOMERINPUT_COST, 'value': round(openai_customerinput_cost, 5), 'unit': 'None'},
-                           {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
-                           {'name': CostMetrics.OPENAI_COST, 'value': round(openai_cost, 5), 'unit': 'None'},
-                           {'name': CostMetrics.BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
-                           {'name': CostMetrics.OPENAI_INPUT_TOKENS, 'value': openai_input_tokens, 'unit': 'Count'},
-                           {'name': CostMetrics.OPENAI_CUSTOMERINPUT_TOKENS, 'value': openai_customerinput_tokens, 'unit': 'Count'},
-                           {'name': CostMetrics.OPENAI_OUTPUT_TOKENS, 'value': openai_output_tokens, 'unit': 'Count'},
-                           {'name': CostMetrics.OPENAI_TOKENS, 'value': openai_tokens, 'unit': 'Count'})
-
-        except Exception:
-            exception_info = traceback.format_exc().replace('\n', ' ')
-            print(f"{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error capturing metrics: ", exception_info)
-            pass  # Don't fail if we can't capture metrics
+                print(f"{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error capturing metrics: ", exception_info)
+                pass  # Don't fail if we can't capture metrics
 
         return {
             "output": result,
@@ -306,9 +403,17 @@ class GenericProcessor:
             "chunked": chunked
         }
 
-    # used for calculating usage on user input. The return string is virtually useless in this format
-    def collate_all_user_input(self, data):
+    def get_excluded_input_keys(self) -> list[str]:
+        return ['model', 'top_p', 'temperature', 'chunking']
+
+    def collate_all_user_input(self, prompt_format_args):
         # remove any keys used for control of the processing, so we only charge for user input
-        excluded_keys = ['model', 'top_p', 'temperature']
-        input_list = [str(value) for key, value in data.items() if key not in excluded_keys]
+        excluded_keys = self.get_excluded_input_keys()
+
+        # Use lambda function to handle list of strings
+        input_list = map(
+            lambda key: ' '.join(prompt_format_args[key]) if isinstance(prompt_format_args[key], list) else str(prompt_format_args[key]),
+            [key for key in prompt_format_args if key not in excluded_keys]
+        )
+
         return ' '.join(input_list)

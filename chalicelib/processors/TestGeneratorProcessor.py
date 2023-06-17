@@ -9,8 +9,11 @@ class TestGeneratorProcessor(GenericProcessor):
             'role_system': 'testgen-role-system.prompt'
         })
 
+    def get_chunkable_input(self) -> str:
+        return 'code'
+
     def testgen_code(self, data, account, function_name, correlation_id):
-        original_code = data['code']
+        code = data[self.get_chunkable_input()]
 
         language = data['language']
         outputlanguage = language
@@ -25,7 +28,7 @@ class TestGeneratorProcessor(GenericProcessor):
                 framework = "the best framework for " + outputlanguage + " tests"
 
         result = self.process_input(data, account, function_name, correlation_id,
-                                    {'original_code': original_code,
+                                    {self.get_chunkable_input(): code,
                                      'language': outputlanguage,
                                      'framework': framework})
 
@@ -34,4 +37,3 @@ class TestGeneratorProcessor(GenericProcessor):
             "truncated": result['truncated'],
             "chunked": result['chunked'],
         }
-

@@ -10,15 +10,18 @@ class AnalyzeProcessor(GenericProcessor):
             'role_system': 'analyze-role-system.prompt'
         })
 
+    def get_chunkable_input(self) -> str:
+        return 'code'
+
     def analyze_code(self, data, account, function_name, correlation_id):
 
         # Extract the code from the json data
-        code = data['code']
+        code = data[self.get_chunkable_input()]
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze")
 
         result = self.process_input(data, account, function_name, correlation_id,
-                                    {'code': code})
+                                    {self.get_chunkable_input(): code})
 
         return {
             "analysis": result['output'],

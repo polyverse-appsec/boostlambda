@@ -10,10 +10,13 @@ class FlowDiagramProcessor(GenericProcessor):
             'role_system': 'flowdiagram-role-system.prompt'
         })
 
-    def flowdiagram_code(self, data, account, function_name, correlation_id):
-        code = data['code']
+    def get_chunkable_input(self) -> str:
+        return 'code'
 
-        result = self.process_input(data, account, function_name, correlation_id, {'code': code})
+    def flowdiagram_code(self, data, account, function_name, correlation_id):
+        code = data[self.get_chunkable_input()]
+
+        result = self.process_input(data, account, function_name, correlation_id, {self.get_chunkable_input(): code})
         cleanedResult = sanitize_mermaid_code(result['output'])
 
         return {"analysis": cleanedResult}

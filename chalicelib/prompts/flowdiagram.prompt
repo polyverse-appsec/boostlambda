@@ -20,6 +20,8 @@ If there is control flow to the source code, prefix the mermaid output with mark
 
 In the mermaid code syntax, do not use parenthesis, invalid or special characters. If no control flow is present in the code (for example, the code is just comments), return the string "NO CONTROL FLOW FOUND".
 
+{chunking}
+
 ```
 {code}
 ```

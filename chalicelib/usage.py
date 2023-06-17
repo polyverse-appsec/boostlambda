@@ -102,18 +102,21 @@ def decode_string_from_input(input: list[int]) -> str:
     return output
 
 
-def get_openai_usage(payload, input: bool = True):
-
+def get_openai_usage_per_string(payload: str, input: bool) -> Tuple[int, float]:
     token_count, _ = num_tokens_from_string(payload)
+    return get_openai_usage_per_token(token_count, input)
+
+
+def get_openai_usage_per_token(num_tokens: int, input: bool) -> Tuple[int, float]:
 
     if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4):
         if (input):
-            if (token_count < OpenAIDefaults.boost_max_tokens_gpt_4):
+            if (num_tokens < OpenAIDefaults.boost_max_tokens_gpt_4):
                 cost_per_token = cost_gpt4_per_prompt_token_lt_8000
             else:
                 cost_per_token = cost_gpt4_per_prompt_token_lt_32000
         else:
-            if (token_count < OpenAIDefaults.boost_max_tokens_gpt_4):
+            if (num_tokens < OpenAIDefaults.boost_max_tokens_gpt_4):
                 cost_per_token = cost_gpt4_per_completion_token_lt_8000
             else:
                 cost_per_token = cost_gpt4_per_completion_token_lt_32000
@@ -126,9 +129,9 @@ def get_openai_usage(payload, input: bool = True):
     else:
         cost_per_token = cost_codex_per_token
 
-    total_cost = token_count * cost_per_token
+    total_cost = num_tokens * cost_per_token
 
-    return token_count, total_cost
+    return num_tokens, total_cost
 
 
 def get_boost_cost(payloadLength):
