@@ -3,6 +3,7 @@ import traceback
 import json
 import uuid
 import time
+import os
 
 from chalice import BadRequestError
 
@@ -63,7 +64,19 @@ def process_request(event, function, api_version):
 
     except Exception as e:
         exception_info = traceback.format_exc().replace('\n', ' ')
-        print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+
+        # Use the get() method to retrieve the value of CHALICE_STAGE, with a default value of 'dev'
+        service_stage = os.environ.get('CHALICE_STAGE', 'local')
+
+        # we want to catch internal implementation errors and return a 500
+        if (service_stage in ('prod', 'staging')) and isinstance(e, (TypeError, ValueError, KeyError, IndexError, AttributeError, RuntimeError, NotImplementedError)):
+            genericServiceFailure = "Internal Boost Service error has occurred. Please retry or contact Polyverse Boost Support if the error continues"
+            print(f'SERVICE_IMPL_FAILURE: {str(event)}, function({function.__name__}: FAILED with exception: {exception_info}')
+        else:
+            # everything else we'll pass through
+            genericServiceFailure = str(e)
+            print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
+
         if cloudwatch is not None:
             subsegment = xray_recorder.begin_subsegment('exception')
             subsegment.put_annotation('correlation_id', correlation_id)
@@ -76,7 +89,7 @@ def process_request(event, function, api_version):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': api_version},
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": genericServiceFailure})
         }
 
     # Put this into a JSON object - assuming the result is already an object
