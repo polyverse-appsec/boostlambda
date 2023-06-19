@@ -59,14 +59,22 @@ class SummarizeProcessor(GenericProcessor):
             # combine the entire set of inputs into a large input (which will be chunked by the model)
             # inputs = '\n\n'.join(chunked_inputs)
 
-        result = self.process_input(data, account, function_name, correlation_id,
-                                    {self.get_chunkable_input(): inputs if inputs is not None else None,
-                                     'analysis_type': analysis_type,
-                                     'analysis_label': analysis_label,
-                                     key_NumberOfChunks: chunks,
-                                     key_ChunkPrefix: chunk_prefix,
-                                     'summary_example': example_summary,
-                                     key_ChunkedInputs: chunked_inputs})
+        print(f'SUMMARY:{correlation_id}:Processing {len(inputs)} {analysis_type} inputs')
+
+        try:
+            result = self.process_input(data, account, function_name, correlation_id,
+                                        {self.get_chunkable_input(): inputs if inputs is not None else None,
+                                         'analysis_type': analysis_type,
+                                         'analysis_label': analysis_label,
+                                         key_NumberOfChunks: chunks,
+                                         key_ChunkPrefix: chunk_prefix,
+                                         'summary_example': example_summary,
+                                         key_ChunkedInputs: chunked_inputs})
+        except Exception as e:
+            print(f'SUMMARY:{correlation_id}:Error processing {len(inputs)} {analysis_type} inputs')
+            raise e
+        finally:
+            print(f'SUMMARY:{correlation_id}:Completed processing {len(inputs)} {analysis_type} inputs')
 
         return {"analysis": result['output'],
                 "truncated": result['truncated'],
