@@ -267,7 +267,7 @@ class GenericProcessor:
                         raise
                     else:
                         # throttle way back if we hit the 40k processing limit
-                        if "40000 / min" in e.message:
+                        if "40000 / min" in str(e):
                             randomSleep = random.uniform(30, 60)
                         else:
                             randomSleep = random.uniform(5, 15)
@@ -343,17 +343,27 @@ class GenericProcessor:
             if chunked:
                 print(f"{function_name}:Chunked:{account['email']}:{correlation_id}:Chunked user input - {len(prompt_set)} chunks")
 
+                openAIRateLimitPerMinute = 40000
+                totalChunks = len(prompt_set)
+                tokensPerChunk = openAIRateLimitPerMinute / totalChunks
+
                 def runAnalysisForPromptThrottled(prompt_iteration):
                     index, prompt = prompt_iteration
                     if OpenAIDefaults.boost_max_tokens_default == 0:
                         delay = 0  # if we have no defined max, then no delay and no throttling - since tuning is disabled
                     else:
-                        openAIRateLimitPerMinute = 40000
-                        secondsPerMinute = 60
+
+                        def calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk) -> float:
+                            processingMinutes = estimatedTokensForThisPrompt / tokensPerChunk
+                            processingSeconds = processingMinutes * 60
+                            return processingSeconds
+
                         # we use an estimate that input tokens will be doubled in output
-                        estimatedTokensForThisPrompt = math.min((OpenAIDefaults.boost_max_tokens_default - prompt[1]) * (1 / self.calculate_input_token_buffer),
-                                                                OpenAIDefaults.boost_max_tokens_default)
-                        delay = estimatedTokensForThisPrompt / (openAIRateLimitPerMinute / secondsPerMinute)
+                        estimatedTokensForThisPrompt = min((OpenAIDefaults.boost_max_tokens_default - prompt[1]) * (1 / self.calculate_input_token_buffer(
+                            OpenAIDefaults.boost_max_tokens_default)),
+                            OpenAIDefaults.boost_max_tokens_default)
+                        delay = calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk)
+
                     print(f"{function_name}:{correlation_id}:Thread-{threading.current_thread().ident} "
                           f"Summary {index} delaying for {delay:.3f} secs")
                     time.sleep(delay)  # Delay based on the number of words in the prompt
