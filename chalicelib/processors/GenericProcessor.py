@@ -266,7 +266,11 @@ class GenericProcessor:
                     if attempt >= max_retries:  # If not the last attempt
                         raise
                     else:
-                        randomSleep = random.uniform(5, 15)
+                        # throttle way back if we hit the 40k processing limit
+                        if "40000 / min" in e.message:
+                            randomSleep = random.uniform(30, 60)
+                        else:
+                            randomSleep = random.uniform(5, 15)
                         print(f"{function_name}:{correlation_id}:RateLimitError, sleeping for {randomSleep} seconds before retry")
                         time.sleep(randomSleep)  # Sleep for 5-15 seconds to throttle, and avoid stampeding on retry
                         recoverableError = e
