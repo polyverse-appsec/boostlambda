@@ -219,7 +219,7 @@ def check_customer_account_status(customer):
         return True, "paid"
 
     # Check if the customer has a default payment method
-    if customer['invoice_settings']['default_payment_method']:
+    if customer['invoice_settings']['default_payment_method'] or customer['default_source']:
         return True, "paid"
 
     # if stripe thinks the customer is delinquent, then we will suspend them
