@@ -59,7 +59,7 @@ class SummarizeProcessor(GenericProcessor):
             # combine the entire set of inputs into a large input (which will be chunked by the model)
             # inputs = '\n\n'.join(chunked_inputs)
 
-        print(f'SUMMARY:{correlation_id}:Processing {len(inputs)} {analysis_type} inputs')
+        print(f'SUMMARY:{correlation_id}:Processing {len(inputs) if inputs is not None else 0} {analysis_type} inputs')
 
         try:
             result = self.process_input(data, account, function_name, correlation_id,
