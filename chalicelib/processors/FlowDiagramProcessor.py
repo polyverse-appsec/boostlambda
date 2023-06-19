@@ -48,6 +48,11 @@ def sanitize_mermaid_code(markdownCode):
                              lambda match: "```" + re.sub(r" \"(.*)\"", " \1",
                                                           match.group(1)) + "```", cleanedMarkdown, flags=re.DOTALL)
 
+    # replace unescaped unicode \u0001 with nothing
+    cleanedMarkdown = re.sub(regex,
+                             lambda match: "```" + re.sub(u'\u0001', '',
+                                                          match.group(1)) + "```", cleanedMarkdown, flags=re.DOTALL)
+
     # clean out parantheses, replaced with spaces
     cleanedMarkdown = re.sub(regex,
                              lambda match: "```" + re.sub(r"\((.*)\)", " \1 ",
