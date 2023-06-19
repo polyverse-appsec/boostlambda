@@ -224,6 +224,20 @@ def test_update_usage_large():
 
     assert account_status == 'paid'
 
+    # remove the card
+    stripe.Customer.delete_source(
+        customer.id,
+        customer.default_source,
+    )
+    
+    # Retrieve the customer again to get updated data
+    customer = stripe.Customer.retrieve(customer.id)
+
+    # now check that we correctly flag the customer as needing to be charged
+    active, account_status = check_customer_account_status(customer=customer)
+    assert active is False
+    assert account_status == 'expired'
+
 
 def test_check_valid_subscriber():
     # Define test inputs
