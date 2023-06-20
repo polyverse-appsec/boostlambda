@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.6.1: June 14, 2023
+## Version 0.6.1: June 19, 2023
 
 ### New Features
 - Support for very large input files - broken into chunks

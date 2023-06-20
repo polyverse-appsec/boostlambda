@@ -229,7 +229,7 @@ def test_update_usage_large():
         customer.id,
         customer.default_source,
     )
-    
+
     # Retrieve the customer again to get updated data
     customer = stripe.Customer.retrieve(customer.id)
 
