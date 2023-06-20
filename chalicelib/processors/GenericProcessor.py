@@ -223,6 +223,7 @@ class GenericProcessor:
                         print(f"{function_name}:{account['email']}:{correlation_id}:Succeeded after {attempt} retries")
 
                     return dict(
+                        message=response.choices[0].message,
                         response=response.choices[0].message.content,
                         finish=response.choices[0].finish_reason,
                         input_tokens=response.usage.prompt_tokens,
@@ -325,6 +326,16 @@ class GenericProcessor:
             params["top_p"] = float(data['top_p'])
         elif 'temperature' in data:
             params["temperature"] = float(data['temperature'])
+
+        # if the current class instance has a functions array, then add that to the params
+        if hasattr(self, 'functions'):
+            params["functions"] = self.functions
+            if hasattr(self, 'function_call'):
+                params["function_call"] = self.function_call
+
+        # the the current class instance has a max_tokens field, then add that to the params
+        if hasattr(self, 'max_tokens'):
+            params["max_tokens"] = self.max_tokens
 
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
@@ -452,6 +463,7 @@ class GenericProcessor:
                 pass  # Don't fail if we can't capture metrics
 
         return {
+            "results": results,
             "output": result,
             "truncated": truncated,
             "chunked": chunked

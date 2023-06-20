@@ -1,0 +1,15 @@
+Analyze the below code for bugs, including security bugs, race conditions, timing issues, and problematic side-effects .
+
+For each bug, indicate a severity on a ten point scale, ten being the worse.
+Explain the bug and if possible, suggest a solution.
+
+For each vulnerability and solution, provide web link for more education and background.
+
+Please be very concise
+
+{chunking}
+
+Here is the code to analyze:
+
+```
+{code}
