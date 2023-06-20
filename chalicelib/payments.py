@@ -82,7 +82,7 @@ def create_price(email):
 
 
 # a function to call stripe to create a customer
-def check_create_customer(email, org, correlation_id):
+def check_create_customer(email, org, correlation_id=0):
     # the Stripe API is a bit goofy.  search does not guarantee results immediately, it can have up to an hour delay.
     # so we will first search.
     # if we can't find it, then we look to the last hour of customers and see if we can find it there.

@@ -148,6 +148,9 @@ def main(show_test, debug, dev, printall, exportcsv, user):
             print(f"No upcoming invoice for customer {customer.id} or error fetching invoice: {str(e)}")
 
     print()
+    print("-------------------------------------------------------------------")
+    print(f"Invoice Report Date/Time: {datetime.datetime.now().strftime('%B %d, %Y, %I:%M:%S %p')}")
+    print("-------------------------------------------------------------------")
 
     if exportcsv:
         csvFile = 'customer_data.csv'

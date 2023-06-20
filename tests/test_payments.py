@@ -3,6 +3,7 @@ import stripe
 
 # Import the checkCreateCustomer function from the payments module in the chalicelib directory
 from chalicelib.payments import check_create_customer, check_create_subscription, check_create_subscription_item, update_usage, check_customer_account_status, check_valid_subscriber
+from chalicelib.usage import boost_cost_per_kb
 
 
 # utility function to generate an org name with a random domain
@@ -134,17 +135,32 @@ def test_update_usage_large():
     # Call the checkCreateSubscriptionItem function with the test inputs
     subscription_item = check_create_subscription_item(subscription=subscription, email=email)
 
+    # small amount of data
+    oneKb = 1024
+    oneDollarInData = 1 / boost_cost_per_kb * oneKb
+    trialNinetyNineDollars = 99 * oneDollarInData
+
+    # now check that we correctly flag the customer as active (new account)
+    active, account_status = check_customer_account_status(customer=customer)
+    assert active is True
+    assert account_status == 'active'
+    # Call the updateUsage function with the test inputs
+    result = update_usage(subscription_item=subscription_item, bytes=oneDollarInData)  # small amount of data
+
     # now check that we correctly flag the customer as in a trial
     active, account_status = check_customer_account_status(customer=customer)
     assert active is True
     assert account_status == 'trial'
     # Call the updateUsage function with the test inputs
-    result = update_usage(subscription_item=subscription_item, bytes=104857600)
+    result = update_usage(subscription_item=subscription_item, bytes=trialNinetyNineDollars)
 
     # Assert that the result is a customer object
     assert result is not None
     # Assert that there is a customer id
     assert result.id is not None
+
+    # Add a bit more data to go over the trial limit, and require credit card
+    result = update_usage(subscription_item=subscription_item, bytes=oneDollarInData)  # small amount of data
 
     # now get the current balance from the customer.  we should look up the customer id again to get the latest
     customer = stripe.Customer.retrieve(customer.id)
@@ -155,7 +171,7 @@ def test_update_usage_large():
     # now check that we correctly flag the customer as needing to be charged
     active, account_status = check_customer_account_status(customer=customer)
     assert active is False
-    assert account_status == 'suspended'
+    assert account_status == 'expired'
 
     # get the pending invoice
     invoice = stripe.Invoice.upcoming(customer=customer.id)
@@ -163,6 +179,64 @@ def test_update_usage_large():
     # assert that the invoice is not none
     assert invoice is not None
     assert invoice.amount_due > 0
+
+    # create the credit card for customer
+    token = stripe.Token.create(card={
+        "number": "4242424242424242",  # Replace with card number
+        "exp_month": 12,  # Replace with expiration month
+        "exp_year": 2024,  # Replace with expiration year
+        "cvc": "123",  # Replace with card CVC
+    })
+    # attach the card to the customer
+    new_source = stripe.Customer.create_source(
+        customer.id,
+        source=token.id,
+    )
+    # Set the new card as the default source
+    customer = stripe.Customer.modify(
+        customer.id,
+        default_source=new_source['id']
+    )
+
+    # now check that we correctly flag the customer as needing to be charged
+    active, account_status = check_customer_account_status(customer=customer)
+    if not active:
+        payment_method = stripe.PaymentMethod.create(
+            type='card',
+            card={
+                'number': '4242424242424242',
+                'exp_month': 5,
+                'exp_year': 2024,
+                'cvc': '314',
+            },
+        )
+
+        customer = stripe.Customer.modify(
+            customer.id,
+            invoice_settings={
+                'default_payment_method': payment_method.id,
+            },
+        )
+
+        # now check that we correctly flag the customer as needing to be charged
+        active, account_status = check_customer_account_status(customer=customer)
+        assert active is True
+
+    assert account_status == 'paid'
+
+    # remove the card
+    stripe.Customer.delete_source(
+        customer.id,
+        customer.default_source,
+    )
+    
+    # Retrieve the customer again to get updated data
+    customer = stripe.Customer.retrieve(customer.id)
+
+    # now check that we correctly flag the customer as needing to be charged
+    active, account_status = check_customer_account_status(customer=customer)
+    assert active is False
+    assert account_status == 'expired'
 
 
 def test_check_valid_subscriber():
