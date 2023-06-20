@@ -218,7 +218,7 @@ def check_customer_account_status(customer):
     if customer['email'].endswith("@polyverse.io"):
         return True, "paid"
 
-    # Check if the customer has a default payment method
+    # Check if the customer has a default payment method (or manually entered payment)
     if customer['invoice_settings']['default_payment_method'] or customer['default_source']:
         return True, "paid"
 

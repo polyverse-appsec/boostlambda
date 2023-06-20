@@ -3,6 +3,20 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.6.1: June 14, 2023
+
+### New Features
+- Support for very large input files - broken into chunks
+
+# Enhancements
+- Migrated all Boost services to generic processor for shared infrastructure
+- Throttling for rate limited OpenAI network services
+- Retry logic on recoverable network errors
+- Improvements to flow chart rendering
+
+# Bug Fixes
+- Fixed manually entered credit cards
+
 ## Version 0.6.0: June 14, 2023
 
 ### New Features
@@ -14,7 +28,7 @@ Polyverse Boost Cloud Service
 # Bug Fixes
 - Fix xray tracing on error cases for all Generic Processor-derived services
 - Fix Blueprint Update prompt - wasn't including the original blueprint in the prompt
-- Fix bug that prevented completed Trial licenses from blocking unpaid new usage without a credit cardxwxw
+- Fix bug that prevented completed Trial licenses from blocking unpaid new usage without a credit cards
 
 ## Version 0.5.7: June 8, 2023
 

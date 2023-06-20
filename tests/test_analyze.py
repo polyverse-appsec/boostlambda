@@ -16,4 +16,5 @@ def test_analyze_function():
         response = client.lambda_.invoke(
             'analyze_function', request_body)
 
+        print(response.payload)
         assert response.payload['statusCode'] == 200

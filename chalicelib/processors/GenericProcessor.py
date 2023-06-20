@@ -266,7 +266,11 @@ class GenericProcessor:
                     if attempt >= max_retries:  # If not the last attempt
                         raise
                     else:
-                        randomSleep = random.uniform(5, 15)
+                        # throttle way back if we hit the 40k processing limit
+                        if "40000 / min" in str(e):
+                            randomSleep = random.uniform(30, 60)
+                        else:
+                            randomSleep = random.uniform(5, 15)
                         print(f"{function_name}:{correlation_id}:RateLimitError, sleeping for {randomSleep} seconds before retry")
                         time.sleep(randomSleep)  # Sleep for 5-15 seconds to throttle, and avoid stampeding on retry
                         recoverableError = e
@@ -339,15 +343,40 @@ class GenericProcessor:
             if chunked:
                 print(f"{function_name}:Chunked:{account['email']}:{correlation_id}:Chunked user input - {len(prompt_set)} chunks")
 
+                openAIRateLimitPerMinute = 40000
+                totalChunks = len(prompt_set)
+                tokensPerChunk = openAIRateLimitPerMinute / totalChunks
+
+                def runAnalysisForPromptThrottled(prompt_iteration):
+                    index, prompt = prompt_iteration
+                    if OpenAIDefaults.boost_max_tokens_default == 0:
+                        delay = 0  # if we have no defined max, then no delay and no throttling - since tuning is disabled
+                    else:
+
+                        def calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk) -> float:
+                            processingMinutes = estimatedTokensForThisPrompt / tokensPerChunk
+                            processingSeconds = processingMinutes * 60
+                            return processingSeconds
+
+                        # we use an estimate that input tokens will be doubled in output
+                        estimatedTokensForThisPrompt = min((OpenAIDefaults.boost_max_tokens_default - prompt[1]) * (1 / self.calculate_input_token_buffer(
+                            OpenAIDefaults.boost_max_tokens_default)),
+                            OpenAIDefaults.boost_max_tokens_default)
+                        delay = calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk)
+
+                    print(f"{function_name}:{correlation_id}:Thread-{threading.current_thread().ident} "
+                          f"Summary {index} delaying for {delay:.3f} secs")
+                    time.sleep(delay)  # Delay based on the number of words in the prompt
+
+                    if delay > 5:  # If delay is more than 5 seconds, log it
+                        print(f"{function_name}:{correlation_id}:Thread-{threading.current_thread().ident} "
+                              f"Summary {index} delayed for {delay:.3f} secs")
+                    return self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
+
                 # launch all the parallel threads to run analysis with the unique chunked prompt for each
+                # Throttling the rate of file processing
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    results = list(
-                        executor.map(
-                            # prompt_iteration is an expansion of the tuple resulting from enumerate(prompts)
-                            # prompts enumeration tuple is index into prompts, and the prompt member in prompts
-                            lambda prompt_iteration: self.runAnalysisForPrompt(
-                                prompt_iteration[0], prompt_iteration[1][0], prompt_iteration[1][1], params, account,
-                                function_name, correlation_id), enumerate(prompt_set)))
+                    results = list(executor.map(runAnalysisForPromptThrottled, enumerate(prompt_set)))
             # otherwise, run once
             else:
                 # if truncated user input, report it out, and update the OpenAI input with the truncated input
