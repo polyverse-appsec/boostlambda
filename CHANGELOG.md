@@ -17,6 +17,7 @@ Polyverse Boost Cloud Service
 - Fix regression in blueprint processor for custom seeds
 - Fix issue with custom processor sending too many messages - truncate more than 60% of total token buffer
 - Fix issue with missing content in custom processor messages
+- Enable access to account portal and billing info for delinquent accounts
 
 ## Version 0.6.1: June 19, 2023
 

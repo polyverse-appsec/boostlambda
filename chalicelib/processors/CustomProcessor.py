@@ -89,7 +89,7 @@ class CustomProcessor(GenericProcessor):
                 if sys_token_count > retained_tokens:
                     message['content'] = decode_string_from_input(sys_tokens[:retained_tokens])
                     print(f"{self.__class__.__name__}:Truncation:"
-                        f"System input discarded {sys_token_count - retained_tokens} tokens")
+                          f"System input discarded {sys_token_count - retained_tokens} tokens")
             new_messages.append(message)
         this_messages = new_messages
 

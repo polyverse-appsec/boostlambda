@@ -212,6 +212,11 @@ def update_usage_for_text(account, bytes_of_text):
 #   - paid: the customer has a payment method
 #   - active: the customer has no usage, no invoice, no balance, no payment method
 def check_customer_account_status(customer):
+
+    # if stripe thinks the customer is delinquent, then we will suspend them
+    if customer['delinquent'] is True:
+        return False, "suspended"
+
     invoice = stripe.Invoice.upcoming(customer=customer.id)
 
     # We're going to treat polyverse accounts as paid, even though no credit card on file
@@ -221,10 +226,6 @@ def check_customer_account_status(customer):
     # Check if the customer has a default payment method (or manually entered payment)
     if customer['invoice_settings']['default_payment_method'] or customer['default_source']:
         return True, "paid"
-
-    # if stripe thinks the customer is delinquent, then we will suspend them
-    if customer['delinquent'] is True:
-        return False, "suspended"
 
     # it seems like a non-zero balance also implies a trial license
     # we return false to notify that trial has expired (e.g. all discounts used up, and amount due)
