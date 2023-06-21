@@ -16,7 +16,7 @@ from .. import pvsecret
 
 from chalicelib.markdown import markdown_emphasize
 from chalicelib.telemetry import capture_metric, InfoMetrics, CostMetrics
-from chalicelib.usage import (get_openai_usage_per_token, get_openai_usage_per_string,
+from chalicelib.usage import (get_openai_usage_per_token, get_openai_usage_per_string, max_tokens_for_model,
                               get_boost_cost, OpenAIDefaults, num_tokens_from_string, decode_string_from_input)
 from chalicelib.payments import update_usage_for_text
 
@@ -61,7 +61,7 @@ class GenericProcessor:
         fullMessageContentTokensCount = sum(num_tokens_from_string(message["content"])[0] for message in this_messages)
 
         # if we can fit the chunk into one token buffer, we'll process and be done
-        tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - fullMessageContentTokensCount
+        tuned_max_tokens = max_tokens_for_model(data.get('model')) - fullMessageContentTokensCount
         if (fullMessageContentTokensCount < input_token_buffer):
             return [(this_messages, tuned_max_tokens)]
 
@@ -112,7 +112,7 @@ class GenericProcessor:
             these_tokens_count = sum(num_tokens_from_string(message["content"])[0] for message in this_messages)
 
             # get the new remaining max tokens we can accomodate with output
-            tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - these_tokens_count
+            tuned_max_tokens = max_tokens_for_model(data.get('model')) - these_tokens_count
 
             # store the updated message to be processed
             this_messages_chunked.append((this_messages, tuned_max_tokens))
@@ -127,8 +127,8 @@ class GenericProcessor:
     def build_prompts_from_input(self, data, prompt_format_args, function_name) -> Tuple[bool, List[Tuple[List[dict[str, any]], int]], int]:
 
         # get the max input buffer for this function if we are tuning tokens
-        if OpenAIDefaults.boost_tuned_max_tokens != 0:
-            input_token_buffer = self.calculate_input_token_buffer(OpenAIDefaults.boost_tuned_max_tokens)
+        if max_tokens_for_model(data.get('model')) != 0:
+            input_token_buffer = self.calculate_input_token_buffer(max_tokens_for_model(data.get('model')))
         # otherwise, just send it all to the OpenAI endpoint, and ignore limits
         else:
             input_token_buffer = 0
@@ -144,7 +144,7 @@ class GenericProcessor:
                 prompts_set = [(this_messages, 0)]
 
             elif these_tokens_count < input_token_buffer:
-                tuned_max_tokens = OpenAIDefaults.boost_tuned_max_tokens - these_tokens_count
+                tuned_max_tokens = max_tokens_for_model(data.get('model')) - these_tokens_count
                 prompts_set = [(this_messages, tuned_max_tokens)]
 
             else:  # this single input has blown the input buffer, so we'll need to chunk it
@@ -349,6 +349,7 @@ class GenericProcessor:
 
                 def runAnalysisForPromptThrottled(prompt_iteration):
                     index, prompt = prompt_iteration
+                    model_max_tokens = max_tokens_for_model(data.get('model'))
                     if OpenAIDefaults.boost_max_tokens_default == 0:
                         delay = 0  # if we have no defined max, then no delay and no throttling - since tuning is disabled
                     else:
@@ -359,9 +360,9 @@ class GenericProcessor:
                             return processingSeconds
 
                         # we use an estimate that input tokens will be doubled in output
-                        estimatedTokensForThisPrompt = min((OpenAIDefaults.boost_max_tokens_default - prompt[1]) * (1 / self.calculate_input_token_buffer(
-                            OpenAIDefaults.boost_max_tokens_default)),
-                            OpenAIDefaults.boost_max_tokens_default)
+                        estimatedTokensForThisPrompt = min((model_max_tokens - prompt[1]) * (1 / self.calculate_input_token_buffer(
+                            model_max_tokens)),
+                            model_max_tokens)
                         delay = calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk)
 
                     print(f"{function_name}:{correlation_id}:Thread-{threading.current_thread().ident} "
@@ -382,7 +383,7 @@ class GenericProcessor:
                 # if truncated user input, report it out, and update the OpenAI input with the truncated input
                 if truncated:
                     print(f"{function_name}:Truncation:{account['email']}:{correlation_id}:"
-                          f"Truncated user input, discarded {OpenAIDefaults.boost_tuned_max_tokens - prompt_set[0][1]} tokens")
+                          f"Truncated user input, discarded {max_tokens_for_model(data.get('model')) - prompt_set[0][1]} tokens")
 
                 # run the analysis with single input
                 singleIndex = 0
@@ -392,7 +393,7 @@ class GenericProcessor:
 
             # after we run the analysis, we need to update the result with the truncation warning
             if truncated:
-                truncation = markdown_emphasize(f"Truncated input, discarded ~{OpenAIDefaults.boost_tuned_max_tokens - prompt_set[0][1]} words\n\n")
+                truncation = markdown_emphasize(f"Truncated input, discarded ~{max_tokens_for_model(data.get('model')) - prompt_set[0][1]} words\n\n")
                 result = f"{truncation}{results[0]['response']}"
 
             # if chunked, we're going to reassemble all the chunks

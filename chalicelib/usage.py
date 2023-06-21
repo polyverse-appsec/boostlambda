@@ -28,6 +28,26 @@ class OpenAIDefaults:
     encoding_gpt = "cl100k_base"  # used for gpt4
     encoding_codex = "p50k_base"  # used for codex/davinci
 
+
+def max_tokens_for_model(model: str):
+    if OpenAIDefaults.boost_tuned_max_tokens == 0:
+        return OpenAIDefaults.boost_max_tokens_unlimited
+
+    # if the data has a max tokens set, use that
+    if model is None:
+        # use the default
+        return OpenAIDefaults.boost_max_tokens_default
+
+    if OpenAIDefaults.boost_model_gpt4_32k in model:
+        return OpenAIDefaults.boost_max_tokens_gpt_4_32k
+    elif OpenAIDefaults.boost_model_gpt4 in model:
+        return OpenAIDefaults.boost_max_tokens_gpt_4
+    elif OpenAIDefaults.boost_model_gpt35_cheap_chat in model:
+        return OpenAIDefaults.boost_max_tokens_gpt_35
+
+    else:
+        return OpenAIDefaults.boost_max_tokens_default
+
 # https://openai.com/pricing
 # | Context size | Cost per 1K tokens  | Cost per 1K tokens        |
 # | Model        | Prompt              | Completion                |
