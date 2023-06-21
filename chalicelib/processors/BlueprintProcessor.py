@@ -22,12 +22,12 @@ class BlueprintProcessor(GenericProcessor):
             prompt_format_args['prior_blueprint'] = data['blueprint']
             # If there is no prior blueprint, set the prompt is creating the seed blueprint from the ingested code
             if 'prior_blueprint' not in data:
-                return self.prompts['seed'].format(prompt_format_args)
+                return self.prompts['seed'].format(**prompt_format_args)
             else:
                 prompt_format_args['prior_blueprint'] = data['prior_blueprint']
-                return self.prompts['update'].format(prompt_format_args)
+                return self.prompts['update'].format(**prompt_format_args)
         else:
-            return self.prompts['seed'].format(prompt_format_args)
+            return self.prompts['seed'].format(**prompt_format_args)
 
     def generate_messages(self, data, prompt_format_args) -> Tuple[list[dict[str, any]]]:
 
@@ -36,7 +36,7 @@ class BlueprintProcessor(GenericProcessor):
 
         # if we aren't doing chunking, then just erase the tag from the prompt completely
         if 'chunking' not in prompt_format_args:
-            prompt_format_args['chunking'] = ''
+            prompt_format_args['chunking'] = ' '
 
         prompt = self.generate_prompt(data, prompt_format_args)
 
