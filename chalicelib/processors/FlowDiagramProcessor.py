@@ -1,6 +1,7 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 import re
+from chalicelib.usage import OpenAIDefaults
 
 
 class FlowDiagramProcessor(GenericProcessor):
@@ -8,7 +9,8 @@ class FlowDiagramProcessor(GenericProcessor):
         super().__init__(API_VERSION, {
             'main': 'flowdiagram.prompt',
             'role_system': 'flowdiagram-role-system.prompt'
-        })
+        }, {'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def get_chunkable_input(self) -> str:
         return 'code'

@@ -3,7 +3,22 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.6.1: June 14, 2023
+## Version 0.6.2: June 21, 2023
+
+### New Features
+- GenericProcessor now supports customization of model and temperature per processor
+
+# Enhancements
+- All processors have now been tuned for temperature - with Security and Data Compliance using a lower temperature, for example
+
+# Bug Fixes
+- Fixed token max calculation when using non-GPT4 models
+- Fix regression in custom processor for custom prompts
+- Fix regression in blueprint processor for custom seeds
+- Fix issue with custom processor sending too many messages - truncate more than 60% of total token buffer
+- Fix issue with missing content in custom processor messages
+
+## Version 0.6.1: June 19, 2023
 
 ### New Features
 - Support for very large input files - broken into chunks

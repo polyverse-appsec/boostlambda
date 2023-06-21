@@ -1,5 +1,6 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
+from chalicelib.usage import OpenAIDefaults
 
 
 class CodingGuidelinesProcessor(GenericProcessor):
@@ -7,7 +8,8 @@ class CodingGuidelinesProcessor(GenericProcessor):
         super().__init__(API_VERSION, {
             'main': 'guidelines.prompt',
             'role_system': 'guidelines-role-system.prompt'
-        })
+        }, {'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def get_chunkable_input(self) -> str:
         return 'code'

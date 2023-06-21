@@ -1,8 +1,10 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from chalice import BadRequestError
+from chalicelib.usage import OpenAIDefaults, num_tokens_from_string, decode_string_from_input, max_tokens_for_model
 
 import json
+import math
 
 
 class CustomProcessor(GenericProcessor):
@@ -10,33 +12,55 @@ class CustomProcessor(GenericProcessor):
         super().__init__(API_VERSION, {
             'main': 'customprocess.prompt',
             'role_system': 'customprocess-role-system.prompt'
-        })
+        }, {'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.default_temperature})
 
     def get_chunkable_input(self) -> str:
         return 'code'
 
-    def generate_prompt(self, _, prompt_format_args):
-        # if the user-provided prompt includes {code} block, then use that as the prompt
-        if "{{code}}" in prompt_format_args['customprompt']:
-            return prompt_format_args['customprompt'].format(prompt_format_args)
-        # otherwise, use the default prompt to also inject {code} block into the prompt
-        else:
-            return self.prompts['main'].format(prompt_format_args)
+    def calculate_input_token_buffer(self, total_max) -> int:
+        # we'll leave 90% of the buffer for the input, and 10% for the output
+        return math.floor(total_max * 0.8)
+
+    # we're only going to use 75% of our buffer for system messages (e.g. background info)
+    def calculate_system_message_token_buffer(self, total_max) -> int:
+        return math.floor(self.calculate_input_token_buffer(total_max) * 0.75)
 
     def generate_messages(self, data, prompt_format_args):
-        prompt_format_args[self.get_chunkable_input()] = data[self.get_chunkable_input()]
-        prompt_format_args['customprompt'] = data['prompt']
+        code = data[self.get_chunkable_input()]
+        customprompt = data['prompt']
 
-        # if we aren't doing chunking, then just erase the tag from the prompt completely
+        # if the user-provided prompt includes {code} block, then use that as the prompt
+        if "{{code}}" in customprompt:
+            prompt = customprompt
+        # otherwise, use the default prompt to also inject {code} block into the prompt
+        else:
+            prompt = self.prompts['main']
+
+        if '{{chunking}}' not in prompt:
+            prompt = f"{{chunking}}{prompt}"
+
         if 'chunking' not in prompt_format_args:
-            prompt_format_args['chunking'] = ' '
+            chunking = ' '
+        else:
+            chunking = prompt_format_args['chunking']
 
-        prompt = self.generate_prompt(prompt_format_args)
+        prompt = prompt.format(code=code, prompt=customprompt, chunking=chunking)
 
         if 'role_system' in data:
             this_role_system = data['role_system']
         else:
             this_role_system = self.prompts['role_system']
+
+        this_messages = [
+            {
+                "role": "system",
+                "content": this_role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }]
 
         if 'messages' in data:
             this_messages = json.loads(data['messages'])
@@ -50,6 +74,29 @@ class CustomProcessor(GenericProcessor):
                     "role": "user",
                     "content": prompt
                 }]
+
+        # in case the messages (system) are too long, we'll truncate them to the sys token buffer
+        # in case we receive messages with no content, discard them
+        new_messages = []
+        discarded_messages = []
+        for message in this_messages:
+            if 'content' not in message or message['content'] == '':
+                discarded_messages.append(message)
+                continue  # Skip this iteration and move to next message
+            if message['role'] == 'system':
+                sys_token_count, sys_tokens = num_tokens_from_string(message['content'])
+                retained_tokens = self.calculate_system_message_token_buffer(max_tokens_for_model(data.get('model')))
+                if sys_token_count > retained_tokens:
+                    message['content'] = decode_string_from_input(sys_tokens[:retained_tokens])
+                    print(f"{self.__class__.__name__}:Truncation:"
+                        f"System input discarded {sys_token_count - retained_tokens} tokens")
+            new_messages.append(message)
+        this_messages = new_messages
+
+        if len(discarded_messages) > 0:
+            print(f"{self.__class__.__name__}:Truncation:"
+                  f"Discarded {len(discarded_messages)} messages with no content")
+        this_messages = new_messages
 
         return this_messages
 
