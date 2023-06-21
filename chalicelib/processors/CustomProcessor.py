@@ -17,28 +17,41 @@ class CustomProcessor(GenericProcessor):
     def get_chunkable_input(self) -> str:
         return 'code'
 
-    def generate_prompt(self, _, prompt_format_args):
+    def generate_messages(self, data, prompt_format_args):
+        code = data[self.get_chunkable_input()]
+        customprompt = data['prompt']
+
         # if the user-provided prompt includes {code} block, then use that as the prompt
-        if "{{code}}" in prompt_format_args['customprompt']:
-            return prompt_format_args['customprompt'].format(prompt_format_args)
+        if "{{code}}" in customprompt:
+            prompt = customprompt
         # otherwise, use the default prompt to also inject {code} block into the prompt
         else:
-            return self.prompts['main'].format(prompt_format_args)
+            prompt = self.prompts['main']
 
-    def generate_messages(self, data, prompt_format_args):
-        prompt_format_args[self.get_chunkable_input()] = data[self.get_chunkable_input()]
-        prompt_format_args['customprompt'] = data['prompt']
+        if '{{chunking}}' not in prompt:
+            prompt = f"{{chunking}}{prompt}"
 
-        # if we aren't doing chunking, then just erase the tag from the prompt completely
         if 'chunking' not in prompt_format_args:
-            prompt_format_args['chunking'] = ' '
+            chunking = ' '
+        else:
+            chunking = prompt_format_args['chunking']
 
-        prompt = self.generate_prompt(prompt_format_args)
+        prompt = prompt.format(code=code, prompt=customprompt, chunking=chunking)
 
         if 'role_system' in data:
             this_role_system = data['role_system']
         else:
             this_role_system = self.prompts['role_system']
+
+        this_messages = [
+            {
+                "role": "system",
+                "content": this_role_system
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }]
 
         if 'messages' in data:
             this_messages = json.loads(data['messages'])
