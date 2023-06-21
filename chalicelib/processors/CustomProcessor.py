@@ -1,6 +1,7 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from chalice import BadRequestError
+from chalicelib.usage import OpenAIDefaults
 
 import json
 
@@ -10,7 +11,8 @@ class CustomProcessor(GenericProcessor):
         super().__init__(API_VERSION, {
             'main': 'customprocess.prompt',
             'role_system': 'customprocess-role-system.prompt'
-        })
+        }, {'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.default_temperature})
 
     def get_chunkable_input(self) -> str:
         return 'code'

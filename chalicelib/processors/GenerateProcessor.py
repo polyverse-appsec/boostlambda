@@ -1,6 +1,7 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from chalice import BadRequestError
+from chalicelib.usage import OpenAIDefaults
 
 
 class GenerateProcessor(GenericProcessor):
@@ -10,7 +11,8 @@ class GenerateProcessor(GenericProcessor):
             'role_system': 'convert-role-system.prompt',
             'role_assistant': 'convert-role-assistant.prompt',
             'role_user': 'convert-role-user.prompt'
-        })
+        }, {'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.default_temperature})
 
     # we are going to chunk the explanation, since its bigger than the code presumptively
     # However - realistically, we should be chunking both. But they segment independently - e.g.

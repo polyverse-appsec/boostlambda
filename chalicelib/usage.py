@@ -28,6 +28,13 @@ class OpenAIDefaults:
     encoding_gpt = "cl100k_base"  # used for gpt4
     encoding_codex = "p50k_base"  # used for codex/davinci
 
+    # temperature settings
+    temperature_terse_and_accurate = 0.1
+    temperature_medium_with_explanation = 0.5
+    temperature_verbose_and_explanatory = 1.0
+
+    default_temperature = temperature_verbose_and_explanatory
+
 
 def max_tokens_for_model(model: str):
     if OpenAIDefaults.boost_tuned_max_tokens == 0:

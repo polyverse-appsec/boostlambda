@@ -1,6 +1,7 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from typing import Tuple
+from chalicelib.usage import OpenAIDefaults
 
 
 class BlueprintProcessor(GenericProcessor):
@@ -9,7 +10,8 @@ class BlueprintProcessor(GenericProcessor):
             'role_system': 'blueprint-role-system.prompt',
             'seed': 'blueprint-seed.prompt',
             'update': 'blueprint-update.prompt'
-        })
+        }, {'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def get_chunkable_input(self) -> str:
         return 'code'

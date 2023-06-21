@@ -1,5 +1,6 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
+from chalicelib.usage import OpenAIDefaults
 
 
 class TestGeneratorProcessor(GenericProcessor):
@@ -7,7 +8,8 @@ class TestGeneratorProcessor(GenericProcessor):
         super().__init__(API_VERSION, {
             'main': 'testgen.prompt',
             'role_system': 'testgen-role-system.prompt'
-        })
+        }, {'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.default_temperature})
 
     def get_chunkable_input(self) -> str:
         return 'code'

@@ -38,10 +38,16 @@ openai.api_key = openai_key
 
 class GenericProcessor:
 
-    def __init__(self, api_version, prompt_filenames):
+    def __init__(self, api_version, prompt_filenames,
+                 default_params={'model': OpenAIDefaults.boost_default_gpt_model,
+                                 'temperature': OpenAIDefaults.default_temperature}):
+        
         self.api_version = api_version
         self.prompt_filenames = prompt_filenames
+        self.default_params = default_params
+
         print(f"{self.__class__.__name__}_api_version: ", self.api_version)
+
         self.prompts = self.load_prompts()
 
     def load_prompts(self):
@@ -313,12 +319,11 @@ class GenericProcessor:
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
 
-        params = {}
+        params = self.default_params.copy()  # Create a copy of the defaults
+
         # enable user to override the model to gpt-3 or gpt-4
         if 'model' in data:
             params["model"] = data['model']
-        else:
-            params["model"] = OpenAIDefaults.boost_default_gpt_model
 
         # https://community.openai.com/t/cheat-sheet-mastering-temperature-and-top-p-in-chatgpt-api-a-few-tips-and-tricks-on-controlling-the-creativity-deterministic-output-of-prompt-responses/172683
         if 'top_p' in data:
