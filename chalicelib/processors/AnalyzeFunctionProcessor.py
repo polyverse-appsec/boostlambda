@@ -113,7 +113,7 @@ class AnalyzeFunctionProcessor(GenericProcessor):
 
         # unless the temperature is explicity set in data, set it to .2
         if 'temperature' not in data:
-            data['temperature'] = .2
+            data['temperature'] = 0.1
 
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze")

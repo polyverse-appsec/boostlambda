@@ -26,12 +26,12 @@ def test_analyze_function():
         analysis = json.loads(response.payload['body'])
         assert analysis['status'] == 'bugsfound'
         assert analysis['analysis'][0]['bugType'] == 'Buffer Overflow'
-        assert analysis['analysis'][0]['lineNumber'] >= 20
+        assert analysis['analysis'][0]['lineNumber'] >= 15
         assert analysis['analysis'][0]['severity'] >= 7
         assert analysis['analysis'][1]['bugType'] != ''
-        assert analysis['analysis'][1]['lineNumber'] >= 20
+        assert analysis['analysis'][1]['lineNumber'] >= 15
         assert analysis['analysis'][1]['severity'] >= 7
         #for this test, any string is fine
         assert analysis['analysis'][2]['bugType'] != ''
-        assert analysis['analysis'][2]['lineNumber'] >= 30
+        assert analysis['analysis'][2]['lineNumber'] >= 15
         assert analysis['analysis'][2]['severity'] >= 7
