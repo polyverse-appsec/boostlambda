@@ -41,7 +41,7 @@ class GenericProcessor:
     def __init__(self, api_version, prompt_filenames,
                  default_params={'model': OpenAIDefaults.boost_default_gpt_model,
                                  'temperature': OpenAIDefaults.default_temperature}):
-        
+
         self.api_version = api_version
         self.prompt_filenames = prompt_filenames
         self.default_params = default_params
@@ -64,7 +64,10 @@ class GenericProcessor:
 
         # get the ideal full prompt - then we'll figure out if we need to break it up further
         this_messages = self.generate_messages(data, prompt_format_args)
-        fullMessageContentTokensCount = sum(num_tokens_from_string(message["content"])[0] for message in this_messages)
+        fullMessageContentTokensCount = 0
+        for message in this_messages:
+            if 'content' in message:
+                fullMessageContentTokensCount += num_tokens_from_string(message["content"])[0]
 
         # if we can fit the chunk into one token buffer, we'll process and be done
         tuned_max_tokens = max_tokens_for_model(data.get('model')) - fullMessageContentTokensCount
@@ -115,7 +118,10 @@ class GenericProcessor:
             prompt_format_args_copy[self.get_chunkable_input()] = user_chunk_text
             this_messages = self.generate_messages(data_copy, prompt_format_args_copy)
 
-            these_tokens_count = sum(num_tokens_from_string(message["content"])[0] for message in this_messages)
+            these_tokens_count = 0
+            for message in this_messages:
+                if 'content' in message:
+                    these_tokens_count += num_tokens_from_string(message["content"])[0]
 
             # get the new remaining max tokens we can accomodate with output
             tuned_max_tokens = max_tokens_for_model(data.get('model')) - these_tokens_count
@@ -144,7 +150,10 @@ class GenericProcessor:
         # if single input, build the prompt to test length
         if 'chunks' not in prompt_format_args:
             this_messages = self.generate_messages(data, prompt_format_args)
-            these_tokens_count = sum(num_tokens_from_string(message["content"])[0] for message in this_messages)
+            these_tokens_count = 0
+            for message in this_messages:
+                if 'content' in message:
+                    these_tokens_count += num_tokens_from_string(message["content"])[0]
 
             if input_token_buffer == 0:
                 prompts_set = [(this_messages, 0)]
@@ -182,10 +191,11 @@ class GenericProcessor:
                 # add the newly build prompt and max tokens into the list
                 prompts_set.extend(each_chunk_prompt_set)
 
-        user_prompts_size = sum(len(message["content"])
-                                for prompt, _ in prompts_set
-                                for message in prompt
-                                if message["role"] == "user")
+        user_prompts_size = 0
+        for prompt, _ in prompts_set:
+            for message in prompt:
+                if 'content' in message and message["role"] == "user":
+                    user_prompts_size += len(message["content"])
 
         return truncated, prompts_set, user_prompts_size
 
