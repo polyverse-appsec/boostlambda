@@ -51,7 +51,7 @@ def split_leading_number_from_description(description):
     return number, plan
 
 
-def main(show_test, debug, dev, printall, exportcsv, user):
+def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
     if not dev:
         os.environ['CHALICE_STAGE'] = 'prod'
@@ -92,7 +92,12 @@ def main(show_test, debug, dev, printall, exportcsv, user):
                 continue
 
             # exclude any customer with polyverse in email address, unless the command line argument "showTest" is specified
-            if ('polyverse' in customer.email or 'test-email-' in customer.email) and not show_test:
+            if ('test-email-' in customer.email) and not show_test:
+                if debug:
+                    print(f"Test Account: {customer.email}")
+                continue
+
+            if ('polyverse' in customer.email) and not includePolyverse:
                 if debug:
                     print(f"Test Account: {customer.email}")
                 continue
@@ -102,6 +107,15 @@ def main(show_test, debug, dev, printall, exportcsv, user):
             upcoming_invoice = stripe.Invoice.upcoming(customer=customer.id) if not customer.delinquent else None
 
             past_invoices = stripe.Invoice.list(customer=customer.id, status='paid')
+            open_invoices = stripe.Invoice.list(customer=customer.id, status='open')
+            void_invoices = stripe.Invoice.list(customer=customer.id, status='void')
+            draft_invoices = stripe.Invoice.list(customer=customer.id, status='draft')
+
+            all_invoices = past_invoices.data + open_invoices.data + void_invoices.data + draft_invoices.data  # + ([upcoming_invoice] if upcoming_invoice else [])
+
+            if customer.delinquent:
+                print(f"Delinquent customer: {customer.email}")
+
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
             customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
             customer_discounts += upcoming_invoice.total_discount_amounts[0].amount if (upcoming_invoice and upcoming_invoice.total_discount_amounts) else 0
@@ -113,41 +127,43 @@ def main(show_test, debug, dev, printall, exportcsv, user):
             _, account_status = check_customer_account_status(customer)
 
             thisCustomerUsage = 0
-            for invoice_data in upcoming_invoice.lines.data if upcoming_invoice else []:
-                usageInKb, plan_name = split_leading_number_from_description(invoice_data.description)
-                thisCustomerUsage += usageInKb
+            targetInvoices = ([upcoming_invoice] if upcoming_invoice else []) + list(past_invoices) + list(open_invoices)
+            for invoice in targetInvoices:
+                for invoice_data in upcoming_invoice.lines.data if upcoming_invoice else []:
+                    usageInKb, plan_name = split_leading_number_from_description(invoice_data.description)
+                    thisCustomerUsage += usageInKb
 
-                total_usage_kb += usageInKb
+                    total_usage_kb += usageInKb
 
-                customers_list.append([customer.metadata.org,
-                                       f"{invoice_data.price.metadata.email}",
-                                       f"{datetime.datetime.fromtimestamp(customer.created).date()}",
-                                       f"{account_status}",
-                                       f"{customer.invoice_settings.default_payment_method is not None}",
-                                       f"{plan_name}",
-                                       f"{usageInKb}",
-                                       f"${invoice_data.amount / 100:.2f}",
-                                       f"${upcoming_invoice.amount_due / 100:.2f}",
-                                       f"${upcoming_invoice.total_discount_amounts[0].amount / 100:.2f}" if upcoming_invoice.total_discount_amounts else "$0.00",
-                                       f"${upcoming_invoice.total / 100:.2f}",
-                                       f"${customer_discounts / 100:.2f}",
-                                       f"${customer_paid_invoices / 100:.2f}"])
+                    customers_list.append([customer.metadata.org,
+                                        f"{invoice_data.price.metadata.email}",
+                                        f"{datetime.datetime.fromtimestamp(customer.created).date()}",
+                                        f"{account_status}",
+                                        f"{customer.invoice_settings.default_payment_method is not None}",
+                                        f"{plan_name}",
+                                        f"{usageInKb}",
+                                        f"${invoice_data.amount / 100:.2f}",
+                                        f"${invoice.amount_due / 100:.2f}",
+                                        f"${invoice.total_discount_amounts[0].amount / 100:.2f}" if invoice.total_discount_amounts else "$0.00",
+                                        f"${invoice.total / 100:.2f}",
+                                        f"${customer_discounts / 100:.2f}",
+                                        f"${customer_paid_invoices / 100:.2f}"])
 
-            total_pending_invoices += upcoming_invoice.amount_due if upcoming_invoice else 0
-            total_paid_invoices += customer_paid_invoices
-            total_customer_discounts += customer_discounts
+                total_pending_invoices += upcoming_invoice.amount_due if upcoming_invoice else 0
+                total_paid_invoices += customer_paid_invoices
+                total_customer_discounts += customer_discounts
 
-            total_suspended_customers += 1 if customer.delinquent else 0
+                total_suspended_customers += 1 if customer.delinquent else 0
 
-            if customer.invoice_settings.default_payment_method:
-                total_paying_customers += 1
+                if customer.invoice_settings.default_payment_method:
+                    total_paying_customers += 1
 
-            if thisCustomerUsage > 0:
-                total_active_users += 1
-            else:
-                total_inactive_users += 1
+                if thisCustomerUsage > 0:
+                    total_active_users += 1
+                else:
+                    total_inactive_users += 1
 
-            customer_iter = customers.auto_paging_iter()
+                customer_iter = customers.auto_paging_iter()
 
         except Exception:
             if debug:
@@ -268,10 +284,11 @@ if __name__ == "__main__":
     parser.add_argument("--dev", action='store_true', help="Use Dev Server")
     parser.add_argument("--csv", action='store_true', help="Generate CSV file instead of printing table")
     parser.add_argument("--user", type=str, help="Show invoice data for a single user")
+    parser.add_argument("--includePolyverse", action='store_true', help="Include Polyverse account data")
     args = parser.parse_args()
 
     try:
-        main(args.showTest, args.debug, args.dev, args.printAll, args.csv, args.user)
+        main(args.showTest, args.debug, args.dev, args.printAll, args.csv, args.user, args.includePolyverse)
     except KeyboardInterrupt:
         print('Canceling...')
         sys.exit(0)
