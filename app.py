@@ -2,7 +2,7 @@ from chalice import Chalice
 
 from chalicelib.telemetry import cloudwatch, xray_recorder
 from chalicelib.payments import customer_portal_url, customerportal_api_version
-from app_utils import process_request, validate_request_lambda
+from chalicelib.app_utils import process_request, validate_request_lambda
 from chalicelib.auth import fetch_orgs, fetch_email_and_username, extract_client_version, userorganizations_api_version
 
 from chalicelib.processors.FlowDiagramProcessor import FlowDiagramProcessor
