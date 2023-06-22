@@ -62,10 +62,14 @@ def main(show_test, debug, dev, printall, exportcsv, user):
     from chalicelib.payments import check_customer_account_status # noqa
 
     total_pending_invoices = 0
+
     total_paying_customers = 0
     total_active_users = 0
     total_inactive_users = 0
+    total_suspended_customers = 0
+
     total_usage_kb = 0
+
     total_paid_invoices = 0
     total_customer_discounts = 0
 
@@ -100,7 +104,7 @@ def main(show_test, debug, dev, printall, exportcsv, user):
             past_invoices = stripe.Invoice.list(customer=customer.id, status='paid')
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
             customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
-            customer_discounts += upcoming_invoice.total_discount_amounts[0].amount if upcoming_invoice.total_discount_amounts else 0
+            customer_discounts += upcoming_invoice.total_discount_amounts[0].amount if (upcoming_invoice and upcoming_invoice.total_discount_amounts) else 0
 
             if debug:
                 print(customer)
@@ -129,9 +133,11 @@ def main(show_test, debug, dev, printall, exportcsv, user):
                                        f"${customer_discounts / 100:.2f}",
                                        f"${customer_paid_invoices / 100:.2f}"])
 
-            total_pending_invoices += upcoming_invoice.amount_due
+            total_pending_invoices += upcoming_invoice.amount_due if upcoming_invoice else 0
             total_paid_invoices += customer_paid_invoices
             total_customer_discounts += customer_discounts
+
+            total_suspended_customers += 1 if customer.delinquent else 0
 
             if customer.invoice_settings.default_payment_method:
                 total_paying_customers += 1
@@ -241,7 +247,8 @@ def main(show_test, debug, dev, printall, exportcsv, user):
         customerTable.add_row(["Paying Customers", f"{total_paying_customers}", f"{total_paying_customers / (total_active_users) * 100:.0f}% Converted"])
         customerTable.add_row(["Trial Customers", f"{total_active_users - total_paying_customers}", f"{(total_active_users - total_paying_customers) / (total_active_users) * 100:.0f}% of Active"])
         customerTable.add_row(["Active Customers", f"{total_active_users}", f"{total_active_users / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
-        customerTable.add_row(["New/Inactive Customers", f"{total_inactive_users}", f"{total_inactive_users / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
+        customerTable.add_row(["New Customers", f"{total_inactive_users}", f"{total_inactive_users / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
+        customerTable.add_row(["Suspended Customers", f"{total_suspended_customers}", f"{total_suspended_customers / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
         customerTable.add_row(["----------------------", "-----", "-----------"])
         customerTable.add_row(["TOTAL Customers", f"{total_active_users + total_inactive_users}", ""])
         print(customerTable)
