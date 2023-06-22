@@ -104,7 +104,7 @@ def main(show_test, debug, dev, printall, exportcsv, user):
 
             if debug:
                 print(customer)
-                print(upcoming_invoice)
+                print(upcoming_invoice if upcoming_invoice else "No upcoming invoice")
 
             _, account_status = check_customer_account_status(customer)
 
