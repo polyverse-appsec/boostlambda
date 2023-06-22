@@ -95,21 +95,21 @@ def main(show_test, debug, dev, printall, exportcsv, user):
 
             print(".", end="")
 
-            invoice = stripe.Invoice.upcoming(customer=customer.id)
+            upcoming_invoice = stripe.Invoice.upcoming(customer=customer.id) if not customer.delinquent else None
 
             past_invoices = stripe.Invoice.list(customer=customer.id, status='paid')
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
             customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
-            customer_discounts += invoice.total_discount_amounts[0].amount if invoice.total_discount_amounts else 0
+            customer_discounts += upcoming_invoice.total_discount_amounts[0].amount if upcoming_invoice.total_discount_amounts else 0
 
             if debug:
                 print(customer)
-                print(invoice)
+                print(upcoming_invoice)
 
             _, account_status = check_customer_account_status(customer)
 
             thisCustomerUsage = 0
-            for invoice_data in invoice.lines.data:
+            for invoice_data in upcoming_invoice.lines.data if upcoming_invoice else []:
                 usageInKb, plan_name = split_leading_number_from_description(invoice_data.description)
                 thisCustomerUsage += usageInKb
 
@@ -123,13 +123,13 @@ def main(show_test, debug, dev, printall, exportcsv, user):
                                        f"{plan_name}",
                                        f"{usageInKb}",
                                        f"${invoice_data.amount / 100:.2f}",
-                                       f"${invoice.amount_due / 100:.2f}",
-                                       f"${invoice.total_discount_amounts[0].amount / 100:.2f}" if invoice.total_discount_amounts else "$0.00",
-                                       f"${invoice.total / 100:.2f}",
+                                       f"${upcoming_invoice.amount_due / 100:.2f}",
+                                       f"${upcoming_invoice.total_discount_amounts[0].amount / 100:.2f}" if upcoming_invoice.total_discount_amounts else "$0.00",
+                                       f"${upcoming_invoice.total / 100:.2f}",
                                        f"${customer_discounts / 100:.2f}",
                                        f"${customer_paid_invoices / 100:.2f}"])
 
-            total_pending_invoices += invoice.amount_due
+            total_pending_invoices += upcoming_invoice.amount_due
             total_paid_invoices += customer_paid_invoices
             total_customer_discounts += customer_discounts
 
