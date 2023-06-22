@@ -7,6 +7,7 @@ import pandas as pd
 import datetime
 import re
 import csv
+import traceback
 
 
 # Determine the parent directory's path.
@@ -142,10 +143,11 @@ def main(show_test, debug, dev, printall, exportcsv, user):
 
             customer_iter = customers.auto_paging_iter()
 
-        except Exception as e:
+        except Exception:
             if debug:
                 print(customer)
-            print(f"No upcoming invoice for customer {customer.id} or error fetching invoice: {str(e)}")
+
+            print(f"No upcoming invoice for customer {customer.id} or error fetching invoice: {str(traceback.format_exc())}")
 
     print()
     print("-------------------------------------------------------------------")
