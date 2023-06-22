@@ -137,11 +137,11 @@ class AnalyzeFunctionProcessor(GenericProcessor):
 
             return {
                 "status": "bugsfound",
-                "analysis": bugs
+                "details": bugs
             } 
         else:
             return {
                 "status": "nobugsfound",
-                "analysis": []
+                "details": []
             }
         
