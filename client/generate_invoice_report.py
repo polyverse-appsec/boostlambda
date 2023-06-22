@@ -45,7 +45,7 @@ def split_leading_number_from_description(description):
     # Extract number and plan name
     number = int(parts[0])
     plan = parts[1]
-    plan = re.sub(r'^Polyverse Boost \(Tier (.*) at \$([\d.]+) \/ month\)$', r'T\1 at $\2', plan)
+    plan = re.sub(r'Polyverse Boost \((?:Tier (\d) )?at \$(.+) \/ month\)', r'T\1 at $\2', plan)
 
     return number, plan
 
