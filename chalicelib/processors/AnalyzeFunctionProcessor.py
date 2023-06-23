@@ -4,6 +4,7 @@ from chalice import BadRequestError
 from chalicelib.usage import OpenAIDefaults
 
 import json
+import math
 
 
 report_bug_function_old = {
@@ -108,6 +109,11 @@ class AnalyzeFunctionProcessor(GenericProcessor):
 
     def get_chunkable_input(self) -> str:
         return 'code'
+
+    def calculate_input_token_buffer(self, total_max) -> int:
+        # we'll leave 80% of the buffer for the input, and 20% for the output, since the function call outputs are small
+        # and we're much terser in output in this processor
+        return math.floor(total_max * 0.8)
 
     def analyze_code(self, data, account, function_name, correlation_id):
 
