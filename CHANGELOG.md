@@ -1,6 +1,17 @@
 Polyverse Boost Cloud Service
 ======================
 
+## Version 0.6.3: June 23, 2023
+
+### New Features
+- AnalyzeFunction will analyze code and return issues in source files and lines structured as JSON results 
+
+# Enhancements
+- N/A
+
+# Bug Fixes
+- Improve Mermaid code markdown blocks in Summary blocks
+
 # Release Notes
 
 ## Version 0.6.2: June 22, 2023
