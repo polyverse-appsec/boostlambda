@@ -16,6 +16,7 @@ from chalicelib.processors.ComplianceProcessor import ComplianceProcessor
 from chalicelib.processors.CodingGuidelinesProcessor import CodingGuidelinesProcessor
 from chalicelib.processors.BlueprintProcessor import BlueprintProcessor
 from chalicelib.processors.AnalyzeFunctionProcessor import AnalyzeFunctionProcessor
+from chalicelib.processors.ComplianceFunctionProcessor import ComplianceFunctionProcessor
 
 import uuid
 import json
@@ -82,9 +83,11 @@ def analyze(event, _):
 
 analyzeFunctionProcessor = AnalyzeFunctionProcessor()
 
+
 @app.lambda_function(name='analyze_function')
 def analyze_function(event, _):
     return process_request(event, analyzeFunctionProcessor.analyze_code, analyzeFunctionProcessor.api_version)
+
 
 complianceProcessor = ComplianceProcessor()
 
@@ -92,6 +95,14 @@ complianceProcessor = ComplianceProcessor()
 @app.lambda_function(name='compliance')
 def compliance(event, context):
     return process_request(event, complianceProcessor.compliance_code, complianceProcessor.api_version)
+
+
+complianceFunctionProcessor = ComplianceFunctionProcessor()
+
+
+@app.lambda_function(name='compliance_function')
+def compliance_function(event, _):
+    return process_request(event, complianceFunctionProcessor.compliance_code, complianceFunctionProcessor.api_version)
 
 
 codeguidelinesProcessor = CodingGuidelinesProcessor()

@@ -1,0 +1,15 @@
+Analyze this code for data and privacy compliance issues related to GDPR, PCI DSS, and HIPAA compliance. For each issue, indicate a severity on a ten point scale, ten being the worse. Explain the data and privacy compliance issue and if possible, suggest a solution. For each compliance issue, provide web link for more education and background.
+
+For each data compliance or privacy issue, indicate a severity on a ten point scale, ten being the worst.
+Explain the compliance issue, including how data compliance of the app, server or or system is compromised. If possible, suggest a solution.
+
+For each data compliance or privacy issue and solution, provide web link for more education and background.
+
+Please be very concise
+
+{chunking}
+
+Here is the code to analyze:
+
+```
+{code}

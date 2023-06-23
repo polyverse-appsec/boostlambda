@@ -6,7 +6,7 @@ Polyverse Boost Cloud Service
 ## Version 0.6.4: June 23, 2023
 
 ### New Features
-- N/A 
+- new Service: ComplianceFunction will analyze code and return issues in source files and lines structured as JSON results 
 
 # Enhancements
 - N/A
