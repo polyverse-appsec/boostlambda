@@ -150,10 +150,10 @@ class GenericProcessor:
 
         # at least 10% of total max if it fits in remainingBuffer
         ten_percent_total = total_max * 0.1
-        minimum_buffer = min(remainingBuffer, ten_percent_total)
+        minimum_buffer = int(min(remainingBuffer, ten_percent_total))
 
         # the lesser of the remainingBuffer or 5x the input_buffer (for very tine inputs)
-        buffer_size = min(remainingBuffer, math.floor(input_buffer_size * 2))
+        buffer_size = int(min(remainingBuffer, math.floor(input_buffer_size * 2)))
 
         return max(buffer_size, minimum_buffer)
 
@@ -338,7 +338,7 @@ class GenericProcessor:
         params = params_template.copy()  # Create a copy of the template to avoid side effects
 
         if max_output_tokens != 0:
-            params["max_tokens"] = max_output_tokens
+            params["max_tokens"] = int(max_output_tokens)
 
         params['messages'] = this_messages
 
