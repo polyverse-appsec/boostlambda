@@ -26,7 +26,7 @@ report_bug_function_old = {
                             "type": "integer",
                             "description": "the column index on the line where the bug begins"
                         },
-                        "endCol": { 
+                        "endCol": {
                             "type": "integer",
                             "description": "the column index one the line where the bug ends "
                         },
@@ -51,7 +51,7 @@ report_bug_function_old = {
             }
         },
         "required": ["bugs"]
-    } 
+    }
 }
 
 # the live version does not use startCol and endCol. The line number is calculated from the original line number of the chunk if given,
