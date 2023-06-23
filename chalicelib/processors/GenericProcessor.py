@@ -343,6 +343,9 @@ class GenericProcessor:
         if 'model' in data:
             params["model"] = data['model']
 
+        if "model" in params:
+            print(f"{function_name}:{account['email']}:{correlation_id}:Using model {params['model']}")
+
         # https://community.openai.com/t/cheat-sheet-mastering-temperature-and-top-p-in-chatgpt-api-a-few-tips-and-tricks-on-controlling-the-creativity-deterministic-output-of-prompt-responses/172683
         if 'top_p' in data:
             params["top_p"] = float(data['top_p'])

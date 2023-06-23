@@ -37,6 +37,11 @@ class OpenAIDefaults:
     default_temperature = temperature_verbose_and_explanatory
 
 
+if 'AWS_CHALICE_CLI_MODE' not in os.environ and 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
+
+    print("OpenAIDefaults.boost_default_gpt_model: " + OpenAIDefaults.boost_default_gpt_model)
+
+
 def max_tokens_for_model(model: str):
     if OpenAIDefaults.boost_tuned_max_tokens == 0:
         return OpenAIDefaults.boost_max_tokens_unlimited
@@ -81,6 +86,7 @@ cost_codex_per_token = 0.02 / 1000
 cost_codex_cheap_per_token = 0.0004 / 1000
 
 try:
+    # text_encoding = tiktoken.encoding_for_model(OpenAIDefaults.boost_default_gpt_model)
     text_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt)
     code_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_codex)
 except Exception as error:
@@ -96,7 +102,7 @@ if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
 
 def num_tokens_from_string(string: str) -> Tuple[int, List[int]]:
     # Returns the number of tokens in a text string, and the encoded string
-    if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4):
+    if ((OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4) or (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4_current)):
         if (code_encoding is None):
             raise Exception("No encoding available")
 
@@ -115,7 +121,7 @@ def num_tokens_from_string(string: str) -> Tuple[int, List[int]]:
 
 def decode_string_from_input(input: list[int]) -> str:
     # Returns the number of tokens in a text string, and the encoded string
-    if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4):
+    if ((OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4) or (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4_current)):
         if (code_encoding is None):
             raise Exception("No encoding available")
 
@@ -137,7 +143,7 @@ def get_openai_usage_per_string(payload: str, input: bool) -> Tuple[int, float]:
 
 def get_openai_usage_per_token(num_tokens: int, input: bool) -> Tuple[int, float]:
 
-    if (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4):
+    if ((OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4) or (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4_current)):
         if (input):
             if (num_tokens < OpenAIDefaults.boost_max_tokens_gpt_4):
                 cost_per_token = cost_gpt4_per_prompt_token_lt_8000
