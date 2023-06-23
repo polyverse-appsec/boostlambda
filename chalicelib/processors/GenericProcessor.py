@@ -8,6 +8,7 @@ import requests
 import concurrent.futures
 import threading
 import random
+import json
 from typing import List, Tuple
 
 from chalice import UnprocessableEntityError
@@ -136,7 +137,7 @@ class GenericProcessor:
 
     # returns true if truncation was done
     # also returns a list of prompts to process - where each prompt includes the prompt text, and the max output tokens for that prompt
-    def build_prompts_from_input(self, data, prompt_format_args, function_name) -> Tuple[bool, List[Tuple[List[dict[str, any]], int]], int]:
+    def build_prompts_from_input(self, data, params, prompt_format_args, function_name) -> Tuple[bool, List[Tuple[List[dict[str, any]], int]], int]:
 
         # get the max input buffer for this function if we are tuning tokens
         if max_tokens_for_model(data.get('model')) != 0:
@@ -154,6 +155,12 @@ class GenericProcessor:
             for message in this_messages:
                 if 'content' in message:
                     these_tokens_count += num_tokens_from_string(message["content"])[0]
+
+            # include the function-related content as part of the input buffer
+            for key in ['function_call', 'functions']:
+                if key in params:
+                    # note that the function-related params are stored as dictionaries, unlike other user content
+                    these_tokens_count += num_tokens_from_string(json.dumps(params[key]))[0]
 
             if input_token_buffer == 0:
                 prompts_set = [(this_messages, 0)]
@@ -186,7 +193,7 @@ class GenericProcessor:
                 cloned_prompt_format_args[self.get_chunkable_input()] = chunk_inputs[i]
 
                 # recursively call ourselves per chunk
-                _, each_chunk_prompt_set, _ = self.build_prompts_from_input(data, cloned_prompt_format_args, function_name)
+                _, each_chunk_prompt_set, _ = self.build_prompts_from_input(data, params, cloned_prompt_format_args, function_name)
 
                 # add the newly build prompt and max tokens into the list
                 prompts_set.extend(each_chunk_prompt_set)
@@ -348,7 +355,7 @@ class GenericProcessor:
 
         prompt_set: List[Tuple[str, int]] = []
 
-        truncated, prompt_set, prompts_size = self.build_prompts_from_input(data, prompt_format_args, function_name)
+        truncated, prompt_set, prompts_size = self.build_prompts_from_input(data, params, prompt_format_args, function_name)
         chunked = len(prompt_set) > 1
 
         success = False
