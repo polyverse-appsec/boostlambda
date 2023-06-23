@@ -102,9 +102,9 @@ class AnalyzeFunctionProcessor(GenericProcessor):
             'main': 'analyze-function.prompt',
             'role_system': 'analyze-function-role-system.prompt'
         }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.temperature_terse_and_accurate})
-        self.functions = [report_bug_function]
-        self.function_call = {"name": "report_security_bugs"}
+            'temperature': OpenAIDefaults.temperature_terse_and_accurate,
+            'functions': [report_bug_function],
+            'function_call': {"name": "report_security_bugs"}})
 
     def get_chunkable_input(self) -> str:
         return 'code'

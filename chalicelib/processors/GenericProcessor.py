@@ -342,16 +342,6 @@ class GenericProcessor:
         elif 'temperature' in data:
             params["temperature"] = float(data['temperature'])
 
-        # if the current class instance has a functions array, then add that to the params
-        if hasattr(self, 'functions'):
-            params["functions"] = self.functions
-            if hasattr(self, 'function_call'):
-                params["function_call"] = self.function_call
-
-        # the the current class instance has a max_tokens field, then add that to the params
-        if hasattr(self, 'max_tokens'):
-            params["max_tokens"] = self.max_tokens
-
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
         email = account['email']
