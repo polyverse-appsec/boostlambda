@@ -71,9 +71,11 @@ class GenericProcessor:
                 fullMessageContentTokensCount += num_tokens_from_string(message["content"])[0]
 
         # if we can fit the chunk into one token buffer, we'll process and be done
-        tuned_max_tokens = max_tokens_for_model(data.get('model')) - fullMessageContentTokensCount
+        max_tokens = max_tokens_for_model(data.get('model'))
+        tuned_max_tokens = max_tokens - fullMessageContentTokensCount
+        tuned_output = self.calculate_output_token_buffer(fullMessageContentTokensCount, tuned_max_tokens, max_tokens)
         if (fullMessageContentTokensCount < input_token_buffer):
-            return [(this_messages, tuned_max_tokens)]
+            return [(this_messages, tuned_output)]
 
         # otherwise, we'll need to break the chunk into smaller chunks
         # we're going to extract ONLY the bit of user-content (not the prompt wrapper) that we can try and break up
@@ -125,23 +127,44 @@ class GenericProcessor:
                     these_tokens_count += num_tokens_from_string(message["content"])[0]
 
             # get the new remaining max tokens we can accomodate with output
-            tuned_max_tokens = max_tokens_for_model(data.get('model')) - these_tokens_count
+            max_tokens = max_tokens_for_model(data.get('model'))
+            tuned_max_tokens = max_tokens - these_tokens_count
+            tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens)
 
             # store the updated message to be processed
-            this_messages_chunked.append((this_messages, tuned_max_tokens))
+            this_messages_chunked.append((this_messages, tuned_output))
 
         return this_messages_chunked
 
     def calculate_input_token_buffer(self, total_max) -> int:
         return math.floor(total_max * 0.5)
 
+    def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max) -> int:
+
+        # if the input is larger than our output buffer already, we'll just allow the entire output buffer to be used
+        if input_buffer_size > output_buffer_size:
+            return output_buffer_size
+
+        # otherwise, we'll calculate the remaining buffer size
+        remainingBuffer = total_max - input_buffer_size
+
+        # at least 10% of total max if it fits in remainingBuffer
+        ten_percent_total = total_max * 0.1
+        minimum_buffer = min(remainingBuffer, ten_percent_total)
+
+        # the lesser of the remainingBuffer or 5x the input_buffer (for very tine inputs)
+        buffer_size = min(remainingBuffer, math.floor(input_buffer_size * 2))
+
+        return max(buffer_size, minimum_buffer)
+
     # returns true if truncation was done
     # also returns a list of prompts to process - where each prompt includes the prompt text, and the max output tokens for that prompt
     def build_prompts_from_input(self, data, params, prompt_format_args, function_name) -> Tuple[bool, List[Tuple[List[dict[str, any]], int]], int]:
 
+        max_tokens = max_tokens_for_model(data.get('model'))
         # get the max input buffer for this function if we are tuning tokens
-        if max_tokens_for_model(data.get('model')) != 0:
-            input_token_buffer = self.calculate_input_token_buffer(max_tokens_for_model(data.get('model')))
+        if max_tokens != 0:
+            input_token_buffer = self.calculate_input_token_buffer(max_tokens)
         # otherwise, just send it all to the OpenAI endpoint, and ignore limits
         else:
             input_token_buffer = 0
@@ -166,8 +189,9 @@ class GenericProcessor:
                 prompts_set = [(this_messages, 0)]
 
             elif these_tokens_count < input_token_buffer:
-                tuned_max_tokens = max_tokens_for_model(data.get('model')) - these_tokens_count
-                prompts_set = [(this_messages, tuned_max_tokens)]
+                tuned_max_tokens = max_tokens - these_tokens_count
+                tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens)
+                prompts_set = [(this_messages, tuned_output)]
 
             else:  # this single input has blown the input buffer, so we'll need to chunk it
                 # If we are over the token limit, we're going to need to split it into chunks to process in parallel and then reassemble
