@@ -3,6 +3,16 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.6.4: June 23, 2023
+
+### New Features
+- N/A 
+
+# Enhancements
+- N/A
+
+# Bug Fixes
+- Update tokenizer to support gpt-4-613
 ## Version 0.6.3: June 23, 2023
 
 ### New Features
