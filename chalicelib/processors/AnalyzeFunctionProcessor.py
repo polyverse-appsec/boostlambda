@@ -1,6 +1,8 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from chalice import BadRequestError
+from chalicelib.usage import OpenAIDefaults
+
 import json
 
 
@@ -90,18 +92,19 @@ report_bug_function = {
                 }
             }
         },
-    } 
+    }
 }
+
 
 class AnalyzeFunctionProcessor(GenericProcessor):
     def __init__(self):
         super().__init__(API_VERSION, {
             'main': 'analyze-function.prompt',
             'role_system': 'analyze-function-role-system.prompt'
-        })
+        }, {'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.temperature_terse_and_accurate})
         self.functions = [report_bug_function]
         self.function_call = {"name": "report_security_bugs"}
-        self.max_tokens = 8100
 
     def get_chunkable_input(self) -> str:
         return 'code'
@@ -111,37 +114,32 @@ class AnalyzeFunctionProcessor(GenericProcessor):
         # Extract the code from the json data
         code = data[self.get_chunkable_input()]
 
-        # unless the temperature is explicity set in data, set it to .2
-        if 'temperature' not in data:
-            data['temperature'] = 0.1
-
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze")
 
         result = self.process_input(data, account, function_name, correlation_id,
                                     {self.get_chunkable_input(): code})
 
-        #if result['messages'] has a field 'function_call', then we have the data for a function call
+        # if result['messages'] has a field 'function_call', then we have the data for a function call
 
         if 'function_call' in result['results'][0]['message']:
-            #if we get here, we have a function call in the results array.  loop through each of the results and add the array of arguments to the bugs array
-            #result['results'][0]['message']['function_call']['arguments'] is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore
-            #any errors
+            # if we get here, we have a function call in the results array.  loop through each of the results and add the array of arguments to the bugs array
+            # result['results'][0]['message']['function_call']['arguments'] is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore
+            # any errors
             bugs = []
             for r in result['results']:
                 try:
                     json_bugs = json.loads(r['message']['function_call']['arguments'])
                     bugs.extend(json_bugs["bugs"])
-                except:
+                except Exception:
                     pass
 
             return {
                 "status": "bugsfound",
                 "details": bugs
-            } 
+            }
         else:
             return {
                 "status": "nobugsfound",
                 "details": []
             }
-        
