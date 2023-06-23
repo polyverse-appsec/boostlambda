@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - new Service: ComplianceFunction will analyze code and return issues in source files and lines structured as JSON results 
 
 # Enhancements
-- N/A
+- Reduce RateLimit errors: Added output buffer tuning based on input size - specifically, small inputs get small output buffers, with a multiplier for min output buffer
 
 # Bug Fixes
 - Update tokenizer to support gpt-4-613
