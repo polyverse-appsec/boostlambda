@@ -1,6 +1,8 @@
 Polyverse Boost Cloud Service
 ======================
 
+# Release Notes
+
 ## Version 0.6.3: June 23, 2023
 
 ### New Features
