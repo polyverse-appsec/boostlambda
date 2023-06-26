@@ -13,6 +13,7 @@ Polyverse Boost Cloud Service
 
 # Bug Fixes
 - Update tokenizer to support gpt-4-613
+
 ## Version 0.6.3: June 23, 2023
 
 ### New Features
