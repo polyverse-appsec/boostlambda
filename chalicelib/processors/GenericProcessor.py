@@ -471,6 +471,9 @@ class GenericProcessor:
         elif 'temperature' in data:
             params["temperature"] = float(data['temperature'])
 
+        if 'guidelines' not in data:
+            prompt_format_args['guidelines'] = "This software project has no additional special architectural guidelines or constraints."
+
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
         email = account['email']

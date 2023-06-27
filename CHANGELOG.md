@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - Add support for submitting lists of architectural guidelines to any prompt engineering paths
 
 # Enhancements
-- N/A
+- All Kernel/Processors have been updated to integrate analysis of the guidelines in their analysis
 
 # Bug Fixes
 - N/A
