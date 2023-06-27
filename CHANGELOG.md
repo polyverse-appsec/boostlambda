@@ -3,10 +3,10 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.6.5: June 228, 2023
+## Version 0.7.0: June 27, 2023
 
 ### New Features
-- N/A 
+- Add support for submitting lists of architectural guidelines to any prompt engineering paths
 
 # Enhancements
 - N/A

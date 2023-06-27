@@ -20,6 +20,24 @@ def test_explain():
         assert response.payload['statusCode'] == 200
 
 
+def test_explain_with_guideline():
+    with Client(app) as client:
+        request_body = {
+            'code': 'print("Hello, World!")',
+            'guidelines': ['system',
+                           ['This application code should be able to print "Hello, Cruel World!" to the console.',
+                            'This application code should be written in TypeScript or JavaScript.']],
+            'session': 'testemail: alex@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'explain', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+
 def test_generate_outputlanguage():
     with Client(app) as client:
         output_language = 'python'  # Replace this with the desired output language
@@ -157,6 +175,9 @@ def test_blueprint():
     with Client(app) as client:
         request_body = {
             'code': 'print("Hello, World!")',
+            'guidelines': ['system',
+                           ['This application code should be able to print "Hello, Cruel World!" to the console.',
+                            'This application code should be written in TypeScript or JavaScript.']],
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
