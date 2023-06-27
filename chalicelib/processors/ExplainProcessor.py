@@ -5,11 +5,12 @@ from chalicelib.usage import OpenAIDefaults
 
 class ExplainProcessor(GenericProcessor):
     def __init__(self):
-        super().__init__(API_VERSION, {
-            'main': 'explain.prompt',
-            'role_system': 'explain-role-system.prompt',
-        }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.temperature_verbose_and_explanatory})
+        super().__init__(API_VERSION, [
+            ['main', 'explain.prompt'],
+            ['system', 'explain-role-system.prompt']],
+            None,
+            {'model': OpenAIDefaults.boost_default_gpt_model,
+             'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def get_chunkable_input(self) -> str:
         return 'code'

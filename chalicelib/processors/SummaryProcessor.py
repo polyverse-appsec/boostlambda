@@ -7,11 +7,12 @@ from chalicelib.usage import OpenAIDefaults
 
 class SummarizeProcessor(GenericProcessor):
     def __init__(self):
-        super().__init__(API_VERSION, {
-            'main': 'summarize.prompt',
-            'role_system': 'summarize-role-system.prompt'
-        }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.temperature_medium_with_explanation})
+        super().__init__(API_VERSION,
+                         [['main', 'summarize.prompt'],
+                          ['system', 'summarize-role-system.prompt']],
+                         None,
+                         {'model': OpenAIDefaults.boost_default_gpt_model,
+                          'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def calculate_input_token_buffer(self, total_max) -> int:
         # we'll leave 90% of the buffer for the input, and 10% for the output

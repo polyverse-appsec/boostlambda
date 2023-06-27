@@ -1,17 +1,16 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
-from typing import Tuple
 from chalicelib.usage import OpenAIDefaults
 
 
 class BlueprintProcessor(GenericProcessor):
     def __init__(self):
-        super().__init__(API_VERSION, {
-            'role_system': 'blueprint-role-system.prompt',
-            'seed': 'blueprint-seed.prompt',
-            'update': 'blueprint-update.prompt'
-        }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.temperature_medium_with_explanation})
+        super().__init__(API_VERSION, [
+            ['main', 'blueprint-seed.prompt'],
+            ['system', 'blueprint-role-system.prompt']],
+            None,
+            {'model': OpenAIDefaults.boost_default_gpt_model,
+             'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def get_chunkable_input(self) -> str:
         return 'code'
@@ -29,30 +28,19 @@ class BlueprintProcessor(GenericProcessor):
         else:
             return self.prompts['seed'].format(**prompt_format_args)
 
-    def generate_messages(self, data, prompt_format_args) -> Tuple[list[dict[str, any]]]:
+    def generate_messages(self, data, prompt_format_args) -> list[dict[str, any]]:
 
-        # Extract the code from the json data
-        prompt_format_args[self.get_chunkable_input()] = data[self.get_chunkable_input()]
-
-        # if we aren't doing chunking, then just erase the tag from the prompt completely
-        if 'chunking' not in prompt_format_args:
-            prompt_format_args['chunking'] = ' '
+        result = super.generate_messages(data, prompt_format_args)
 
         prompt = self.generate_prompt(data, prompt_format_args)
 
-        role_system = self.prompts['role_system']
+        for message in reversed(result):
+            if message['role'] != 'user':
+                raise Exception('Unexpected last message role: ' + message['role'])
+            message['content'] = prompt
+            break
 
-        this_messages = [
-            {
-                "role": "system",
-                "content": role_system
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }]
-
-        return this_messages
+        return result
 
     def blueprint_code(self, data, account, function_name, correlation_id):
 

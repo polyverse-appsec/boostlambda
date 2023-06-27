@@ -10,6 +10,7 @@ import threading
 import random
 import json
 from typing import List, Tuple
+import glob
 
 from chalice import UnprocessableEntityError
 
@@ -39,13 +40,14 @@ openai.api_key = openai_key
 
 class GenericProcessor:
 
-    def __init__(self, api_version, prompt_filenames,
+    def __init__(self, api_version, prompt_filenames, numbered_prompt_keys,
                  default_params={'model': OpenAIDefaults.boost_default_gpt_model,
                                  'temperature': OpenAIDefaults.default_temperature}):
 
         self.api_version = api_version
         self.prompt_filenames = prompt_filenames
         self.default_params = default_params
+        self.numbered_prompt_keys = numbered_prompt_keys
 
         print(f"{self.__class__.__name__}_api_version: ", self.api_version)
 
@@ -53,11 +55,34 @@ class GenericProcessor:
 
     def load_prompts(self):
         promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
-        prompts = {}
+        prompts = []
 
-        for prompt_name, filename in self.prompt_filenames.items():
-            with open(os.path.join(promptdir, filename), 'r') as f:
-                prompts[prompt_name] = f.read()
+        # load prompts specified in 'prompt_filenames'
+        for prompt_filename in self.prompt_filenames:
+            with open(os.path.join(promptdir, prompt_filename[1]), 'r') as f:
+                prompts.append([prompt_filename[0], f.read()])
+
+        # load numbered prompts
+        for prompt_key in self.numbered_prompt_keys if self.numbered_prompt_keys is not None else []:
+            # if the definition is a prompt & response, pairing, load both files and process in order
+            if prompt_key[0] == 'response':
+                for file in sorted(glob.glob(os.path.join(promptdir, f"{prompt_key[1]}-user_*.prompt"))):
+                    # response has a user prompt....
+                    with open(file, 'r') as f:
+                        prompts.append(["user", f.read()])
+                    paired_file = os.path.join(promptdir, f"{prompt_key[1]}-assistant_*.prompt")
+                    # and an example response
+                    with open(paired_file, 'r') as f:
+                        prompts.append(["assistant", f.read()])
+                    prompts.append(["assistant", f.read()])
+            else:
+                file_list = sorted(glob.glob(os.path.join(promptdir, f"{prompt_key[1]}-{prompt_key[0]}_*.prompt")))
+                if prompt_key not in prompts:
+                    prompts.append([prompt_key, prompt_key[1]])
+
+                for file in file_list:
+                    with open(file, 'r') as f:
+                        prompts[prompt_key[0]].append(f.read())
 
         return prompts
 
@@ -233,24 +258,39 @@ class GenericProcessor:
     def get_chunkable_input(self) -> str:
         raise NotImplementedError
 
-    def generate_messages(self, _, prompt_format_args):
+    def safe_format(self, string, **kwargs):
+        class SafeDict(dict):
+            def __missing__(self, key):
+                return '{' + key + '}'
 
-        # if we aren't doing chunking, then just erase the tag from the prompt completely
-        if key_IsChunked not in prompt_format_args:
-            prompt_format_args[key_ChunkingPrompt] = ''
+        safe_dict = SafeDict(kwargs)
+        return string.format_map(safe_dict)
 
-        prompt = self.prompts['main'].format(**prompt_format_args)
-        role_system = self.prompts['role_system']
+    def safe_dict(self, d):
+        return {k: v if v is not None else '' for k, v in d.items()}
 
-        this_messages = [
-            {
-                "role": "system",
-                "content": role_system
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }]
+    def generate_messages(self, _, prompt_format_args) -> List[dict[str, any]]:
+        prompt_format_args = self.safe_dict(prompt_format_args)
+
+        # handle variable replacements safely
+        this_messages = []
+
+        # Generate messages for all roles
+        for prompt in self.prompts:
+            if prompt[0] == 'main':  # we handle 'main' last
+                main_prompt = prompt[1]
+                continue
+
+            this_messages.append({
+                "role": prompt[0],
+                "content": self.safe_format(prompt[1], **prompt_format_args)
+            })
+
+        # 'main' is always the last message and it's always from the 'user'
+        this_messages.append({
+            "role": "user",
+            "content": self.safe_format(main_prompt, **prompt_format_args)
+        })
 
         return this_messages
 

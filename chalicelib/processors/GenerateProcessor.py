@@ -6,13 +6,14 @@ from chalicelib.usage import OpenAIDefaults
 
 class GenerateProcessor(GenericProcessor):
     def __init__(self):
-        super().__init__(API_VERSION, {
-            'main': 'convert.prompt',
-            'role_system': 'convert-role-system.prompt',
-            'role_assistant': 'convert-role-assistant.prompt',
-            'role_user': 'convert-role-user.prompt'
-        }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.default_temperature})
+        super().__init__(API_VERSION,
+                         [['main', 'convert.prompt'],
+                          ['system', 'convert-role-system.prompt'],
+                          ['assistant', 'convert-role-assistant.prompt'],
+                          ['user', 'convert-role-user.prompt']],
+                         None,
+                         {'model': OpenAIDefaults.boost_default_gpt_model,
+                          'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     # we are going to chunk the explanation, since its bigger than the code presumptively
     # However - realistically, we should be chunking both. But they segment independently - e.g.
