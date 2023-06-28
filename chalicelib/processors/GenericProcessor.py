@@ -282,7 +282,7 @@ class GenericProcessor:
     def safe_dict(self, d):
         return {k: v if v is not None else '' for k, v in d.items()}
 
-    def generate_messages(self, data, prompt_format_args) -> List[dict[str, any]]:
+    def generate_messages(self, _, prompt_format_args) -> List[dict[str, any]]:
         prompt_format_args = self.safe_dict(prompt_format_args)
 
         # handle variable replacements safely
@@ -294,29 +294,32 @@ class GenericProcessor:
                 main_prompt = prompt[1]
                 continue
 
-            # Check if prompt[1] contains a '{tag}' that exists in data
-            tag = re.findall(r'\{(.+?)\}', prompt[1])
-            if tag and tag[0] in data:
-                if isinstance(data.get(tag[0]), list):
-
-                    role, content_list = data[tag[0]]
-                    for content in content_list:
-                        # inject each piece of custom content into the prompt
-                        this_prompt_format_args = prompt_format_args.copy()
-                        this_prompt_format_args[tag[0]] = content
-                        formatted_content = self.safe_format(content, **this_prompt_format_args)
-
-                        if str.isspace(formatted_content):
-                            print(f"Skipping empty prompt for role {role}")
-                            continue
-
-                        this_messages.append({
-                            "role": role,
-                            "content": formatted_content
-                        })
-
-                    # finished with this prompt
+            # Check if this prompt text contains a '{tag}' that exists in our reformatting args
+            for tag in re.findall(r'\{(.+?)\}', prompt[1]):
+                if tag is None or tag not in prompt_format_args:
                     continue
+
+                if not isinstance(prompt_format_args.get(tag), list):
+                    continue
+
+                role, content_list = prompt_format_args[tag]
+                for content in content_list:
+                    # inject each piece of custom content into the prompt
+                    this_prompt_format_args = prompt_format_args.copy()
+                    this_prompt_format_args[tag] = content
+                    formatted_content = self.safe_format(content, **this_prompt_format_args)
+
+                    if str.isspace(formatted_content):
+                        print(f"Skipping empty prompt for role {role}")
+                        continue
+
+                    this_messages.append({
+                        "role": role,
+                        "content": formatted_content
+                    })
+
+                # finished with this prompt
+                continue
 
             content = self.safe_format(prompt[1], **prompt_format_args)
             # skip empty content
@@ -329,17 +332,16 @@ class GenericProcessor:
                 "content": content
             })
 
-        # Check if prompt[1] contains a '{tag}' that exists in data
-        tag = re.findall(r'\{(.+?)\}', main_prompt)
-        if tag and tag[0] in data:
-            if isinstance(data.get(tag[0]), list):
+        # Check if main prompt contains a '{tag}' that exists in data
+        for tag in re.findall(r'\{(.+?)\}', main_prompt):
+            if isinstance(prompt_format_args.get(tag), list):
                 new_format_arg = ""
-                role, content_list = data[tag[0]]
+                _, content_list = prompt_format_args[tag]
                 for content in content_list:
                     new_format_arg = f"{new_format_arg}\n{content}"
 
                 # inject the combined content into the args for prompt injection
-                prompt_format_args[tag[0]] = new_format_arg
+                prompt_format_args[tag] = new_format_arg
 
         # 'main' is always the last message and it's always from the 'user'
         this_messages.append({
@@ -473,6 +475,9 @@ class GenericProcessor:
 
         if 'guidelines' not in data:
             prompt_format_args['guidelines'] = "This software project has no additional special architectural guidelines or constraints."
+        else:
+            # get the JSON object out of the data payload
+            prompt_format_args['guidelines'] = json.loads(data['guidelines'])
 
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
