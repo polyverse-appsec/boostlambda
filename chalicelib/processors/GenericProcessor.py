@@ -274,7 +274,7 @@ class GenericProcessor:
     def safe_format(self, string, **kwargs):
         class SafeDict(dict):
             def __missing__(self, key):
-                return '{' + key + '}'
+                return ''
 
         safe_dict = SafeDict(kwargs)
         return string.format_map(safe_dict)
@@ -615,13 +615,22 @@ class GenericProcessor:
     def get_excluded_input_keys(self) -> list[str]:
         return ['model', 'top_p', 'temperature', 'chunking']
 
+    def flatten_and_join(self, lst):
+        result = []
+        for i in lst:
+            if isinstance(i, list):
+                result.extend(self.flatten_and_join(i))
+            else:
+                result.append(str(i))
+        return ' '.join(result)
+
     def collate_all_user_input(self, prompt_format_args):
         # remove any keys used for control of the processing, so we only charge for user input
         excluded_keys = self.get_excluded_input_keys()
 
         # Use lambda function to handle list of strings
         input_list = map(
-            lambda key: ' '.join(prompt_format_args[key]) if isinstance(prompt_format_args[key], list) else str(prompt_format_args[key]),
+            lambda key: self.flatten_and_join(prompt_format_args[key]) if isinstance(prompt_format_args[key], (list, tuple)) else str(prompt_format_args[key]),
             [key for key in prompt_format_args if key not in excluded_keys]
         )
 
