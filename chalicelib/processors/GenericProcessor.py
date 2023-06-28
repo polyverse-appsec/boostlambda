@@ -477,7 +477,7 @@ class GenericProcessor:
             prompt_format_args['guidelines'] = "This software project has no additional special architectural guidelines or constraints."
         else:
             # get the JSON object out of the data payload
-            prompt_format_args['guidelines'] = json.loads(data['guidelines'])
+            prompt_format_args['guidelines'] = data['guidelines']
 
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
