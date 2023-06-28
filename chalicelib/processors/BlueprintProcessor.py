@@ -30,7 +30,7 @@ class BlueprintProcessor(GenericProcessor):
 
     def generate_messages(self, data, prompt_format_args) -> list[dict[str, any]]:
 
-        result = super.generate_messages(data, prompt_format_args)
+        result = super().generate_messages(data, prompt_format_args)
 
         prompt = self.generate_prompt(data, prompt_format_args)
 

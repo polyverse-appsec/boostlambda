@@ -31,7 +31,7 @@ class CustomProcessor(GenericProcessor):
         if 'messages' in data:
             this_messages = json.loads(data['messages'])
         else:
-            result = super.generate_messages(data, prompt_format_args)
+            result = super().generate_messages(data, prompt_format_args)
 
             customprompt = data['prompt']
             # if the user-provided prompt includes {code} block, then use that as the prompt
