@@ -255,7 +255,7 @@ class GenericProcessor:
         return this_messages
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
-        max_retries = 1
+        max_retries = 3
         # we're going to retry on intermittent network issues
         # e.g. throttling, connection issues, service down, etc..
         # Note that with RateLimit error, we could actually make it worse...
