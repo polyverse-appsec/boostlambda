@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 # Enhancements
 - All Kernel/Processors have been updated to integrate analysis of the guidelines in their analysis
+- Inject line numbers into prompts for function processing - so identified source line numbers are accurate
 
 # Bug Fixes
 - N/A

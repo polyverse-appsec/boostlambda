@@ -12,6 +12,8 @@ Use the following architectural guidelines when performing your bug and security
 
 {chunking}
 
+{lineNumberBase}
+
 Here is the code to analyze:
 
 ```

@@ -124,8 +124,14 @@ class AnalyzeFunctionProcessor(GenericProcessor):
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze")
 
+        prompt_format_args = {self.get_chunkable_input(): code}
+        if 'inputMetadata' in data:
+            inputMetadata = json.loads(data['inputMetadata'])
+            lineNumberBase = inputMetadata['lineNumberBase']
+            prompt_format_args['lineNumberBase'] = f"When identifying source numbers for issues, treat the first line of the code as line number {lineNumberBase + 1}"
+
         result = self.process_input(data, account, function_name, correlation_id,
-                                    {self.get_chunkable_input(): code})
+                                    prompt_format_args)
 
         # if result['messages'] has a field 'function_call', then we have the data for a function call
 
