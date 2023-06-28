@@ -3,6 +3,9 @@ Read through the full list of analyses, analyze all of the information and creat
 All code blocks in the summary, including mermaid code, should have markdown tick marks ``` around them
 If you identify multiple existing summaries, replace them with one high-level summary.
 
+Use the following architectural guidelines when performing your summarization - including for consistency with or conflicts between the summarized analysis and the guidelines:
+{guidelines}
+
 {chunking}
 
 The high-level summary should have details and information like this:

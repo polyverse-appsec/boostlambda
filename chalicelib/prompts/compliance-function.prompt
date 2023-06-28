@@ -7,6 +7,9 @@ For each data compliance or privacy issue and solution, provide web link for mor
 
 Please be very concise
 
+Use the following architectural guidelines when performing your data compliance analysis - including for consistency with or conflicts between the code and data practices in the guidelines:
+{guidelines}
+
 {chunking}
 
 Here is the code to analyze:

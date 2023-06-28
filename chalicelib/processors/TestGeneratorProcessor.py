@@ -5,11 +5,12 @@ from chalicelib.usage import OpenAIDefaults
 
 class TestGeneratorProcessor(GenericProcessor):
     def __init__(self):
-        super().__init__(API_VERSION, {
-            'main': 'testgen.prompt',
-            'role_system': 'testgen-role-system.prompt'
-        }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.default_temperature})
+        super().__init__(API_VERSION,
+                         [['main', 'testgen.prompt'],
+                          ['system', 'testgen-role-system.prompt']],
+                         None,
+                         {'model': OpenAIDefaults.boost_default_gpt_model,
+                          'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def get_chunkable_input(self) -> str:
         return 'code'

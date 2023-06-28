@@ -9,11 +9,12 @@ import math
 
 class CustomProcessor(GenericProcessor):
     def __init__(self):
-        super().__init__(API_VERSION, {
-            'main': 'customprocess.prompt',
-            'role_system': 'customprocess-role-system.prompt'
-        }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.default_temperature})
+        super().__init__(API_VERSION, [
+            ['main', 'customprocess.prompt'],
+            ['system', 'customprocess-role-system.prompt']],
+            None,
+            {'model': OpenAIDefaults.boost_default_gpt_model,
+             'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def get_chunkable_input(self) -> str:
         return 'code'
@@ -27,53 +28,30 @@ class CustomProcessor(GenericProcessor):
         return math.floor(self.calculate_input_token_buffer(total_max) * 0.75)
 
     def generate_messages(self, data, prompt_format_args):
-        code = data[self.get_chunkable_input()]
-        customprompt = data['prompt']
-
-        # if the user-provided prompt includes {code} block, then use that as the prompt
-        if "{{code}}" in customprompt:
-            prompt = customprompt
-        # otherwise, use the default prompt to also inject {code} block into the prompt
-        else:
-            prompt = self.prompts['main']
-
-        if '{{chunking}}' not in prompt:
-            prompt = f"{{chunking}}{prompt}"
-
-        if 'chunking' not in prompt_format_args:
-            chunking = ' '
-        else:
-            chunking = prompt_format_args['chunking']
-
-        prompt = prompt.format(code=code, prompt=customprompt, chunking=chunking)
-
-        if 'role_system' in data:
-            this_role_system = data['role_system']
-        else:
-            this_role_system = self.prompts['role_system']
-
-        this_messages = [
-            {
-                "role": "system",
-                "content": this_role_system
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }]
-
         if 'messages' in data:
             this_messages = json.loads(data['messages'])
         else:
-            this_messages = [
-                {
-                    "role": "system",
-                    "content": this_role_system
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }]
+            result = super.generate_messages(data, prompt_format_args)
+
+            customprompt = data['prompt']
+            # if the user-provided prompt includes {code} block, then use that as the prompt
+            if "{{code}}" in customprompt:
+                code = data['code']
+                prompt = customprompt
+                prompt = super.safe_format(prompt, code=code, prompt=customprompt)
+
+                for message in reversed(result):
+                    if message['role'] != 'user':
+                        raise Exception('Unexpected last message role: ' + message['role'])
+                    message['content'] = prompt
+                    break
+
+            if 'role_system' in data:
+                for message in result:
+                    if message['role'] != 'system':
+                        raise Exception('Unexpected last message role: ' + message['role'])
+                    message['content'] = data['role_system']
+                    break
 
         # in case the messages (system) are too long, we'll truncate them to the sys token buffer
         # in case we receive messages with no content, discard them

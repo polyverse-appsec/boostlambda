@@ -5,11 +5,12 @@ from chalicelib.usage import OpenAIDefaults
 
 class ComplianceProcessor(GenericProcessor):
     def __init__(self):
-        super().__init__(API_VERSION, {
-            'main': 'compliance.prompt',
-            'role_system': 'compliance-role-system.prompt'
-        }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.temperature_medium_with_explanation})
+        super().__init__(API_VERSION, [
+            ['main', 'compliance.prompt'],
+            ['system', 'compliance-role-system.prompt']],
+            None,
+            {'model': OpenAIDefaults.boost_default_gpt_model,
+             'temperature': OpenAIDefaults.temperature_medium_with_explanation})
 
     def get_chunkable_input(self) -> str:
         return 'code'

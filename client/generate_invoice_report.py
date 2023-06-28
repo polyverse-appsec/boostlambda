@@ -88,15 +88,16 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                 continue
 
             # In your 'Processing customer data' loop, add a check for the user email
-            if user and customer.email != user:
+            if user and user not in customer.email:
                 continue
 
-            # exclude any customer with polyverse in email address, unless the command line argument "showTest" is specified
+            # exclude any customer with test email in email address, unless the command line argument "showTest" is specified
             if ('test-email-' in customer.email) and not show_test:
                 if debug:
                     print(f"Test Account: {customer.email}")
                 continue
 
+            # exclude polyverse accounts (dev and test) unless specifically requested
             if ('polyverse' in customer.email) and not includePolyverse:
                 if debug:
                     print(f"Test Account: {customer.email}")
@@ -112,9 +113,11 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
             draft_invoices = stripe.Invoice.list(customer=customer.id, status='draft')
 
             all_invoices = past_invoices.data + open_invoices.data + void_invoices.data + draft_invoices.data  # + ([upcoming_invoice] if upcoming_invoice else [])
+            if debug:
+                print(f"{customer.email} has {len(all_invoices)} invoices")
 
             if customer.delinquent:
-                print(f"Delinquent customer: {customer.email}")
+                print(f"\nDelinquent customer: {customer.email}\n")
 
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
             customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
@@ -136,18 +139,18 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                     total_usage_kb += usageInKb
 
                     customers_list.append([customer.metadata.org,
-                                        f"{invoice_data.price.metadata.email}",
-                                        f"{datetime.datetime.fromtimestamp(customer.created).date()}",
-                                        f"{account_status}",
-                                        f"{customer.invoice_settings.default_payment_method is not None}",
-                                        f"{plan_name}",
-                                        f"{usageInKb}",
-                                        f"${invoice_data.amount / 100:.2f}",
-                                        f"${invoice.amount_due / 100:.2f}",
-                                        f"${invoice.total_discount_amounts[0].amount / 100:.2f}" if invoice.total_discount_amounts else "$0.00",
-                                        f"${invoice.total / 100:.2f}",
-                                        f"${customer_discounts / 100:.2f}",
-                                        f"${customer_paid_invoices / 100:.2f}"])
+                                           f"{invoice_data.price.metadata.email}",
+                                           f"{datetime.datetime.fromtimestamp(customer.created).date()}",
+                                           f"{account_status}",
+                                           f"{customer.invoice_settings.default_payment_method is not None}",
+                                           f"{plan_name}",
+                                           f"{usageInKb}",
+                                           f"${invoice_data.amount / 100:.2f}",
+                                           f"${invoice.amount_due / 100:.2f}",
+                                           f"${invoice.total_discount_amounts[0].amount / 100:.2f}" if invoice.total_discount_amounts else "$0.00",
+                                           f"${invoice.total / 100:.2f}",
+                                           f"${customer_discounts / 100:.2f}",
+                                           f"${customer_paid_invoices / 100:.2f}"])
 
                 total_pending_invoices += upcoming_invoice.amount_due if upcoming_invoice else 0
                 total_paid_invoices += customer_paid_invoices

@@ -1,0 +1,5 @@
+When performing different types of code review - analysis for bugs, explanation of code, security analysis, summaries, I will look for violations of the above guidelines in the code.
+
+If I find violations or problems with the code related to the guidelines, and it is related to this type of code review, I will first tell you.
+For example, if I am explaining code and see architectural guidelines conflicts with the code, I will say "Based on my code review to explain this code  - I believe this code in conflict with your stated architectural and development guidelines because..." and then tell you why, then continue my explanation.
+Or for example, if I am doing security analysis and don't see conflicts with the architectural guidelines related to security, I will say "While doing security analysis, I believe the code is in compliance with your security guidelines. However, I have identified the following security issues..."

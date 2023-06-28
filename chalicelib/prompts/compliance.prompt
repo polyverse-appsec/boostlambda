@@ -1,5 +1,8 @@
 Analyze this code for compliance issues related to GDPR, PCI DSS, and HIPAA compliance. For each issue, indicate a severity on a ten point scale, ten being the worse. Explain the compliance issue and if possible, suggest a solution. For each compliance issue, provide web link for more education and background.
 
+Use the following architectural guidelines when performing your data compliance analysis - including for consistency with or conflicts between the code and these guidelines:
+{guidelines}
+
 {chunking}
 
 Here is the code to analyze:

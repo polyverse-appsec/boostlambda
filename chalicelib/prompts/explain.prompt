@@ -1,5 +1,8 @@
 Explain the following code in detail including the algorithms used. Where helpful and available, provide web link for more education and background.
 
+Use the following architectural guidelines when performing your analysis - including for consistency with or conflicts between the code and the guidelines:
+{guidelines}
+
 {chunking}
 
 Here is the code:

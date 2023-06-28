@@ -15,6 +15,9 @@ You are an Architect for a software project. Based on samples of software code f
 
 Use the following sample code from a software project to create the Architectural Blueprint Summary of the overall project. And for any Architectural Problems Identified, please provide online resource links to explain the tradeoffs, risks and concerns.
 
+Use the following specific architectural guidelines for this development project when performing your architectural analysis - including for consistency with or conflicts between the architecture you see in the code and way the architecture principle is defined in the guidelines:
+{guidelines}
+
 {chunking}
 
 ```

@@ -99,13 +99,14 @@ report_bug_function = {
 
 class ComplianceFunctionProcessor(GenericProcessor):
     def __init__(self):
-        super().__init__(API_VERSION, {
-            'main': 'compliance-function.prompt',
-            'role_system': 'compliance-function-role-system.prompt'
-        }, {'model': OpenAIDefaults.boost_default_gpt_model,
-            'temperature': OpenAIDefaults.temperature_terse_and_accurate,
-            'functions': [report_bug_function],
-            'function_call': {"name": "report_compliance_bugs"}})
+        super().__init__(API_VERSION, [
+            ['main', 'compliance-function.prompt'],
+            ['system', 'compliance-function-role-system.prompt']],
+            None,
+            {'model': OpenAIDefaults.boost_default_gpt_model,
+             'temperature': OpenAIDefaults.temperature_medium_with_explanation,
+             'functions': [report_bug_function],
+             'function_call': {"name": "report_compliance_bugs"}})
 
     def get_chunkable_input(self) -> str:
         return 'code'

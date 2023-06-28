@@ -10,6 +10,8 @@ import threading
 import random
 import json
 from typing import List, Tuple
+import glob
+import re
 
 from chalice import UnprocessableEntityError
 
@@ -39,13 +41,21 @@ openai.api_key = openai_key
 
 class GenericProcessor:
 
-    def __init__(self, api_version, prompt_filenames,
+    def __init__(self, api_version, prompt_filenames, numbered_prompt_keys,
                  default_params={'model': OpenAIDefaults.boost_default_gpt_model,
                                  'temperature': OpenAIDefaults.default_temperature}):
 
         self.api_version = api_version
-        self.prompt_filenames = prompt_filenames
+
+        self.prompt_filenames = []
+        self.prompt_filenames.extend(prompt_filenames if prompt_filenames is not None else [])
+#         self.prompt_filenames.append(['system', 'guidelines-system.prompt'])
+
         self.default_params = default_params
+
+        self.numbered_prompt_keys = []
+        self.numbered_prompt_keys.append(['response', 'guidelines'])
+        self.numbered_prompt_keys.extend(numbered_prompt_keys if numbered_prompt_keys is not None else [])
 
         print(f"{self.__class__.__name__}_api_version: ", self.api_version)
 
@@ -53,11 +63,39 @@ class GenericProcessor:
 
     def load_prompts(self):
         promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
-        prompts = {}
+        prompts = []
 
-        for prompt_name, filename in self.prompt_filenames.items():
-            with open(os.path.join(promptdir, filename), 'r') as f:
-                prompts[prompt_name] = f.read()
+        # load prompts specified in 'prompt_filenames'
+        for prompt_filename in self.prompt_filenames:
+            with open(os.path.join(promptdir, prompt_filename[1]), 'r') as f:
+                prompts.append([prompt_filename[0], f.read()])
+
+        # load numbered prompts
+        for prompt_key in self.numbered_prompt_keys if self.numbered_prompt_keys is not None else []:
+            # if the definition is a prompt & response, pairing, load both files and process in order
+            if prompt_key[0] == 'response':
+                for file in sorted(glob.glob(os.path.join(promptdir, f"{prompt_key[1]}-user-*.prompt"))):
+                    # response has a user prompt....
+                    with open(file, 'r') as f:
+                        prompts.append(["user", f.read()])
+
+                    # construct the corresponding assistant file name
+                    assistant_file = file.replace("-user-", "-assistant-")
+
+                    # Open assistant file, if it exists
+                    if os.path.isfile(assistant_file):
+                        with open(assistant_file, 'r') as f:
+                            prompts.append(["assistant", f.read()])
+                    else:
+                        raise FileNotFoundError(f"Assistant file {assistant_file} not found for {file}")
+            else:
+                file_list = sorted(glob.glob(os.path.join(promptdir, f"{prompt_key[1]}-{prompt_key[0]}-*.prompt")))
+                if prompt_key not in prompts:
+                    prompts.append([prompt_key, prompt_key[1]])
+
+                for file in file_list:
+                    with open(file, 'r') as f:
+                        prompts[prompt_key[0]].append(f.read())
 
         return prompts
 
@@ -233,24 +271,81 @@ class GenericProcessor:
     def get_chunkable_input(self) -> str:
         raise NotImplementedError
 
-    def generate_messages(self, _, prompt_format_args):
+    def safe_format(self, string, **kwargs):
+        class SafeDict(dict):
+            def __missing__(self, key):
+                return '{' + key + '}'
 
-        # if we aren't doing chunking, then just erase the tag from the prompt completely
-        if key_IsChunked not in prompt_format_args:
-            prompt_format_args[key_ChunkingPrompt] = ''
+        safe_dict = SafeDict(kwargs)
+        return string.format_map(safe_dict)
 
-        prompt = self.prompts['main'].format(**prompt_format_args)
-        role_system = self.prompts['role_system']
+    def safe_dict(self, d):
+        return {k: v if v is not None else '' for k, v in d.items()}
 
-        this_messages = [
-            {
-                "role": "system",
-                "content": role_system
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }]
+    def generate_messages(self, data, prompt_format_args) -> List[dict[str, any]]:
+        prompt_format_args = self.safe_dict(prompt_format_args)
+
+        # handle variable replacements safely
+        this_messages = []
+
+        # Generate messages for all roles
+        for prompt in self.prompts:
+            if prompt[0] == 'main':  # we handle 'main' last
+                main_prompt = prompt[1]
+                continue
+
+            # Check if prompt[1] contains a '{tag}' that exists in data
+            tag = re.findall(r'\{(.+?)\}', prompt[1])
+            if tag and tag[0] in data:
+                if isinstance(data.get(tag[0]), list):
+
+                    role, content_list = data[tag[0]]
+                    for content in content_list:
+                        # inject each piece of custom content into the prompt
+                        this_prompt_format_args = prompt_format_args.copy()
+                        this_prompt_format_args[tag[0]] = content
+                        formatted_content = self.safe_format(content, **this_prompt_format_args)
+
+                        if str.isspace(formatted_content):
+                            print(f"Skipping empty prompt for role {role}")
+                            continue
+
+                        this_messages.append({
+                            "role": role,
+                            "content": formatted_content
+                        })
+
+                    # finished with this prompt
+                    continue
+
+            content = self.safe_format(prompt[1], **prompt_format_args)
+            # skip empty content
+            if str.isspace(content):
+                print(f"Skipping empty prompt for role {prompt[0]}")
+                continue
+
+            this_messages.append({
+                "role": prompt[0],
+                "content": content
+            })
+
+        # Check if prompt[1] contains a '{tag}' that exists in data
+        tag = re.findall(r'\{(.+?)\}', main_prompt)
+        if tag and tag[0] in data:
+            if isinstance(data.get(tag[0]), list):
+                new_format_arg = ""
+                role, content_list = data[tag[0]]
+                for content in content_list:
+                    new_format_arg = f"{new_format_arg}\n{content}"
+
+                # inject the combined content into the args for prompt injection
+                prompt_format_args[tag[0]] = new_format_arg
+
+        # 'main' is always the last message and it's always from the 'user'
+        this_messages.append({
+            "role": "user",
+            "content": self.safe_format(main_prompt, **prompt_format_args)
+        })
 
         return this_messages
 
@@ -375,6 +470,9 @@ class GenericProcessor:
             params["top_p"] = float(data['top_p'])
         elif 'temperature' in data:
             params["temperature"] = float(data['temperature'])
+
+        if 'guidelines' not in data:
+            prompt_format_args['guidelines'] = "This software project has no additional special architectural guidelines or constraints."
 
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
