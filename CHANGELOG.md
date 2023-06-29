@@ -3,17 +3,31 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.7.1: July 5th, 2023
+
+### New Features
+- N/A
+
+# Enhancements
+- N/A
+
+# Bug Fixes
+- N/A
+
 ## Version 0.7.0: June 27, 2023
 
 ### New Features
 - Add support for submitting lists of architectural guidelines to any prompt engineering paths
+- Blueprints are now integrated into system prompts for background for all analysis
+- System quotas are now enforced and analyzed with improved tuning for different sized prompts and background
 
 # Enhancements
 - All Kernel/Processors have been updated to integrate analysis of the guidelines in their analysis
 - Inject line numbers into prompts for function processing - so identified source line numbers are accurate
+- Better logging for tuning truncation and system message quotas
 
 # Bug Fixes
-- N/A
+- Fixes for guidelines processing impacting blueprint analysis
 
 ## Version 0.6.4: June 23, 2023
 
