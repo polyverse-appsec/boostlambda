@@ -48,12 +48,14 @@ class GenericProcessor:
         self.api_version = api_version
 
         self.prompt_filenames = []
+        # ensure all promots start with the project summary info if available
+        self.prompt_filenames.append(['system', 'blueprint-summary-system.prompt'])
         self.prompt_filenames.extend(prompt_filenames if prompt_filenames is not None else [])
-#         self.prompt_filenames.append(['system', 'guidelines-system.prompt'])
 
         self.default_params = default_params
 
         self.numbered_prompt_keys = []
+        # use the client's guidelines to steer the analysis
         self.numbered_prompt_keys.append(['response', 'guidelines'])
         self.numbered_prompt_keys.extend(numbered_prompt_keys if numbered_prompt_keys is not None else [])
 
@@ -100,32 +102,69 @@ class GenericProcessor:
         return prompts
 
     def optimize_content(self, this_messages: List[dict[str, any]], data) -> List[dict[str, any]]:
+        # Initialize variables
+        total_system_tokens = 0
+        system_messages = []
 
-        # in case the messages (system) are too long, we'll truncate them to the sys token buffer
-        # in case we receive messages with no content, discard them
+        # Determine the total number of tokens in system messages and collect system messages
+        for message in this_messages:
+            if 'content' in message and message['role'] == 'system':
+                token_count, _ = num_tokens_from_string(message['content'])
+                total_system_tokens += token_count
+                system_messages.append(message)
+
+        # Compute the total token buffer for all system messages
+        total_system_buffer = self.calculate_system_message_token_buffer(max_tokens_for_model(data.get('model')))
+
+        # Minimum and maximum quota for each system message
+        min_quota_threshold_for_message_count = 5
+        min_quota_percent = 1 / min_quota_threshold_for_message_count  # 20%
+        min_token_quota = 250
+        max_quota = total_system_buffer / len(system_messages)
+
+        if len(system_messages) > min_quota_threshold_for_message_count:
+            min_quota_percent = None
+            min_token_quota = None
+
+        # Initialize list for new messages
         new_messages = []
-        discarded_messages = []
+
+        truncated_system_messages = 0
+        # Handle each message
         for message in this_messages:
             if 'content' not in message or message['content'] == '':
-                discarded_messages.append(message)
-                continue  # Skip this iteration and move to next message
+                # Skip messages without content
+                continue
+
             if message['role'] == 'system':
                 sys_token_count, sys_tokens = num_tokens_from_string(message['content'])
-                retained_tokens = self.calculate_system_message_token_buffer(max_tokens_for_model(data.get('model')))
+                # Allocate tokens to this message proportionally to its original size
+                proportion = sys_token_count / total_system_tokens
+                min_quota = max(min_token_quota, int(total_system_buffer * min_quota_percent))
+                retained_tokens = int(min(max_quota, max(min_quota, int(total_system_buffer * proportion))))
+
                 if sys_token_count > retained_tokens:
+                    truncated_system_messages += 1
                     message['content'] = decode_string_from_input(sys_tokens[:retained_tokens])
+                    discard_percent = retained_tokens / sys_token_count
                     print(f"{self.__class__.__name__}:Truncation:"
-                          f"System input discarded {sys_token_count - retained_tokens} tokens")
+                          f"System message quota: {proportion * 100:.1f}% of {total_system_buffer} tokens, max per quota {max_quota}, discarded {sys_token_count - retained_tokens} of {sys_token_count}: {discard_percent * 100:.1f}% retained")
+
+            # Append the message to the new_messages list
             new_messages.append(message)
 
-        # let user know we truncated messages
-        if len(discarded_messages) > 0:
+        if truncated_system_messages > 0:
             print(f"{self.__class__.__name__}:Truncation:"
-                  f"Discarded {len(discarded_messages)} messages with no content")
+                  f"Truncated {truncated_system_messages} out of {len(system_messages)} system messages to meet total system token quota: {total_system_buffer}")
 
-        # assign scratch messages as official messages
-        this_messages = new_messages
-        return this_messages
+        # Inform about the number of messages discarded due to lack of content
+        discarded_messages = len(this_messages) - len(new_messages)
+        if discarded_messages > 0:
+            print(f"{self.__class__.__name__}:Truncation:"
+                  f"Discarded {discarded_messages} messages with no content")
+
+        # Return the list of optimized messages
+        return new_messages
 
     def chunk_input_based_on_token_limit(self, data, prompt_format_args, input_token_buffer) -> List[Tuple[List[dict[str, any]], int]]:
 
@@ -207,9 +246,9 @@ class GenericProcessor:
     def calculate_input_token_buffer(self, total_max) -> int:
         return math.floor(total_max * 0.5)
 
-    # we're only going to use 75% of our buffer for system messages (e.g. background info)
+    # we're only going to use 25% of our input buffer for system messages (e.g. background info)
     def calculate_system_message_token_buffer(self, total_max) -> int:
-        return math.floor(self.calculate_input_token_buffer(total_max) * 0.75)
+        return math.floor(self.calculate_input_token_buffer(total_max) * 0.25)
 
     def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max) -> int:
 
@@ -513,6 +552,12 @@ class GenericProcessor:
         else:
             # get the JSON object out of the data payload
             prompt_format_args['guidelines'] = data['guidelines']
+
+        if 'summaries' not in data:
+            prompt_format_args['summaries'] = "This software project should be well designed and bug-free."
+        else:
+            # get the JSON object out of the data payload
+            prompt_format_args['summaries'] = data['summaries']
 
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
