@@ -177,6 +177,10 @@ class GenericProcessor:
     def calculate_input_token_buffer(self, total_max) -> int:
         return math.floor(total_max * 0.5)
 
+    # we're only going to use 75% of our buffer for system messages (e.g. background info)
+    def calculate_system_message_token_buffer(self, total_max) -> int:
+        return math.floor(self.calculate_input_token_buffer(total_max) * 0.75)
+
     def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max) -> int:
 
         # if the input is larger than our output buffer already, we'll just allow the entire output buffer to be used

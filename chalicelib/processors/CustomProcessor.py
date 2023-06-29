@@ -23,10 +23,6 @@ class CustomProcessor(GenericProcessor):
         # we'll leave 90% of the buffer for the input, and 10% for the output
         return math.floor(total_max * 0.8)
 
-    # we're only going to use 75% of our buffer for system messages (e.g. background info)
-    def calculate_system_message_token_buffer(self, total_max) -> int:
-        return math.floor(self.calculate_input_token_buffer(total_max) * 0.75)
-
     def generate_messages(self, data, prompt_format_args):
         if 'messages' in data:
             this_messages = json.loads(data['messages'])
