@@ -49,29 +49,6 @@ class CustomProcessor(GenericProcessor):
                     message['content'] = data['role_system']
                     break
 
-        # in case the messages (system) are too long, we'll truncate them to the sys token buffer
-        # in case we receive messages with no content, discard them
-        new_messages = []
-        discarded_messages = []
-        for message in this_messages:
-            if 'content' not in message or message['content'] == '':
-                discarded_messages.append(message)
-                continue  # Skip this iteration and move to next message
-            if message['role'] == 'system':
-                sys_token_count, sys_tokens = num_tokens_from_string(message['content'])
-                retained_tokens = self.calculate_system_message_token_buffer(max_tokens_for_model(data.get('model')))
-                if sys_token_count > retained_tokens:
-                    message['content'] = decode_string_from_input(sys_tokens[:retained_tokens])
-                    print(f"{self.__class__.__name__}:Truncation:"
-                          f"System input discarded {sys_token_count - retained_tokens} tokens")
-            new_messages.append(message)
-        this_messages = new_messages
-
-        if len(discarded_messages) > 0:
-            print(f"{self.__class__.__name__}:Truncation:"
-                  f"Discarded {len(discarded_messages)} messages with no content")
-        this_messages = new_messages
-
         return this_messages
 
     def customprocess_code(self, data, account, function_name, correlation_id):

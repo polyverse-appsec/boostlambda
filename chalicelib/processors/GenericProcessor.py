@@ -99,10 +99,39 @@ class GenericProcessor:
 
         return prompts
 
+    def optimize_content(self, this_messages: List[dict[str, any]], data) -> List[dict[str, any]]:
+
+        # in case the messages (system) are too long, we'll truncate them to the sys token buffer
+        # in case we receive messages with no content, discard them
+        new_messages = []
+        discarded_messages = []
+        for message in this_messages:
+            if 'content' not in message or message['content'] == '':
+                discarded_messages.append(message)
+                continue  # Skip this iteration and move to next message
+            if message['role'] == 'system':
+                sys_token_count, sys_tokens = num_tokens_from_string(message['content'])
+                retained_tokens = self.calculate_system_message_token_buffer(max_tokens_for_model(data.get('model')))
+                if sys_token_count > retained_tokens:
+                    message['content'] = decode_string_from_input(sys_tokens[:retained_tokens])
+                    print(f"{self.__class__.__name__}:Truncation:"
+                          f"System input discarded {sys_token_count - retained_tokens} tokens")
+            new_messages.append(message)
+
+        # let user know we truncated messages
+        if len(discarded_messages) > 0:
+            print(f"{self.__class__.__name__}:Truncation:"
+                  f"Discarded {len(discarded_messages)} messages with no content")
+
+        # assign scratch messages as official messages
+        this_messages = new_messages
+        return this_messages
+
     def chunk_input_based_on_token_limit(self, data, prompt_format_args, input_token_buffer) -> List[Tuple[List[dict[str, any]], int]]:
 
         # get the ideal full prompt - then we'll figure out if we need to break it up further
         this_messages = self.generate_messages(data, prompt_format_args)
+        this_messages = self.optimize_content(this_messages, data)
         fullMessageContentTokensCount = 0
         for message in this_messages:
             if 'content' in message:
@@ -158,6 +187,7 @@ class GenericProcessor:
             prompt_format_args_copy = prompt_format_args.copy()
             prompt_format_args_copy[self.get_chunkable_input()] = user_chunk_text
             this_messages = self.generate_messages(data_copy, prompt_format_args_copy)
+            this_messages = self.optimize_content(this_messages, data_copy)
 
             these_tokens_count = 0
             for message in this_messages:
@@ -216,6 +246,7 @@ class GenericProcessor:
         # if single input, build the prompt to test length
         if 'chunks' not in prompt_format_args:
             this_messages = self.generate_messages(data, prompt_format_args)
+            this_messages = self.optimize_content(this_messages, data)
             these_tokens_count = 0
             for message in this_messages:
                 if 'content' in message:
