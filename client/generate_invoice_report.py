@@ -117,7 +117,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                 print(f"{customer.email} has {len(all_invoices)} invoices")
 
             if customer.delinquent:
-                print(f"\nDelinquent customer: {customer.email}\n")
+                print(f"\nSkipping reporting for Delinquent customer: {customer.email}\n")
 
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
             customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
@@ -131,8 +131,16 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
             thisCustomerUsage = 0
             targetInvoices = ([upcoming_invoice] if upcoming_invoice else []) + list(past_invoices) + list(open_invoices)
+
+            total_pending_invoices += upcoming_invoice.amount_due if upcoming_invoice else 0
+            total_paid_invoices += customer_paid_invoices
+            total_customer_discounts += customer_discounts
+            total_suspended_customers += 1 if customer.delinquent else 0
+            if customer.invoice_settings.default_payment_method:
+                total_paying_customers += 1
+
             for invoice in targetInvoices:
-                for invoice_data in upcoming_invoice.lines.data if upcoming_invoice else []:
+                for invoice_data in invoice.lines.data:
                     usageInKb, plan_name = split_leading_number_from_description(invoice_data.description)
                     thisCustomerUsage += usageInKb
 
@@ -152,21 +160,10 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                                            f"${customer_discounts / 100:.2f}",
                                            f"${customer_paid_invoices / 100:.2f}"])
 
-                total_pending_invoices += upcoming_invoice.amount_due if upcoming_invoice else 0
-                total_paid_invoices += customer_paid_invoices
-                total_customer_discounts += customer_discounts
-
-                total_suspended_customers += 1 if customer.delinquent else 0
-
-                if customer.invoice_settings.default_payment_method:
-                    total_paying_customers += 1
-
-                if thisCustomerUsage > 0:
-                    total_active_users += 1
-                else:
-                    total_inactive_users += 1
-
-                customer_iter = customers.auto_paging_iter()
+            if thisCustomerUsage > 0:
+                total_active_users += 1
+            else:
+                total_inactive_users += 1
 
         except Exception:
             if debug:
