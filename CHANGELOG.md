@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.7.1: July 5th, 2023
+## Version 0.7.1: July 2nd, 2023
 
 ### New Features
 - N/A
@@ -12,7 +12,10 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Bug Fixes
-- N/A
+- Fix logging for single input Summary processing
+- Add local variable unreferenced to special service logging
+- Fix failure info disclosure during prod and staging
+- Ensure local reports full info
 
 ## Version 0.7.0: June 27, 2023
 

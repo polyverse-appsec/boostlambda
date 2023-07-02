@@ -71,15 +71,15 @@ def process_request(event, function, api_version):
 
         serviceLogFailurePrefix = "BOOST_USAGE: "
         # we want to catch internal implementation errors and return a 500
-        if isinstance(e, (TypeError, ValueError, KeyError, IndexError, AttributeError, RuntimeError, NotImplementedError)):
+        if isinstance(e, (UnboundLocalError, TypeError, ValueError, KeyError, IndexError, AttributeError, RuntimeError, NotImplementedError)):
             serviceLogFailurePrefix = "SERVICE_IMPL_FAILURE: " + serviceLogFailurePrefix
-
-            if service_stage in ('prod', 'staging'):
-                serviceFailureDetails = "Internal Boost Service error has occurred. Please retry or contact Polyverse Boost Support if the error continues"
 
         print(f'{serviceLogFailurePrefix}email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
 
-        if service_stage in ('dev', "test"):
+        if service_stage in ('prod', 'staging'):
+            serviceFailureDetails = "Internal Boost Service error has occurred. Please retry or contact Polyverse Boost Support if the error continues"
+
+        elif service_stage in ('dev', "test", "local"):
             serviceFailureDetails = exception_info
 
         if cloudwatch is not None:
