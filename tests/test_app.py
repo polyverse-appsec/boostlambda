@@ -205,14 +205,32 @@ def test_blueprint():
         print(f"\nResponse:\n\n{response.payload['body']}")
 
 
-def test_customprocess():
+def test_customprocess_prompt():
+    with Client(app) as client:
+        code = 'print("Hello, World!")'
+        prompt = "Analyze this code to identify use of code incompatible with a commercial license, such as any open source license.\n\nExamples of licenses include BSD, MIT, GPL, LGPL, Apache or other licenses that may conflict with commercial licenses.\n\nFor any identified licenses in the code, provide online web links to relevant license analysis.\n\n\n" + code
+        request_body = {
+            'code': code,
+            'prompt': prompt,
+            'session': 'testemail: alex@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'customprocess', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
+
+def test_customprocess_messages():
     with Client(app) as client:
         code = 'print("Hello, World!")'
         prompt = "Analyze this code to identify use of code incompatible with a commercial license, such as any open source license.\n\nExamples of licenses include BSD, MIT, GPL, LGPL, Apache or other licenses that may conflict with commercial licenses.\n\nFor any identified licenses in the code, provide online web links to relevant license analysis.\n\n\n" + code
         this_role_system = "I am a sofware architect bot. I will analyze the code for architectural, algorithmic and design issues."
         request_body = {
-            'code': code,
-            'prompt': prompt,
             'messages': json.dumps([
                 {
                     "role": "system",

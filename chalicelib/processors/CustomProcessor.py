@@ -1,7 +1,7 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from chalice import BadRequestError
-from chalicelib.usage import OpenAIDefaults, num_tokens_from_string, decode_string_from_input, max_tokens_for_model
+from chalicelib.usage import OpenAIDefaults
 
 import json
 import math
@@ -32,35 +32,52 @@ class CustomProcessor(GenericProcessor):
             customprompt = data['prompt']
             # if the user-provided prompt includes {code} block, then use that as the prompt
             if "{{code}}" in customprompt:
-                code = data['code']
+                code = data['code'] if 'code' in data else None
+                if code is None:
+                    raise BadRequestError("Error: please provide a code fragment to analyze for custom processing")
+
                 prompt = customprompt
                 prompt = super.safe_format(prompt, code=code, prompt=customprompt)
 
                 for message in reversed(result):
                     if message['role'] != 'user':
-                        raise Exception('Unexpected last message role: ' + message['role'])
+                        raise BadRequestError('Unexpected last message role: ' + message['role'])
                     message['content'] = prompt
                     break
 
             if 'role_system' in data:
                 for message in result:
                     if message['role'] != 'system':
-                        raise Exception('Unexpected last message role: ' + message['role'])
+                        raise BadRequestError('Unexpected last message role: ' + message['role'])
                     message['content'] = data['role_system']
                     break
+
+            this_messages = result
 
         return this_messages
 
     def customprocess_code(self, data, account, function_name, correlation_id):
-        # Extract the code from the json data
-        code = data[self.get_chunkable_input()]
-        if code is None:
-            raise BadRequestError("Error: please provide a code fragment to analyze for coding guidelines")
+        if 'messages' in data:
+            # if we're using raw messages, discard code and prompt completely
+            code = None
+            if 'code' in data:
+                del data['code']
+                print("Warning: code was provided but is not used when messages are provided")
 
-        # Extract the prompt from the json data
-        prompt = data['prompt']
-        if prompt is None:
-            raise BadRequestError("Error: please provide a custom prompt to run against the code fragment")
+            prompt = None
+            if 'prompt' in data:
+                del data['prompt']
+                print("Warning: prompt was provided but is not used when messages are provided")
+        else:
+            # Extract the code from the json data
+            code = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
+            if code is None:
+                raise BadRequestError("Error: please provide a code fragment to analyze for coding guidelines")
+
+            # Extract the prompt from the json data
+            prompt = data['prompt'] if 'prompt' in data else None
+            if prompt is None:
+                raise BadRequestError("Error: please provide a custom prompt to run against the code fragment")
 
         result = self.process_input(data, account, function_name, correlation_id,
                                     {self.get_chunkable_input(): code,

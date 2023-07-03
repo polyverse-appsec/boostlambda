@@ -17,6 +17,7 @@ Polyverse Boost Cloud Service
 - Add local variable unreferenced to special service logging
 - Fix failure info disclosure during prod and staging
 - Ensure local debugging reports full exception info
+- Fix non-Chat customProcessor service use case - was failing to generate messages
 
 ## Version 0.7.0: June 27, 2023
 
