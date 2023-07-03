@@ -3,13 +3,14 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.7.1: July 2nd, 2023
+## Version 0.7.1: July 3rd, 2023
 
 ### New Features
 - N/A
 
 ### Enhancements
-- N/A
+- More resilient error handling and error messages for missing parameters
+- Ensure truncation and chunking are reported for code guidelines and flowDiagram services
 
 ### Bug Fixes
 - Fix logging and processing for single input Summary processing

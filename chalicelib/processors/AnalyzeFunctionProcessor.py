@@ -119,8 +119,7 @@ class AnalyzeFunctionProcessor(GenericProcessor):
     def analyze_code(self, data, account, function_name, correlation_id):
 
         # Extract the code from the json data
-        code = data[self.get_chunkable_input()]
-
+        code = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
         if code is None:
             raise BadRequestError("Error: please provide a code fragment to analyze")
 

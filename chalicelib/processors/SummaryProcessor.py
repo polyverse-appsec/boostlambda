@@ -3,6 +3,7 @@ import math
 from chalicelib.processors.GenericProcessor import GenericProcessor, key_ChunkedInputs, key_ChunkPrefix, key_IsChunked, key_NumberOfChunks
 from chalicelib.version import API_VERSION
 from chalicelib.usage import OpenAIDefaults
+from chalice import BadRequestError
 
 
 class SummarizeProcessor(GenericProcessor):
@@ -36,16 +37,28 @@ class SummarizeProcessor(GenericProcessor):
         return 'inputs'
 
     def summarize_inputs(self, data, account, function_name, correlation_id):
-        analysis_type = data['analysis_type']
-        analysis_label = data['analysis_label']
+        analysis_type = data['analysis_type'] if 'analysis_type' in data else None
+        if analysis_type is None:
+            raise BadRequestError('Analysis type not provided')
+
+        analysis_label = data['analysis_label'] if 'analysis_label' in data else None
+        if analysis_label is None:
+            raise BadRequestError('Analysis label not provided')
 
         # older clients will have one larger input
         if self.get_chunkable_input() in data:
             inputs = data[self.get_chunkable_input()]
         # newer clients will send each input in a separate chunk
         else:
-            chunks = int(data[key_NumberOfChunks])
-            chunk_prefix = data[key_ChunkPrefix]
+            numChunks = data[key_NumberOfChunks] if key_NumberOfChunks in data else None
+            if numChunks is None:
+                raise BadRequestError('Number of chunks not provided')
+            chunks = int(numChunks)
+
+            chunk_prefix = data[key_ChunkPrefix] if key_ChunkPrefix in data else None
+            if chunk_prefix is None:
+                raise BadRequestError('Chunk prefix not provided')
+
             chunked_inputs = []
             inputs = None
 
@@ -55,8 +68,13 @@ class SummarizeProcessor(GenericProcessor):
 
             # collect all the chunks into an array for parallel processing
             for i in range(0, chunks):
-                chunked_inputs.append(data[chunk_prefix + str(i)])
-                example_summary = self.update_example_summary(example_summary, data[chunk_prefix + str(i)])
+                thisChunk = data[chunk_prefix + str(i)] if chunk_prefix + str(i) in data else None
+                if thisChunk is None:
+                    raise BadRequestError(f'Chunk {i} not provided')
+
+                chunked_inputs.append(thisChunk)
+
+                example_summary = self.update_example_summary(example_summary, thisChunk)
 
             # disabling this code for now, as we want chunks to be processed on chunk boundaries, if possible
             # combine the entire set of inputs into a large input (which will be chunked by the model)

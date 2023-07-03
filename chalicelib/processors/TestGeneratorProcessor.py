@@ -1,6 +1,7 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from chalicelib.usage import OpenAIDefaults
+from chalice import BadRequestError
 
 
 class TestGeneratorProcessor(GenericProcessor):
@@ -16,14 +17,15 @@ class TestGeneratorProcessor(GenericProcessor):
         return 'code'
 
     def testgen_code(self, data, account, function_name, correlation_id):
-        code = data[self.get_chunkable_input()]
+        code = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
+        if code is None:
+            raise BadRequestError("Error: please provide the code to test")
 
-        language = data['language']
-        outputlanguage = language
+        outputlanguage = data['language'] if 'language' in data else None
         if outputlanguage is None:
             outputlanguage = "python"
 
-        framework = data['framework']
+        framework = data['framework'] if 'framework' in data else None
         if framework is None:
             if outputlanguage == "python":
                 framework = "pytest"

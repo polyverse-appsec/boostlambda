@@ -1,6 +1,7 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from chalicelib.usage import OpenAIDefaults
+from chalice import BadRequestError
 
 
 class ExplainProcessor(GenericProcessor):
@@ -16,7 +17,9 @@ class ExplainProcessor(GenericProcessor):
         return 'code'
 
     def explain_code(self, data, account, function_name, correlation_id):
-        code = data[self.get_chunkable_input()]
+        code = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
+        if code is None:
+            raise BadRequestError("Error: please provide the original code")
 
         result = self.process_input(data, account, function_name, correlation_id,
                                     {self.get_chunkable_input(): code})

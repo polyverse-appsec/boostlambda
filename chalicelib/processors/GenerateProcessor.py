@@ -34,7 +34,7 @@ class GenerateProcessor(GenericProcessor):
         if 'originalCode' in data:
             data['code'] = data['originalCode']
 
-        code = data.get('code')
+        code = data.get('code') if 'code' in data else None
         if code is None:
             raise BadRequestError("Error: please provide the original code")
 

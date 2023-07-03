@@ -2,6 +2,7 @@ from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 import re
 from chalicelib.usage import OpenAIDefaults
+from chalice import BadRequestError
 
 
 class FlowDiagramProcessor(GenericProcessor):
@@ -17,12 +18,18 @@ class FlowDiagramProcessor(GenericProcessor):
         return 'code'
 
     def flowdiagram_code(self, data, account, function_name, correlation_id):
-        code = data[self.get_chunkable_input()]
+        code = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
+        if code is None:
+            raise BadRequestError("Error: please provide the original code")
 
         result = self.process_input(data, account, function_name, correlation_id, {self.get_chunkable_input(): code})
         cleanedResult = sanitize_mermaid_code(result['output'])
 
-        return {"analysis": cleanedResult}
+        return {
+            "analysis": cleanedResult,
+            "truncated": result['truncated'],
+            "chunked": result['chunked'],
+        }
 
 
 def sanitize_mermaid_code(markdownCode):

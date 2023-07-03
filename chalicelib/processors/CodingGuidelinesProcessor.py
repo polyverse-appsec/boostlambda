@@ -1,6 +1,7 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
 from chalicelib.version import API_VERSION
 from chalicelib.usage import OpenAIDefaults
+from chalice import BadRequestError
 
 
 class CodingGuidelinesProcessor(GenericProcessor):
@@ -16,8 +17,15 @@ class CodingGuidelinesProcessor(GenericProcessor):
         return 'code'
 
     def checkguidelines_code(self, data, account, function_name, correlation_id):
-        code = data[self.get_chunkable_input()]
+
+        code = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
+        if code is None:
+            raise BadRequestError("Error: please provide a code fragment to analyze")
 
         result = self.process_input(data, account, function_name, correlation_id, {self.get_chunkable_input(): code})
 
-        return {"analysis": result['output']}
+        return {
+            "analysis": result['output'],
+            "truncated": result['truncated'],
+            "chunked": result['chunked'],
+        }
