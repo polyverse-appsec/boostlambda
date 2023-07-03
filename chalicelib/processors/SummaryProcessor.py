@@ -66,13 +66,17 @@ class SummarizeProcessor(GenericProcessor):
 
         try:
             result = self.process_input(data, account, function_name, correlation_id,
-                                        {self.get_chunkable_input(): inputs if inputs is not None else None,
-                                         'analysis_type': analysis_type,
-                                         'analysis_label': analysis_label,
-                                         key_NumberOfChunks: chunks,
-                                         key_ChunkPrefix: chunk_prefix,
-                                         'summary_example': example_summary,
-                                         key_ChunkedInputs: chunked_inputs})
+                                        {
+                                            self.get_chunkable_input(): inputs if inputs is not None else None,
+                                            'analysis_type': analysis_type,
+                                            'analysis_label': analysis_label,
+
+                                            **({key_NumberOfChunks: chunks,
+                                                key_ChunkPrefix: chunk_prefix,
+                                                'summary_example': example_summary,
+                                                key_ChunkedInputs: chunked_inputs
+                                                } if inputs is None else {})
+                                        })
         except Exception as e:
             print(f'SUMMARY:{correlation_id}:Error processing {len(chunked_inputs) if inputs is None else 1} {analysis_type} inputs')
             raise e

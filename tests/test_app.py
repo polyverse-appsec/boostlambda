@@ -19,6 +19,8 @@ def test_explain():
 
         assert response.payload['statusCode'] == 200
 
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
 
 def test_explain_with_guideline():
     with Client(app) as client:
@@ -37,6 +39,8 @@ def test_explain_with_guideline():
 
         assert response.payload['statusCode'] == 200
 
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
 
 def test_generate_outputlanguage():
     with Client(app) as client:
@@ -53,6 +57,8 @@ def test_generate_outputlanguage():
             'generate', request_body)
 
         assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
 
 
 # test the authentication with the session parameter
@@ -125,6 +131,8 @@ def test_testgen():
 
         assert response.payload['statusCode'] == 200
 
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
 
 def test_analyze():
     with Client(app) as client:
@@ -139,6 +147,8 @@ def test_analyze():
             'analyze', request_body)
 
         assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
 
 
 def test_compliance():
@@ -155,6 +165,8 @@ def test_compliance():
 
         assert response.payload['statusCode'] == 200
 
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
 
 def test_codeguidelines():
     with Client(app) as client:
@@ -169,6 +181,8 @@ def test_codeguidelines():
             'codeguidelines', request_body)
 
         assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
 
 
 def test_blueprint():
@@ -187,6 +201,8 @@ def test_blueprint():
             'codeguidelines', request_body)
 
         assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
 
 
 def test_customprocess():
@@ -215,3 +231,47 @@ def test_customprocess():
             'customprocess', request_body)
 
         assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
+
+def test_summary_inputs():
+    with Client(app) as client:
+        request_body = {
+            'inputs': 'first sentence\nsecond sentence\nthird sentence',
+            'analysis_label': 'Explanation',
+            'analysis_type': 'explain',
+            'session': 'testemail: alex@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'summarize', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
+
+def test_summary_chunks():
+    with Client(app) as client:
+        request_body = {
+            'chunk_0': 'first sentence',
+            'chunk_1': 'second sentence',
+            'chunk_2': 'third sentence',
+            'chunks': 3,
+            'chunk_prefix': 'chunk_',
+            'analysis_label': 'Explanation',
+            'analysis_type': 'explain',
+            'session': 'testemail: alex@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'summarize', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")

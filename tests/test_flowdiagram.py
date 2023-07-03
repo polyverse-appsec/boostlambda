@@ -17,7 +17,8 @@ def test_flowdiagram_no_code():
         }
         response = client.lambda_.invoke('flowdiagram', request_body)
         assert response.payload['statusCode'] == 200  # Ensure the request was successful
-        # Add further assertions based on expected response
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
 
 
 @pytest.mark.codeInput
@@ -41,7 +42,8 @@ def test_flowdiagram_simple_c_code():
         }
         response = client.lambda_.invoke('flowdiagram', request_body)
         assert response.payload['statusCode'] == 200  # Ensure the request was successful
-        # Add further assertions based on expected response
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
 
 
 @pytest.mark.codeInput
@@ -57,8 +59,10 @@ def test_flowdiagram_c_style_comments():
             'version': '0.9.5'
         }
         response = client.lambda_.invoke('flowdiagram', request_body)
+
         assert response.payload['statusCode'] == 200  # Ensure the request was successful
-        # Add further assertions based on expected response
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
 
 
 @pytest.mark.cleanOutput

@@ -12,10 +12,10 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Bug Fixes
-- Fix logging for single input Summary processing
+- Fix logging and processing for single input Summary processing
 - Add local variable unreferenced to special service logging
 - Fix failure info disclosure during prod and staging
-- Ensure local reports full info
+- Ensure local debugging reports full exception info
 
 ## Version 0.7.0: June 27, 2023
 
