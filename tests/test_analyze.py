@@ -13,6 +13,7 @@ def test_analyze_function():
     with Client(app) as client:
         request_body = {
             'code': simple_buf_c,
+            'inputMetadata': json.dumps({'lineNumberBase': 0}),
             'session': 'testemail: alex@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
