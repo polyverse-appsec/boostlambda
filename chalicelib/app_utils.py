@@ -74,6 +74,9 @@ def process_request(event, function, api_version):
         if isinstance(e, (UnboundLocalError, TypeError, ValueError, KeyError, IndexError, AttributeError, RuntimeError, NotImplementedError)):
             serviceLogFailurePrefix = "SERVICE_IMPL_FAILURE: " + serviceLogFailurePrefix
 
+        elif isinstance(e, (BadRequestError)):
+            serviceLogFailurePrefix = "CLIENT_IMPL_FAILURE: " + serviceLogFailurePrefix
+
         print(f'{serviceLogFailurePrefix}email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) FAILED with exception: {exception_info}')
 
         if service_stage in ('prod', 'staging'):
