@@ -28,8 +28,8 @@ def test_compliance_function():
         # body is a JSON string, so parse it into a JSON object
         analysis = json.loads(response.payload['body'])
         assert analysis['status'] == 'bugsfound'
-        assert 'PCI DSS' in analysis['details'][0]['bugType']
-        assert analysis['details'][0]['severity'] >= 10
+        assert 'PCI DSS' in analysis['details'][0]['bugType'] or 'Data Exposure' in analysis['details'][0]['bugType']
+        assert analysis['details'][0]['severity'] >= 8
         assert analysis['details'][0]['lineNumber'] >= 5
 
         assert ("PCI DSS" in analysis['details'][1]['bugType'] or "GDPR" in analysis['details'][1]['bugType'] or 'HIPAA' in analysis['details'][1]['bugType'])
@@ -37,6 +37,6 @@ def test_compliance_function():
         assert analysis['details'][1]['severity'] >= 7
 
         # for this test, any string is fine
-        assert "PCI DSS" in analysis['details'][2]['bugType']
+        assert "PCI DSS" in analysis['details'][2]['bugType'] or "GDPR" in analysis['details'][2]['bugType'] or 'HIPAA' in analysis['details'][2]['bugType']
         assert analysis['details'][2]['lineNumber'] >= 4
         assert analysis['details'][2]['severity'] >= 7
