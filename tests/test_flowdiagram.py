@@ -11,7 +11,7 @@ def test_flowdiagram_no_code():
     with Client(app) as client:
         request_body = {
             'code': 'This is not a code.',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': '0.9.5'
         }
@@ -36,7 +36,7 @@ def test_flowdiagram_simple_c_code():
               return 0;
             }
             """,
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': '0.9.5'
         }
@@ -54,7 +54,7 @@ def test_flowdiagram_c_style_comments():
             /* This is a block comment */
             // This is a line comment
             """,
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': '0.9.5'
         }

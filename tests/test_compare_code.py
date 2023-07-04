@@ -22,7 +22,7 @@ def test_compare_code():
         request_body = {
             'code': sync_urls_sh,
             'code_compare': sync_urls_py,
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }

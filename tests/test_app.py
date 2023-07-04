@@ -9,7 +9,7 @@ def test_explain():
     with Client(app) as client:
         request_body = {
             'code': 'print("Hello, World!")',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -29,7 +29,7 @@ def test_explain_with_guideline():
             'guidelines': ['system',
                            ['This application code should be able to print "Hello, Cruel World!" to the console.',
                             'This application code should be written in TypeScript or JavaScript.']],
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -48,7 +48,7 @@ def test_generate_outputlanguage():
         request_body = {
             'explanation': 'This is a simple program that prints "Hello, World!" to the console.',
             'originalCode': 'print("Hello, World!")',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version,
             'output_language': output_language
@@ -102,9 +102,9 @@ def test_auth():
 
         assert response.payload['statusCode'] == 200
 
-        # now test with an email of alex@polytest.ai
+        # now test with an email of unittest@polytest.ai
         request_body = {
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'code': 'print("Hello, World!")',
             'organization': 'polytest.ai',
             'version': client_version
@@ -122,7 +122,7 @@ def test_testgen():
             'language': 'python',
             'framework': 'pytest',
             'code': 'print("Hello, World!")',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -138,7 +138,7 @@ def test_analyze():
     with Client(app) as client:
         request_body = {
             'code': 'print("Hello, World!")',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -155,7 +155,7 @@ def test_compliance():
     with Client(app) as client:
         request_body = {
             'code': 'print("Hello, World!")',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -172,7 +172,7 @@ def test_codeguidelines():
     with Client(app) as client:
         request_body = {
             'code': 'print("Hello, World!")',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -192,7 +192,7 @@ def test_blueprint():
             'guidelines': ['system',
                            ['This application code should be able to print "Hello, Cruel World!" to the console.',
                             'This application code should be written in TypeScript or JavaScript.']],
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -212,7 +212,7 @@ def test_customprocess_prompt():
         request_body = {
             'code': code,
             'prompt': prompt,
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -240,7 +240,7 @@ def test_customprocess_messages():
                     "role": "user",
                     "content": prompt
                 }]),
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -259,7 +259,7 @@ def test_summary_inputs():
             'inputs': 'first sentence\nsecond sentence\nthird sentence',
             'analysis_label': 'Explanation',
             'analysis_type': 'explain',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
@@ -282,7 +282,7 @@ def test_summary_chunks():
             'chunk_prefix': 'chunk_',
             'analysis_label': 'Explanation',
             'analysis_type': 'explain',
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }

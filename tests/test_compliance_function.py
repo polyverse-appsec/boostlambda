@@ -14,7 +14,7 @@ def test_compliance_function():
         request_body = {
             'code': simple_buf_c,
             'inputMetadata': json.dumps({'lineNumberBase': 0}),
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }

@@ -30,7 +30,7 @@ def check_performance(code, issuesIdentified):
     with Client(app) as client:
         request_body = {
             'code': code,
-            'session': 'testemail: alex@polytest.ai',
+            'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version
         }
