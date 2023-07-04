@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Add automatic retry (one time) for all GitHub server requests to increase network resilience
+- Ensure the Blueprint / Summary info is sent as training AFTER the initial system prompt
 
 ### Bug Fixes
 - N/A

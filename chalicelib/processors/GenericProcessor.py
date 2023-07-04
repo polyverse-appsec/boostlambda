@@ -47,17 +47,30 @@ class GenericProcessor:
 
         self.api_version = api_version
 
-        self.prompt_filenames = []
-        # ensure all promots start with the project summary info if available
-        self.prompt_filenames.append(['system', 'blueprint-summary-system.prompt'])
-        self.prompt_filenames.extend(prompt_filenames if prompt_filenames is not None else [])
+        # Create a new list with the blueprint summary
+        blueprint_summary = ['system', 'blueprint-summary-system.prompt']
+
+        # If prompt_filenames is not None, create a copy, otherwise initialize an empty list
+        new_prompt_filenames = prompt_filenames.copy() if prompt_filenames is not None else []
+
+        # Iterate over the new_prompt_filenames
+        for i, prompt in enumerate(new_prompt_filenames):
+            # Check if the prompt type is 'system'
+            if prompt[0] == 'system':
+                # Insert the blueprint summary after the first system prompt
+                new_prompt_filenames.insert(i + 1, blueprint_summary)
+                break
+
+        self.prompt_filenames = new_prompt_filenames
 
         self.default_params = default_params
 
         self.numbered_prompt_keys = []
-        # use the client's guidelines to steer the analysis
-        self.numbered_prompt_keys.append(['response', 'guidelines'])
-        self.numbered_prompt_keys.extend(numbered_prompt_keys if numbered_prompt_keys is not None else [])
+
+        # We aren't using Assistant/User reply to train on the client's guidelines yet, since better results come
+        #     from being in the user-prompt alone
+        # self.numbered_prompt_keys.append(['response', 'guidelines'])
+        # self.numbered_prompt_keys.extend(numbered_prompt_keys if numbered_prompt_keys is not None else [])
 
         print(f"{self.__class__.__name__}_api_version: ", self.api_version)
 
