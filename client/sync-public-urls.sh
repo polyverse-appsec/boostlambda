@@ -2,6 +2,7 @@
 
 aws_region="us-west-2"
 cloud_stage="$1"
+monitors="$2"
 whatif="$2"
 client_src="$3"
 exit_code=0
@@ -14,8 +15,9 @@ NC='\033[0m' # No Color
 
 # Check if no parameters are passed
 if [[ -z "$cloud_stage" ]]; then
-    echo -e "${YELLOW}Usage: $0 <cloud_stage> [--whatif] [client_src]${NC}"
+    echo -e "${YELLOW}Usage: $0 <cloud_stage> [--monitors] [--whatif] [client_src]${NC}"
     echo -e "${YELLOW}       cloud_stage: dev, test, staging, prod, all${NC}"
+    echo -e "${YELLOW}       --monitors: Optional. Update service monitors instead of services.${NC}"
     echo -e "${YELLOW}       --whatif: Optional. Echo the actions without executing them.${NC}"
     echo -e "${YELLOW}       client_src: Optional. Relative path to the location of client source code.${NC}"
     exit 1
@@ -36,7 +38,11 @@ for stage in "${stages[@]}"; do
     echo "Checking and updating functions in stage: $stage"
 
     # Get a list of all Lambda functions in the stage
-    functions=$(aws lambda list-functions --region "$aws_region" --query "Functions[?starts_with(FunctionName, 'boost-${stage}')].FunctionName" --output text)
+    if [[ "$monitors" == "--monitors" ]]; then
+        functions=$(aws lambda list-functions --region "$aws_region" --query "Functions[?starts_with(FunctionName, 'boost-monitor-${stage}')].FunctionName" --output text)
+    else
+        functions=$(aws lambda list-functions --region "$aws_region" --query "Functions[?starts_with(FunctionName, 'boost-${stage}')].FunctionName" --output text)
+    fi
 
     # Check if any functions exist in the stage
     if [[ -z "$functions" ]]; then
@@ -76,7 +82,7 @@ for stage in "${stages[@]}"; do
                     url=$(echo "$config" | jq -r '.FunctionUrl')
                     echo "      New $function public url: $url"
 
-                    if aws lambda add-permission --region "$aws_region" --function-name "$function" --statement-id 'public-access' --principal '*' --action 'lambda:InvokeFunction' >/dev/null 2>&1; then
+                    if aws lambda add-permission --region "$aws_region" --function-name "$function" --statement-id 'FunctionURLAllowPublicAccess' --principal '*' --action 'lambda:InvokeFunction' >/dev/null 2>&1; then
                         echo -e "${GREEN}      Set public-access for function $function${NC}"
 
                         if [[ -n "$client_src" ]]; then
