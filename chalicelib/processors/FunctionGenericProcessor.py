@@ -1,16 +1,16 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor
-from chalicelib.version import API_VERSION
 from chalice import BadRequestError
 from chalicelib.usage import OpenAIDefaults
 
 import json
 import math
 
+
 # the live version does not use startCol and endCol. The line number is calculated from the original line number of the chunk if given,
 # but is it not always precise. there's no need to complicate the job of the AI with startCol and endCol, which are not always precise
 report_bug_function = {
-    "name": "report_security_bugs",
-    "description": "reports security bugs in the code",
+    "name": "",
+    "description": "",
     "parameters": {
         "type": "object",
         "properties": {
@@ -30,11 +30,11 @@ report_bug_function = {
                         },
                         "bugType": {
                             "type": "string",
-                            "description": "the type of bug, e.g. 'sql-injection', using standard bug types from the MITRE CWE taxonomy"
+                            "description": ""
                         },
                         "description": {
                             "type": "string",
-                            "description": "a description in markdown format of why the bug is a bug and how it might be exploited",
+                            "description": "a description in markdown format of why the bug is a bug and how it might be exposed",
                         },
                         "solution": {
                             "type": "string",
@@ -48,16 +48,21 @@ report_bug_function = {
 }
 
 
-class AnalyzeFunctionProcessor(GenericProcessor):
-    def __init__(self):
-        super().__init__(API_VERSION, [
-            ['main', 'analyze-function.prompt'],
-            ['system', 'analyze-function-role-system.prompt']],
+class FunctionGenericProcessor(GenericProcessor):
+    def __init__(self, api_version, main_prompt, system_prompt, function_name, bugTypeDescription):
+        my_report_bug_function = report_bug_function.copy()
+        my_report_bug_function['name'] = f"report_{function_name}_bugs"
+        my_report_bug_function['description'] = f"reports {function_name} bugs in the code"
+        my_report_bug_function['parameters']['properties']['bugs']['items']['properties']['bugType']['description'] = bugTypeDescription
+
+        super().__init__(api_version, [
+            ['main', main_prompt],
+            ['system', system_prompt]],
             None,
             {'model': OpenAIDefaults.boost_default_gpt_model,
-                'temperature': OpenAIDefaults.temperature_terse_and_accurate,
-                'functions': [report_bug_function],
-                'function_call': {"name": "report_security_bugs"}})
+             'temperature': OpenAIDefaults.temperature_medium_with_explanation,
+             'functions': [my_report_bug_function],
+             'function_call': {"name": f"report_{function_name}_bugs"}})
 
     def get_chunkable_input(self) -> str:
         return 'code'
@@ -67,7 +72,7 @@ class AnalyzeFunctionProcessor(GenericProcessor):
         # and we're much terser in output in this processor
         return math.floor(total_max * 0.8)
 
-    def analyze_code(self, data, account, function_name, correlation_id):
+    def check_code_with_function(self, data, account, function_name, correlation_id):
 
         # Extract the code from the json data
         code = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
@@ -81,7 +86,7 @@ class AnalyzeFunctionProcessor(GenericProcessor):
             prompt_format_args['lineNumberBase'] = f"When identifying source numbers for issues, treat the first line of the code as line number {lineNumberBase + 1}"
 
         result = self.process_input(data, account, function_name, correlation_id,
-                                    prompt_format_args)
+                                    {self.get_chunkable_input(): code})
 
         # if result['messages'] has a field 'function_call', then we have the data for a function call
 

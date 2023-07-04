@@ -75,6 +75,7 @@ for stage in stages:
                             FunctionName=function_name,
                             StatementId='FunctionURLAllowPublicAccess',
                             Action='lambda:InvokeFunction',
+                            Conditions="StringEquals",
                             Principal='*'
                         )
                         print(colored(f"    Created public URI for function {function_name}", 'green'))
