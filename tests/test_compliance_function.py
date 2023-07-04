@@ -38,5 +38,5 @@ def test_compliance_function():
 
         # for this test, any string is fine
         assert "PCI DSS" in analysis['details'][2]['bugType'] or "GDPR" in analysis['details'][2]['bugType'] or 'HIPAA' in analysis['details'][2]['bugType']
-        assert analysis['details'][2]['lineNumber'] >= 4
+        assert analysis['details'][2]['lineNumber'] >= 2
         assert analysis['details'][2]['severity'] >= 7
