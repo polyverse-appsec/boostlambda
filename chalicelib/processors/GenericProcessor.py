@@ -70,7 +70,7 @@ class GenericProcessor:
         # We aren't using Assistant/User reply to train on the client's guidelines yet, since better results come
         #     from being in the user-prompt alone
         # self.numbered_prompt_keys.append(['response', 'guidelines'])
-        # self.numbered_prompt_keys.extend(numbered_prompt_keys if numbered_prompt_keys is not None else [])
+        self.numbered_prompt_keys.extend(numbered_prompt_keys if numbered_prompt_keys is not None else [])
 
         print(f"{self.__class__.__name__}_api_version: ", self.api_version)
 
