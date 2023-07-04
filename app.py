@@ -18,6 +18,7 @@ from chalicelib.processors.BlueprintProcessor import BlueprintProcessor
 from chalicelib.processors.AnalyzeFunctionProcessor import AnalyzeFunctionProcessor
 from chalicelib.processors.ComplianceFunctionProcessor import ComplianceFunctionProcessor
 from chalicelib.processors.CompareCodeProcessor import CompareCodeProcessor
+from chalicelib.processors.PerformanceProcessor import PerformanceProcessor
 
 import uuid
 import json
@@ -71,7 +72,7 @@ compareCodeProcessor = CompareCodeProcessor()
 
 @app.lambda_function(name='compare_code')
 def compare_code(event, _):
-    return process_request(event, compareCodeProcessor.compare_code, generateProcessor.api_version)
+    return process_request(event, compareCodeProcessor.compare_code, compareCodeProcessor.api_version)
 
 
 testGeneratorProcessor = TestGeneratorProcessor()
@@ -120,6 +121,14 @@ codeguidelinesProcessor = CodingGuidelinesProcessor()
 @app.lambda_function(name='codeguidelines')
 def codeguidelines(event, context):
     return process_request(event, codeguidelinesProcessor.checkguidelines_code, codeguidelinesProcessor.api_version)
+
+
+performanceProcessor = PerformanceProcessor()
+
+
+@app.lambda_function(name='performance')
+def performance(event, context):
+    return process_request(event, performanceProcessor.check_performance, performanceProcessor.api_version)
 
 
 blueprintProcessor = BlueprintProcessor()

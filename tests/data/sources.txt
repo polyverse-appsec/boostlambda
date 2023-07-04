@@ -1,0 +1,2 @@
+Ethereum: https://github.com/ethereum/go-ethereum/blob/master/consensus/ethash/consensus.go
+Hadoop: https://github.com/apache/hadoop/blob/trunk/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/namenode/FSNamesystem.java
