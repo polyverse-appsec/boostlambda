@@ -6,7 +6,7 @@ Polyverse Boost Cloud Service
 ## Version 0.7.2: July 5th, 2023
 
 ### New Features
-- N/A
+- Added new code comparison service - that looks for critical differences in two chunks of code (ignoring language, syntax and comments)
 
 ### Enhancements
 - Add automatic retry (one time) for all GitHub server requests to increase network resilience

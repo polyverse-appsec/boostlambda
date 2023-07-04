@@ -17,6 +17,7 @@ from chalicelib.processors.CodingGuidelinesProcessor import CodingGuidelinesProc
 from chalicelib.processors.BlueprintProcessor import BlueprintProcessor
 from chalicelib.processors.AnalyzeFunctionProcessor import AnalyzeFunctionProcessor
 from chalicelib.processors.ComplianceFunctionProcessor import ComplianceFunctionProcessor
+from chalicelib.processors.CompareCodeProcessor import CompareCodeProcessor
 
 import uuid
 import json
@@ -63,6 +64,14 @@ generateProcessor = GenerateProcessor()
 @app.lambda_function(name='generate')
 def generate(event, _):
     return process_request(event, generateProcessor.convert_code, generateProcessor.api_version)
+
+
+compareCodeProcessor = CompareCodeProcessor()
+
+
+@app.lambda_function(name='compare_code')
+def compare_code(event, _):
+    return process_request(event, compareCodeProcessor.compare_code, generateProcessor.api_version)
 
 
 testGeneratorProcessor = TestGeneratorProcessor()

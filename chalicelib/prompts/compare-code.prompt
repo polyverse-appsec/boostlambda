@@ -1,0 +1,17 @@
+Compare the following code to the code you analyzed above.
+
+Use the original code shown earlier as a reference for fundamental algorithm, error handling and use of external data sources.
+
+Ignore differences that do not alter the fundamental architecture, algorithm, inputs or outputs. Examples of differences that can be ignored are code restructuring, refactoring, language syntax, whitespace, comments and non-functional behavior.
+
+Focus on differences between the original code and the new code to compare. Provide terse and clear differences.
+
+If no critical differences are found, then report the code as "NO Critical Differences identified"
+
+Also, use the following architectural guidelines when performing your code comparison:
+{guidelines}
+
+The code to compare follows:
+
+```
+{code_compare}
