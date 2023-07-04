@@ -62,15 +62,15 @@ def check_performance(code, issuesIdentified):
 
 
 def test_performance():
-#    check_performance(concensus_source, ['O(1)', 'O(n)', 'big integer'])
+    check_performance(concensus_source, ['O(1)', 'O(n)', 'big integer'])
 
-#    check_performance(tensorFlow_inefficientuse, ['batch', 'map'])
+    check_performance(tensorFlow_inefficientuse, ['batch', 'map'])
 
-#    check_performance(hadoop_source, ['O(n)', 'lock'])
+    check_performance(hadoop_source, ['O(n)', 'lock'])
 
-#    check_performance(linear_search, ['O(n)'])
+    check_performance(linear_search, ['O(n)'])
 
-#    check_performance(constant_lookup, ['O(1)'])
+    check_performance(constant_lookup, ['O(1)'])
 
     check_performance(exponential_fibonacci, ['O(2^n)', 'O(n)', 'memoization'])
 
