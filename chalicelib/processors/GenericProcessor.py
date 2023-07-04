@@ -543,8 +543,7 @@ class GenericProcessor:
                   f"Finish:{result['finish'] if result is not None and 'finish' in result and result['finish'] is not None else 'Incomplete'}::error:{str(e)}")
             raise
 
-    def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
-
+    def initialize_from_data(self, log, data, account, function_name, correlation_id, prompt_format_args) -> Tuple[dict, dict]:
         params = self.default_params.copy()  # Create a copy of the defaults
 
         # enable user to override the model to gpt-3 or gpt-4
@@ -552,7 +551,7 @@ class GenericProcessor:
             params["model"] = data['model']
 
         if "model" in params:
-            print(f"{function_name}:{account['email']}:{correlation_id}:Using model {params['model']}")
+            log(f"Using model {params['model']}")
 
         # https://community.openai.com/t/cheat-sheet-mastering-temperature-and-top-p-in-chatgpt-api-a-few-tips-and-tricks-on-controlling-the-creativity-deterministic-output-of-prompt-responses/172683
         if 'top_p' in data:
@@ -572,9 +571,24 @@ class GenericProcessor:
             # get the JSON object out of the data payload
             prompt_format_args['summaries'] = data['summaries']
 
+        return params, prompt_format_args
+
+    def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
+
+        email = account['email']
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
         customer = account['customer']
-        email = account['email']
+
+        def log(message, use_thread=False, show_customer=False):
+            if show_customer:
+                message = f"{customer['name']}:{customer['id']}:{message}"
+
+            if use_thread:
+                print(f"{function_name}:{email}:{correlation_id}:{threading.current_thread().ident}:{message}")
+            else:
+                print(f"{function_name}:{email}:{correlation_id}:{message}")
+
+        params, prompt_format_args = self.initialize_from_data(log, data, account, function_name, correlation_id, prompt_format_args)
 
         prompt_set: List[Tuple[str, int]] = []
 
@@ -587,7 +601,7 @@ class GenericProcessor:
             result = None
             # if chunked, we're going to run all chunks in parallel and then concatenate the results at end
             if chunked:
-                print(f"{function_name}:Chunked:{account['email']}:{correlation_id}:Chunked user input - {len(prompt_set)} chunks")
+                log(f"Chunked user input - {len(prompt_set)} chunks")
 
                 openAIRateLimitPerMinute = 40000
                 totalChunks = len(prompt_set)
@@ -611,13 +625,13 @@ class GenericProcessor:
                             model_max_tokens)
                         delay = calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk)
 
-                    print(f"{function_name}:{correlation_id}:Thread-{threading.current_thread().ident} "
-                          f"Summary {index} delaying for {delay:.3f} secs")
+                    log(f"Thread-{threading.current_thread().ident} Summary {index} delaying for {delay:.3f} secs")
+
                     time.sleep(delay)  # Delay based on the number of words in the prompt
 
                     if delay > 5:  # If delay is more than 5 seconds, log it
-                        print(f"{function_name}:{correlation_id}:Thread-{threading.current_thread().ident} "
-                              f"Summary {index} delayed for {delay:.3f} secs")
+                        log(f"Summary {index} delayed for {delay:.3f} secs", True)
+
                     return self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
 
                 # launch all the parallel threads to run analysis with the unique chunked prompt for each
@@ -628,8 +642,7 @@ class GenericProcessor:
             else:
                 # if truncated user input, report it out, and update the OpenAI input with the truncated input
                 if truncated:
-                    print(f"{function_name}:Truncation:{account['email']}:{correlation_id}:"
-                          f"Truncated user input, discarded {max_tokens_for_model(data.get('model')) - prompt_set[0][1]} tokens")
+                    log(f"Truncated user input, discarded {max_tokens_for_model(data.get('model')) - prompt_set[0][1]} tokens")
 
                 # run the analysis with single input
                 singleIndex = 0
@@ -673,8 +686,8 @@ class GenericProcessor:
                 except Exception:
                     success = False
                     exception_info = traceback.format_exc().replace('\n', ' ')
-                    print(f"UPDATE_USAGE:FAILURE:{customer['name']}:{customer['id']}:{email}:{correlation_id}:"
-                          f"Error updating ~${boost_cost} usage: ", exception_info)
+                    log(f"UPDATE_USAGE_FAILURE:"
+                        f"Error updating ~${boost_cost} usage: {exception_info}", False, True)
                     capture_metric(customer, email, function_name, correlation_id,
                                    {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
 
@@ -695,7 +708,7 @@ class GenericProcessor:
 
             except Exception:
                 exception_info = traceback.format_exc().replace('\n', ' ')
-                print(f"{customer['name']}:{customer['id']}:{email}:{correlation_id}:Error capturing metrics: ", exception_info)
+                log(f"Error capturing metrics: {exception_info}", False, True)
                 pass  # Don't fail if we can't capture metrics
 
         return {
