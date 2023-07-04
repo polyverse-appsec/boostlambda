@@ -7,8 +7,8 @@ from chalice import BadRequestError
 class CodingGuidelinesProcessor(GenericProcessor):
     def __init__(self):
         super().__init__(API_VERSION, [
-            ['main', 'guidelines.prompt'],
-            ['system', 'guidelines-role-system.prompt']],
+            ['main', 'codingguidelines.prompt'],
+            ['system', 'codingguidelines-role-system.prompt']],
             None,
             {'model': OpenAIDefaults.boost_default_gpt_model,
              'temperature': OpenAIDefaults.temperature_medium_with_explanation})
