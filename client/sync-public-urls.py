@@ -37,88 +37,87 @@ for stage in stages:
     # Get a list of all Lambda functions in the stage
     client = boto3.client('lambda', region_name=aws_region)
 
-    if monitors:
-        functions = client.list_functions(FunctionVersion='ALL', MaxItems=50)
-    else:
-        functions = client.list_functions(FunctionVersion='ALL', MaxItems=50)
+    paginator = client.get_paginator('list_functions')
+    iterator = paginator.paginate(
+        FunctionVersion='ALL',
+        PaginationConfig={
+            'MaxItems': 500,
+            'PageSize': 50
+        }
+    )
 
-    # Check if any functions exist in the stage
-    if not functions:
-        print(colored(f"No functions found in stage: {stage}", 'red'))
-        exit_code = 1
-        continue
+    for page in iterator:
+        for function in page['Functions']:
 
-    # Iterate over each function
-    for function in functions['Functions']:
-        function_name = function['FunctionName']
-        config = client.get_function_configuration(FunctionName=function_name)
+            function_name = function['FunctionName']
+            config = client.get_function_configuration(FunctionName=function_name)
 
-        if not monitors:
-            if not function_name.startswith(f"boost-{stage}"):
-                continue
-        else:
-            if not function_name.startswith(f"boost-monitor-{stage}"):
-                continue
-
-        # Check if the function already has public access
-        existing_permissions = client.get_policy(FunctionName=function_name)
-
-        if not config or not existing_permissions:
-            # Create public access for the function
-            if whatif:
-                print(colored(f"    Missing Public Uri for {function_name}; would create via create-function-url-config and add-permission", 'red'))
-                exit_code = 1
-                missing_functions += 1
-
+            if not monitors:
+                if not function_name.startswith(f"boost-{stage}"):
+                    continue
             else:
-                try:
-                    response = client.add_permission(
-                        FunctionName=function_name,
-                        StatementId='FunctionURLAllowPublicAccess',
-                        Action='lambda:InvokeFunction',
-                        Principal='*'
-                    )
-                    print(colored(f"    Created public URI for function {function_name}", 'green'))
+                if not function_name.startswith(f"boost-monitor-{stage}"):
+                    continue
 
-                    if client_src:
-                        # Search for URI in source code files
-                        uri_found = 0
-                        for root, dirs, files in os.walk(client_src):
-                            for file in files:
-                                if file.endswith(".ts"):
-                                    with open(os.path.join(root, file), "r") as file:
-                                        if function_name in file.read():
-                                            print(f"      Found in client {file}")
-                                            uri_found = 1
-                                            break
-                        if uri_found == 0:
-                            print(colored(f"      URI {function_name} not found in client source", 'red'))
-                            exit_code = 1
-                            missing_client_src += 1
+            # Check if the function already has public access
+            existing_permissions = client.get_policy(FunctionName=function_name)
 
-                except Exception:
-                    print(colored(f"    Failed to create public URI for function {function_name}", 'red'))
+            if not config or not existing_permissions:
+                # Create public access for the function
+                if whatif:
+                    print(colored(f"    Missing Public Uri for {function_name}; would create via create-function-url-config and add-permission", 'red'))
                     exit_code = 1
                     missing_functions += 1
 
-        else:
-            print(f"    {function_name} already public: {function_name}")
+                else:
+                    try:
+                        response = client.add_permission(
+                            FunctionName=function_name,
+                            StatementId='FunctionURLAllowPublicAccess',
+                            Action='lambda:InvokeFunction',
+                            Principal='*'
+                        )
+                        print(colored(f"    Created public URI for function {function_name}", 'green'))
 
-            if client_src:
-                # Search for URI in source code files
-                uri_found = 0
-                for root, dirs, files in os.walk(client_src):
-                    for file in files:
-                        if file.endswith(".ts"):
-                            with open(os.path.join(root, file), "r") as file:
-                                if function_name in file.read():
-                                    print(f"      Found in client {file}")
-                                    uri_found = 1
-                                    break
-                if uri_found == 0:
-                    print(colored(f"      URI {function_name} not found in client source", 'red'))
-                    exit_code = 1
-                    missing_client_src += 1
+                        if client_src:
+                            # Search for URI in source code files
+                            uri_found = 0
+                            for root, dirs, files in os.walk(client_src):
+                                for file in files:
+                                    if file.endswith(".ts"):
+                                        with open(os.path.join(root, file), "r") as file:
+                                            if function_name in file.read():
+                                                print(f"      Found in client {file}")
+                                                uri_found = 1
+                                                break
+                            if uri_found == 0:
+                                print(colored(f"      URI {function_name} not found in client source", 'red'))
+                                exit_code = 1
+                                missing_client_src += 1
+
+                    except Exception:
+                        print(colored(f"    Failed to create public URI for function {function_name}", 'red'))
+                        exit_code = 1
+                        missing_functions += 1
+
+            else:
+                print(f"    {function_name} already public: {function_name}")
+
+                if client_src:
+                    # Search for URI in source code files
+                    uri_found = 0
+                    for root, dirs, files in os.walk(client_src):
+                        for file in files:
+                            if file.endswith(".ts"):
+                                with open(os.path.join(root, file), "r") as file:
+                                    if function_name in file.read():
+                                        print(f"      Found in client {file}")
+                                        uri_found = 1
+                                        break
+                    if uri_found == 0:
+                        print(colored(f"      URI {function_name} not found in client source", 'red'))
+                        exit_code = 1
+                        missing_client_src += 1
 
     print(f"  Finished processing functions in stage: {stage}")
     if missing_functions > 0:
