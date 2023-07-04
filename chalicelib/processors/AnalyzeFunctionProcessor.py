@@ -6,55 +6,6 @@ from chalicelib.usage import OpenAIDefaults
 import json
 import math
 
-
-report_bug_function_old = {
-    "name": "report_security_bugs",
-    "description": "reports security bugs in the code",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "bugs": {
-                "type": "array",
-                "description": "the list of bugs found in the code",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "lineNumber": {
-                            "type": "integer",
-                            "description": "the line number where the bug begins, caculated from the original line number of the chunk if given"
-                        },
-                        "startCol": {
-                            "type": "integer",
-                            "description": "the column index on the line where the bug begins"
-                        },
-                        "endCol": {
-                            "type": "integer",
-                            "description": "the column index one the line where the bug ends "
-                        },
-                        "severity": {
-                            "type": "integer",
-                            "description": "the severity of the bug, 1-10, 10 being the most severe"
-                        },
-                        "bugType": {
-                            "type": "string",
-                            "description": "the type of bug, e.g. 'sql-injection', using standard bug types from the MITRE CWE taxonomy"
-                        },
-                        "description": {
-                            "type": "string",
-                            "description": "a description in markdown format of why the bug is a bug and how it might be exploited",
-                        },
-                        "solution": {
-                            "type": "string",
-                            "description": "the solution description in markdown format of how to fix the bug",
-                        }
-                    }
-                }
-            }
-        },
-        "required": ["bugs"]
-    }
-}
-
 # the live version does not use startCol and endCol. The line number is calculated from the original line number of the chunk if given,
 # but is it not always precise. there's no need to complicate the job of the AI with startCol and endCol, which are not always precise
 report_bug_function = {
