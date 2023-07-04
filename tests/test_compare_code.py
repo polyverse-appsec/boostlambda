@@ -3,15 +3,15 @@ from app import app
 import json
 
 # load the first codebase into a string, relative to the root directory
-with open('./tests/data/sync_urls.sh', 'r') as file:
+with open('./tests/data/comparison/sync_urls.sh', 'r') as file:
     sync_urls_sh = file.read()
 
 # load the first comparand codebase into a string, relative to the root directory
-with open('./tests/data/sync_urls.py', 'r') as file:
+with open('./tests/data/comparison/sync_urls.py', 'r') as file:
     sync_urls_py = file.read()
 
 # load the second comparand codebase into a string, relative to the root directory
-with open('./tests/data/sync_urls_2.py', 'r') as file:
+with open('./tests/data/comparison/sync_urls_2.py', 'r') as file:
     sync_urls_2_py = file.read()
 
 client_version = '0.9.5'
