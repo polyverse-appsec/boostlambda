@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Enhancements
-- N/A
+- Add automatic retry (one time) for all GitHub server requests to increase network resilience
 
 ### Bug Fixes
 - N/A

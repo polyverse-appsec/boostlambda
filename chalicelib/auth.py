@@ -21,6 +21,22 @@ class ExtendedUnauthorizedError(UnauthorizedError):
 token_2_email_cache = TTLCache(maxsize=100, ttl=300)
 
 
+def request_get_with_retry(url, headers, max_retries=1):
+    retry_count = 0
+
+    while retry_count <= max_retries:
+        try:
+            response = requests.get(url, headers=headers)
+            return response
+        except ConnectionError as e:
+            if retry_count < max_retries:
+                print(f"Connection error occurred retrieving url: {str(e)}; attempt {retry_count + 1} of {max_retries + 1}")
+                retry_count += 1
+            else:
+                print(f"Connection error: {str(e)} Max retries exceeded: {max_retries} retrieving url: {url}... giving up")
+                raise e
+
+
 def fetch_email(access_token):
     # Check if the access token is already cached
     if access_token in token_2_email_cache:
@@ -34,7 +50,7 @@ def fetch_email(access_token):
     }
     url = 'https://api.github.com/user/emails'
 
-    response = requests.get(url, headers=headers)
+    response = request_get_with_retry(url, headers=headers)
 
     if response.status_code == 200:
         emails = response.json()
@@ -87,7 +103,7 @@ def fetch_email_and_username(access_token):
 
     # get login/username from github
     url = 'https://api.github.com/user'
-    response = requests.get(url, headers=headers)
+    response = request_get_with_retry(url, headers=headers)
 
     if response.status_code == 200:
         user = response.json()
@@ -134,7 +150,7 @@ def fetch_orgs(access_token):
             print("Refreshing Org Cache: *access token hidden*")
 
     url = 'https://api.github.com/user/orgs'
-    response = requests.get(url, headers=headers)
+    response = request_get_with_retry(url, headers=headers)
     # if we got a 200, then we have a list of orgs, otherwise check for a testorg
     if response.status_code == 200:
         orgs = response.json()
