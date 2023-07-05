@@ -38,7 +38,7 @@ class CustomProcessor(GenericProcessor):
                     raise BadRequestError("Error: please provide a code fragment to analyze for custom processing")
 
                 prompt = customprompt
-                prompt = super.safe_format(prompt, code=code, prompt=customprompt)
+                prompt = super().safe_format(prompt, code=code, prompt=customprompt)
 
                 for message in reversed(result):
                     if message['role'] != 'user':
