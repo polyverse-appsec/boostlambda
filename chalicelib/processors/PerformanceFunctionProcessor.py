@@ -8,6 +8,7 @@ class PerformanceFunctionProcessor(FunctionGenericProcessor):
                          'performance-function.prompt',
                          'performance-function-role-system.prompt',
                          'performance',
+                         None,
                          'the type of issue, e.g. "Memory", "Disk", using one of the following types: CPU, Memory, Disk, Network and Datastore')
 
     def check_performance(self, data, account, function_name, correlation_id):

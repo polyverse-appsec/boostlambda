@@ -49,11 +49,14 @@ report_bug_function = {
 
 
 class FunctionGenericProcessor(GenericProcessor):
-    def __init__(self, api_version, main_prompt, system_prompt, function_name, bugTypeDescription):
-        my_report_bug_function = report_bug_function.copy()
-        my_report_bug_function['name'] = f"report_{function_name}_bugs"
-        my_report_bug_function['description'] = f"reports {function_name} bugs in the code"
-        my_report_bug_function['parameters']['properties']['bugs']['items']['properties']['bugType']['description'] = bugTypeDescription
+    def __init__(self, api_version, main_prompt, system_prompt, function_name, custom_function_schema=None, bugTypeDescription=None):
+        if custom_function_schema is not None:
+            my_function_schema = custom_function_schema.copy()
+        else:
+            my_function_schema = report_bug_function.copy()
+            my_function_schema['name'] = f"report_{function_name}_bugs"
+            my_function_schema['description'] = f"reports {function_name} bugs in the code"
+            my_function_schema['parameters']['properties']['bugs']['items']['properties']['bugType']['description'] = bugTypeDescription
 
         super().__init__(api_version, [
             ['main', main_prompt],
@@ -61,7 +64,7 @@ class FunctionGenericProcessor(GenericProcessor):
             None,
             {'model': OpenAIDefaults.boost_default_gpt_model,
              'temperature': OpenAIDefaults.temperature_medium_with_explanation,
-             'functions': [my_report_bug_function],
+             'functions': [my_function_schema],
              'function_call': {"name": f"report_{function_name}_bugs"}},
             AnalysisOutputFormat.json)
 
@@ -72,6 +75,36 @@ class FunctionGenericProcessor(GenericProcessor):
         # we'll leave 80% of the buffer for the input, and 20% for the output, since the function call outputs are small
         # and we're much terser in output in this processor
         return math.floor(total_max * 0.8)
+
+    # default is capturing bugs in the function output
+    def process_function_output(self, result, log):
+
+        bugs = []
+        # if we get here, we have a function call in the results array.  loop through each of the results and add the array of arguments to the bugs array
+        # result['results'][0]['message']['function_call']['arguments'] is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore
+        # any errors
+        for r in result['results']:
+            try:
+                json_bugs = json.loads(r['message']['function_call']['arguments'])
+                bugs.extend(json_bugs["bugs"])
+            except Exception as e:
+                log(f"Error parsing function call arguments: {e}")
+                pass
+
+        if json_bugs["bugs"] is None or len(json_bugs["bugs"]) == 0:
+
+            log("No bugs found with OpenAI reporting functional output")
+
+        if len(bugs) > 0:
+            return {
+                "status": "bugsfound",
+                "details": bugs
+            }
+        else:
+            return {
+                "status": "nobugsfound",
+                "details": []
+            }
 
     def check_code_with_function(self, data, account, function_name, correlation_id):
 
@@ -90,30 +123,11 @@ class FunctionGenericProcessor(GenericProcessor):
                                     {self.get_chunkable_input(): code})
 
         # if result['messages'] has a field 'function_call', then we have the data for a function call
+        if 'function_call' not in result['results'][0]['message']:
+            print(f"{function_name}:{account['email']}:{correlation_id}:No function call found in OpenAI response")
+            return {"details": []}
 
-        bugs = []
-        if 'function_call' in result['results'][0]['message']:
-            # if we get here, we have a function call in the results array.  loop through each of the results and add the array of arguments to the bugs array
-            # result['results'][0]['message']['function_call']['arguments'] is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore
-            # any errors
-            for r in result['results']:
-                try:
-                    json_bugs = json.loads(r['message']['function_call']['arguments'])
-                    bugs.extend(json_bugs["bugs"])
-                except Exception:
-                    pass
+        def log(message):
+            print(f"{function_name}:{account['email']}:{correlation_id}:{message}")
 
-            if json_bugs["bugs"] is None or len(json_bugs["bugs"]) == 0:
-
-                print(f"{function_name}:{account['email']}:{correlation_id}:No bugs found with OpenAI reporting functional output")
-
-        if len(bugs) > 0:
-            return {
-                "status": "bugsfound",
-                "details": bugs
-            }
-        else:
-            return {
-                "status": "nobugsfound",
-                "details": []
-            }
+        return self.process_function_output(result, log)

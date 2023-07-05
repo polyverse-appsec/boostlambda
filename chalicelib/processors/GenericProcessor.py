@@ -12,7 +12,6 @@ import json
 from typing import List, Tuple
 import glob
 import re
-from chalice import BadRequestError
 
 from chalice import UnprocessableEntityError
 

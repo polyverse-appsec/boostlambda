@@ -8,6 +8,7 @@ class SecurityFunctionProcessor(FunctionGenericProcessor):
                          'security-function.prompt',
                          'security-function-role-system.prompt',
                          'security',
+                         None,
                          'the type of bug, e.g. "sql-injection", using standard bug types from the MITRE CWE taxonomy')
 
     def secure_code(self, data, account, function_name, correlation_id):

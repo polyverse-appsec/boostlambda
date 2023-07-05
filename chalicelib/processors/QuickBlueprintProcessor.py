@@ -11,10 +11,9 @@ class QuickBlueprintProcessor(GenericProcessor):
         super().__init__(API_VERSION,
                          [['system', 'quick-blueprint-role-system.prompt'],
                           ['system', 'quick-blueprint-projectfile-role-system.prompt'],
-                          ['response', 'quick-blueprint-response.prompt'],
                           ['main', 'quick-blueprint.prompt']
                           ],
-                         None,
+                         [['response', 'quick-blueprint']],
                          {'model': OpenAIDefaults.boost_default_gpt_model,
                           'temperature': OpenAIDefaults.temperature_terse_and_accurate},
                          AnalysisOutputFormat.prose)
@@ -43,11 +42,16 @@ class QuickBlueprintProcessor(GenericProcessor):
         if draftBlueprint is None:
             raise BadRequestError("Error: please provide the draftBlueprint")
 
+        projectName = data['projectName'] if 'projectName' in data else None
+        if projectName is None:
+            raise BadRequestError("Error: please provide the projectName")
+
         result = self.process_input(data, account, function_name, correlation_id,
                                     {'filelist': filelist,
                                      'projectFile': projectFile,
                                      'code': code,
-                                     'draftBlueprint': draftBlueprint})
+                                     'draftBlueprint': draftBlueprint,
+                                     'projectName': projectName})
 
         return {
             "blueprint": result['output'],

@@ -1,0 +1,10 @@
+Please do the following, based on the below list of source files and project name:
+
+ * Produce an Architectural Blueprint Summary using the above exact format
+ * Tell me which single file in the list is the most likely the build / deployment description file.
+ * Suggest one file to use as sample code to represent the key elements of the software project.
+
+ The project name is {projectName}
+
+The files in the project include:
+ {filelist}
