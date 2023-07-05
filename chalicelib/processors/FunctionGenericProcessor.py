@@ -91,11 +91,11 @@ class FunctionGenericProcessor(GenericProcessor):
 
         # if result['messages'] has a field 'function_call', then we have the data for a function call
 
+        bugs = []
         if 'function_call' in result['results'][0]['message']:
             # if we get here, we have a function call in the results array.  loop through each of the results and add the array of arguments to the bugs array
             # result['results'][0]['message']['function_call']['arguments'] is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore
             # any errors
-            bugs = []
             for r in result['results']:
                 try:
                     json_bugs = json.loads(r['message']['function_call']['arguments'])
@@ -103,6 +103,11 @@ class FunctionGenericProcessor(GenericProcessor):
                 except Exception:
                     pass
 
+            if json_bugs["bugs"] is None or len(json_bugs["bugs"]) == 0:
+
+                print(f"{function_name}:{account['email']}:{correlation_id}:No bugs found with OpenAI reporting functional output")
+
+        if len(bugs) > 0:
             return {
                 "status": "bugsfound",
                 "details": bugs
