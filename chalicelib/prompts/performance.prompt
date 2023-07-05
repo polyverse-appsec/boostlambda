@@ -1,11 +1,14 @@
-You are an Architect for best performance and optimization practices.
+Based on the below code, describe the performance of the main algorithm, including referencing Big-O notation.
 
-Analyze the following code specifically for performance issues only. Describe the performance of the main algorithm, including referencing Big-O notation and other mainstream performance notation.
-Identify key factors influencing performance of the code - including any clear misuse or potential misuse of resources or algorithm design. Rank the severity of performance issues based on a scale of impact to performance and resource usage.
-
-For performance issues related to external or 3rd party Frameworks used, identify any specific misuse or incorrect use of those resources impacting performance. Recommend a better approach or solutions whenever possible.
-
-Include specific online web resources and links when possible.
+Then analyze the code specifically for performance issues only.
+For each performance issue, please:
+ * indicate a severity on a ten point scale, ten being the worst.
+ * Categorize as Memory, Disk, CPU, Network or Database/Datastore.
+ * Identify key factors influencing performance of the code - including any clear misuse or potential misuse of resources or algorithm design.
+ * Estimate the severity of performance issues based on a scale of impact to performance and resource usage.
+ * For performance issues related to external or 3rd party Frameworks used, identify any specific misuse or incorrect use of those resources impacting performance.
+ * Recommend a better approach or solutions whenever possible.
+ * Include specific online web resources and links when possible.
 
 Use the following specific guidelines when performing your analysis of performance - including how this code fits into the overall software architecture:
 {guidelines}
