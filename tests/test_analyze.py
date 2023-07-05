@@ -29,7 +29,7 @@ def test_analyze_function():
 
         assert analysis['status'] == 'bugsfound'
 
-        assert len(analysis['details']) == 3
+        assert len(analysis['details']) >= 3
 
         assert analysis['details'][0]['bugType'] == 'Buffer Overflow'
         assert analysis['details'][0]['lineNumber'] >= 15

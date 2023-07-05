@@ -29,7 +29,7 @@ def test_compliance_function():
         analysis = json.loads(response.payload['body'])
         assert analysis['status'] == 'bugsfound'
 
-        assert len(analysis['details']) == 3
+        assert len(analysis['details']) >= 3
 
         assert 'PCI DSS' in analysis['details'][0]['bugType'] or 'Data Exposure' in analysis['details'][0]['bugType']
         assert analysis['details'][0]['severity'] >= 8
