@@ -23,6 +23,7 @@ Polyverse Boost Cloud Service
 ### Bug Fixes
 - Fixed bug where Functions reporting bugs when none were found
 - Fixed bug where large sourcce files fail to process when using Function source level analysis (e.g. chunking and JSON results)
+- Fixed bug with analyzing older Notebooks without source line info
 
 ## Version 0.7.1: July 3rd, 2023
 

@@ -96,7 +96,7 @@ class BugFunctionGenericProcessor(FunctionGenericProcessor):
 
         if 'inputMetadata' in data:
             inputMetadata = json.loads(data['inputMetadata'])
-            lineNumberBase = inputMetadata['lineNumberBase']
+            lineNumberBase = inputMetadata['lineNumberBase'] if 'lineNumberBase' in inputMetadata else 0
             prompt_format_args['lineNumberBase'] = f"When identifying source numbers for issues," \
                                                    f" treat the first line of the code as line number {lineNumberBase + 1}"
 
