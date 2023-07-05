@@ -1,0 +1,26 @@
+Analyze the below code for performance issues - including buffer overruns, underruns, stack overflow, poor cipher or encryption algorithms, and any bugs that can lead to MITM, escalation of privilege, information disclosure, bypassing access, authorization or authentication.
+
+Analyze the code specifically for performance issues only.
+
+For each performance issue, please:
+ * indicate a severity on a ten point scale, ten being the worst.
+ * Categorize as Memory, Disk, CPU, Network or Database/Datastore.
+ * Identify key factors influencing performance of the code - including any clear misuse or potential misuse of resources or algorithm design.
+ * Estimate the severity of performance issues based on a scale of impact to performance and resource usage.
+ * For performance issues related to external or 3rd party Frameworks used, identify any specific misuse or incorrect use of those resources impacting performance.
+ * Recommend a better approach or solutions whenever possible.
+ * Include specific online web resources and links when possible.
+
+Please be very concise.
+
+Use the following architectural guidelines when performing your performance analysis - including for consistency with or conflicts between the code and performance practices in the guidelines:
+{guidelines}
+
+{chunking}
+
+{lineNumberBase}
+
+Here is the code to analyze:
+
+```
+{code}

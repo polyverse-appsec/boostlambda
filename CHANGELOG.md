@@ -10,13 +10,15 @@ Polyverse Boost Cloud Service
 - Added new support for selecting output format from client per service
 - All services now have a default output format - prose, ranked list, bulleted list, numbered list (JSON is only supported for Security and Compliance and Performance)
 - Improved default output formatting of Analyze, Data Compliance, Coding Guidelines
+- Added Performance service for reporting issues in structured JSON
+- Added Performance Function service for finding source line-level issues
 
 ### Enhancements
 - Add automatic retry (one time) for all GitHub server requests to increase network resilience
 - Ensure the Blueprint / Summary info is sent as training AFTER the initial system prompt
 
 ### Bug Fixes
-- N/A
+- Fixed bug where Functions reporting bugs when none were found
 
 ## Version 0.7.1: July 3rd, 2023
 

@@ -8,7 +8,7 @@ class ComplianceFunctionProcessor(FunctionGenericProcessor):
                          'compliance-function.prompt',
                          'compliance-function-role-system.prompt',
                          'compliance',
-                         'the type of bug, e.g. "privacy-leak", using standard bug types from the MITRE CWE taxonomy')
+                         'the type of bug, e.g. "privacy-leak", using standard issue types from GDPR, CCPA, ISO 27001, etc')
 
-    def compliance_code(self, data, account, function_name, correlation_id):
+    def check_compliance(self, data, account, function_name, correlation_id):
         return self.check_code_with_function(data, account, function_name, correlation_id)

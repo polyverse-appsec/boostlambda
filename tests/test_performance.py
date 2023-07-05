@@ -26,52 +26,97 @@ with open('./tests/data/performance/constant_lookup.py', 'r') as file:
 client_version = '0.9.5'
 
 
-def check_performance(code, issuesIdentified):
+def check_performance(code, issuesIdentified, use_function=False, issues=0):
     with Client(app) as client:
-        request_body = {
-            'code': code,
-            'session': 'testemail: unittest@polytest.ai',
-            'organization': 'polytest.ai',
-            'version': client_version
-        }
 
-        response = client.lambda_.invoke(
-            'performance', request_body)
+        if not use_function:
+            request_body = {
+                'code': code,
+                'session': 'testemail: unittest@polytest.ai',
+                'organization': 'polytest.ai',
+                'version': client_version
+            }
+            response = client.lambda_.invoke(
+                'performance', request_body)
+        else:
+            request_body = {
+                'code': code,
+                'inputMetadata': json.dumps({'lineNumberBase': 0}),
+                'session': 'testemail: unittest@polytest.ai',
+                'organization': 'polytest.ai',
+                'version': client_version
+            }
+            response = client.lambda_.invoke(
+                'performance_function', request_body)
 
         # print(response.payload)
         assert response.payload['statusCode'] == 200
 
-        # body is a JSON string, so parse it into a JSON object and print
+        # body is a JSON string, so parse it into a JSON object
         analysis = json.loads(response.payload['body'])
 
-        assert analysis['analysis'] != ''
+        if (use_function):
+            assert issues == 0 or analysis['status'] == 'bugsfound'
 
-        for issue in issuesIdentified:
+            assert len(analysis['details']) >= issues
 
-            print(f"Checking for {issue} in analysis")
+            for issue in analysis['details']:
+                assert len(issue['bugType']) > 0
+                assert issue['severity'] >= 1
+                assert issue['lineNumber'] >= 1
 
-            if issue in analysis['analysis']:
-                print(f"Found {issue} in analysis")
+        else:
 
-            else:
-                print(f"Could not find {issue} in analysis")
-                print()
-                print(analysis['analysis'])
+            for issue in issuesIdentified:
 
-            assert issue in analysis['analysis']
+                print(f"Checking for {issue} in analysis")
+
+                if issue in analysis['analysis']:
+                    print(f"Found {issue} in analysis")
+
+                else:
+                    print(f"Could not find {issue} in analysis")
+                    print()
+                    print(analysis['analysis'])
+
+                assert issue in analysis['analysis']
 
 
-def test_performance():
+def test_performance_3rd_party():
     check_performance(concensus_source, ['O(1)', 'O(n)', 'big integer'])
 
     check_performance(tensorFlow_inefficientuse, ['batch', 'map'])
 
     check_performance(hadoop_source, ['O(n)', 'lock'])
 
+
+def test_performance_big_o():
     check_performance(linear_search, ['O(n)'])
 
     check_performance(constant_lookup, ['O(1)'])
 
-    check_performance(exponential_fibonacci, ['O(2^n)', 'O(n)', 'memoization'])
+    check_performance(exponential_fibonacci, ['O(2^n)', 'O(n)'])
 
     check_performance(linear_fibonacci, ['O(n)', 'O(1)'])
+
+
+def test_performance_function_3rd_party():
+    check_performance(tensorFlow_inefficientuse, ['batch', 'map'], True)
+
+    check_performance(hadoop_source, ['O(n)', 'lock'], True)
+
+
+def test_performance_function_large_3rd_party():
+    # this checks if we fail due to chunking bug in processing
+    check_performance(concensus_source, ['O(1)', 'O(n)'], True)
+
+
+def test_performance_function_big_o():
+
+    check_performance(linear_search, ['O(n)'], True)
+
+    check_performance(constant_lookup, ['O(1)'], True, 0)
+
+    check_performance(exponential_fibonacci, ['O(2^n)', 'O(n)'], True)
+
+    check_performance(linear_fibonacci, ['O(n)', 'O(1)'], True)

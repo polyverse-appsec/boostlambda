@@ -19,6 +19,7 @@ from chalicelib.processors.SecurityFunctionProcessor import SecurityFunctionProc
 from chalicelib.processors.ComplianceFunctionProcessor import ComplianceFunctionProcessor
 from chalicelib.processors.CompareCodeProcessor import CompareCodeProcessor
 from chalicelib.processors.PerformanceProcessor import PerformanceProcessor
+from chalicelib.processors.PerformanceFunctionProcessor import PerformanceFunctionProcessor
 
 import uuid
 import json
@@ -112,7 +113,7 @@ complianceFunctionProcessor = ComplianceFunctionProcessor()
 
 @app.lambda_function(name='compliance_function')
 def compliance_function(event, _):
-    return process_request(event, complianceFunctionProcessor.compliance_code, complianceFunctionProcessor.api_version)
+    return process_request(event, complianceFunctionProcessor.check_compliance, complianceFunctionProcessor.api_version)
 
 
 codeguidelinesProcessor = CodingGuidelinesProcessor()
@@ -129,6 +130,14 @@ performanceProcessor = PerformanceProcessor()
 @app.lambda_function(name='performance')
 def performance(event, context):
     return process_request(event, performanceProcessor.check_performance, performanceProcessor.api_version)
+
+
+performanceFunctionProcessor = PerformanceFunctionProcessor()
+
+
+@app.lambda_function(name='performance_function')
+def performance_function(event, context):
+    return process_request(event, performanceFunctionProcessor.check_performance, performanceFunctionProcessor.api_version)
 
 
 blueprintProcessor = BlueprintProcessor()
