@@ -51,7 +51,6 @@ for stage in stages:
         for function in page['Functions']:
 
             function_name = function['FunctionName']
-            config = client.get_function_configuration(FunctionName=function_name)
 
             if not monitors:
                 if not function_name.startswith(f"boost-{stage}"):
@@ -59,6 +58,8 @@ for stage in stages:
             else:
                 if not function_name.startswith(f"boost-monitor-{stage}"):
                     continue
+
+            config = client.get_function_url_config(FunctionName=function_name)
 
             # Check if the function already has public access
             existing_permissions = client.get_policy(FunctionName=function_name)
@@ -85,6 +86,15 @@ for stage in stages:
                 # if we didn't find public access, then try to create it
                 if not foundPublicAccess:
                     existingPermissions = None
+
+            url = None
+            # if the config for the URL is missing, rebuild it
+            if config:
+                if config['FunctionUrl'] is None:
+                    config = None
+                else:
+                    url = config['FunctionUrl']
+
             if not config or not existing_permissions:
                 # Create public access for the function
                 if whatif:
@@ -104,19 +114,26 @@ for stage in stages:
                         )
                         print(colored(f"    Created public URI for function {function_name}", 'green'))
 
-                        if client_src:
+                        config = client.get_function_url_config(FunctionName=function_name)
+                        url = config['FunctionUrl'] if config else None
+                        if url is None:
+                            print(colored(f"    Failed to create public URI for function {function_name}", 'red'))
+                            exit_code = 1
+                            missing_functions += 1
+
+                        elif client_src:
                             # Search for URI in source code files
                             uri_found = 0
                             for root, dirs, files in os.walk(client_src):
                                 for file in files:
                                     if file.endswith(".ts"):
                                         with open(os.path.join(root, file), "r") as file:
-                                            if function_name in file.read():
+                                            if url in file.read():
                                                 print(f"      Found in client {file}")
                                                 uri_found = 1
                                                 break
                             if uri_found == 0:
-                                print(colored(f"      URI {function_name} not found in client source", 'red'))
+                                print(colored(f"      URI {url} not found in client source", 'red'))
                                 exit_code = 1
                                 missing_client_src += 1
 
@@ -126,7 +143,7 @@ for stage in stages:
                         missing_functions += 1
 
             else:
-                print(f"    {function_name} already public: {function_name}")
+                print(f"    {function_name} already public: {url}")
 
                 if client_src:
                     # Search for URI in source code files
@@ -135,12 +152,12 @@ for stage in stages:
                         for file in files:
                             if file.endswith(".ts"):
                                 with open(os.path.join(root, file), "r") as file:
-                                    if function_name in file.read():
+                                    if url in file.read():
                                         print(f"      Found in client {file}")
                                         uri_found = 1
                                         break
                     if uri_found == 0:
-                        print(colored(f"      URI {function_name} not found in client source", 'red'))
+                        print(colored(f"      URI {url} not found in client source", 'red'))
                         exit_code = 1
                         missing_client_src += 1
 
