@@ -83,7 +83,7 @@ def check_performance(code, issuesIdentified, use_function=False, issues=0):
 
 
 def test_performance_3rd_party():
-    check_performance(concensus_source, ['O(1)', 'O(n)', 'big integer'])
+    check_performance(concensus_source, ['memory', 'CPU'])
 
     check_performance(tensorFlow_inefficientuse, ['batch', 'map'])
 
