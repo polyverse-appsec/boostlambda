@@ -3,6 +3,8 @@ Use the following architectural guidelines when performing your analysis - inclu
 
 {chunking}
 
+{outputFormat}
+
 {prompt}:
 
 ```

@@ -7,6 +7,9 @@ Polyverse Boost Cloud Service
 
 ### New Features
 - Added new code comparison service - that looks for critical differences in two chunks of code (ignoring language, syntax and comments)
+- Added new support for selecting output format from client per service
+- All services now have a default output format - prose, ranked list, bulleted list, numbered list (JSON is only supported for Security and Compliance and Performance)
+- Improved default output formatting of Analyze, Data Compliance, Coding Guidelines
 
 ### Enhancements
 - Add automatic retry (one time) for all GitHub server requests to increase network resilience

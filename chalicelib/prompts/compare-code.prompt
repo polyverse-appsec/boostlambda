@@ -11,6 +11,10 @@ If no critical differences are found, then report the code as "NO Critical Diffe
 Also, use the following architectural guidelines when performing your code comparison:
 {guidelines}
 
+{chunking}
+
+{outputFormat}
+
 The code to compare follows:
 
 ```

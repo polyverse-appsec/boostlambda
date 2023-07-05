@@ -1,4 +1,4 @@
-from chalicelib.processors.GenericProcessor import GenericProcessor
+from chalicelib.processors.GenericProcessor import GenericProcessor, AnalysisOutputFormat
 from chalice import BadRequestError
 from chalicelib.usage import OpenAIDefaults
 
@@ -62,7 +62,8 @@ class FunctionGenericProcessor(GenericProcessor):
             {'model': OpenAIDefaults.boost_default_gpt_model,
              'temperature': OpenAIDefaults.temperature_medium_with_explanation,
              'functions': [my_report_bug_function],
-             'function_call': {"name": f"report_{function_name}_bugs"}})
+             'function_call': {"name": f"report_{function_name}_bugs"}},
+            AnalysisOutputFormat.json)
 
     def get_chunkable_input(self) -> str:
         return 'code'

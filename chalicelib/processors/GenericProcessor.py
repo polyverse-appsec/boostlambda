@@ -12,6 +12,7 @@ import json
 from typing import List, Tuple
 import glob
 import re
+from chalice import BadRequestError
 
 from chalice import UnprocessableEntityError
 
@@ -39,13 +40,31 @@ openai_key = secret_json["openai-personal"]
 openai.api_key = openai_key
 
 
+class AnalysisOutputFormat:
+
+    # formats to choose from
+    bulletedList = "bulletedList"   # bulleted list of issues
+    prose = "prose"                 # prose/generic text
+    numberedList = "numberedList"   # numbered list of issues
+    rankedList = "rankedList"       # ranked list of issues - by severity or importance
+    json = "json"                   # json output (aka functions): NOTE: Not currently supported exception by special processor
+
+    defaultFormat = prose
+
+
 class GenericProcessor:
 
     def __init__(self, api_version, prompt_filenames, numbered_prompt_keys,
                  default_params={'model': OpenAIDefaults.boost_default_gpt_model,
-                                 'temperature': OpenAIDefaults.default_temperature}):
+                                 'temperature': OpenAIDefaults.default_temperature},
+                 default_output_format=AnalysisOutputFormat.defaultFormat,
+                 supported_output_formats=[]):
 
         self.api_version = api_version
+
+        self.default_output_format = default_output_format
+        self.supported_output_formats = supported_output_formats.copy()
+        self.supported_output_formats.append(default_output_format)
 
         # Create a new list with the blueprint summary
         blueprint_summary = ['system', 'blueprint-summary-system.prompt']
@@ -63,7 +82,7 @@ class GenericProcessor:
 
         self.prompt_filenames = new_prompt_filenames
 
-        self.default_params = default_params
+        self.default_params = default_params.copy()
 
         self.numbered_prompt_keys = []
 
@@ -570,6 +589,44 @@ class GenericProcessor:
         else:
             # get the JSON object out of the data payload
             prompt_format_args['summaries'] = data['summaries']
+
+        # use the client's requested output format, or the default
+        outputFormat = self.default_output_format if 'outputFormat' not in data else data['outputFormat']
+        # if the requested format is prose, do nothing
+        if outputFormat is not AnalysisOutputFormat.prose:
+
+            outputExample = ""
+
+            if outputFormat not in self.supported_output_formats:
+                log(f"Unsupported output format {outputFormat.upper} for {function_name}; default to {self.default_output_format}")
+            elif outputFormat is not self.default_output_format:
+                log(f"Using non-default output format {outputFormat.upper} for {function_name}; default was {self.default_output_format}")
+            elif outputFormat is AnalysisOutputFormat.json:
+                log(f"Using JSON output format for {function_name}")
+
+            if outputFormat is AnalysisOutputFormat.bulletedList:
+                outputExample = "Please describe results in structured bulleted list like the following\n" \
+                                "* First issue\n" \
+                                "* Second issue\n" \
+                                "..." \
+                                "* Third issue\n"
+
+            elif outputFormat is AnalysisOutputFormat.numberedList:
+                outputExample = "Please describe results in structured numbered list in markdown like the following\n" \
+                                "1. an issue\n" \
+                                "2. an issue\n" \
+                                "..." \
+                                "n. an issue\n"
+
+            elif outputFormat is AnalysisOutputFormat.rankedList:
+                outputExample = "Please describe results in ranked numbered list in markdown, with the most important issue listed first, and the least important issue listed last, like the following\n" \
+                                "1. Most important issue\n" \
+                                "2. Next most important issue\n" \
+                                "..." \
+                                "n. Least important issue\n"
+
+            if outputExample != "":
+                prompt_format_args['outputFormat'] = outputExample
 
         return params, prompt_format_args
 

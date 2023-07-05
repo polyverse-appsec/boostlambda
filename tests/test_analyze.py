@@ -26,7 +26,11 @@ def test_analyze_function():
         assert response.payload['statusCode'] == 200
         # body is a JSON string, so parse it into a JSON object
         analysis = json.loads(response.payload['body'])
+
         assert analysis['status'] == 'bugsfound'
+
+        assert len(analysis['details']) == 3
+
         assert analysis['details'][0]['bugType'] == 'Buffer Overflow'
         assert analysis['details'][0]['lineNumber'] >= 15
         assert analysis['details'][0]['severity'] >= 7

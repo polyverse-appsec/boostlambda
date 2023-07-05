@@ -1,4 +1,4 @@
-from chalicelib.processors.GenericProcessor import GenericProcessor
+from chalicelib.processors.GenericProcessor import GenericProcessor, AnalysisOutputFormat
 from chalicelib.version import API_VERSION
 from chalicelib.usage import OpenAIDefaults
 from chalice import BadRequestError
@@ -11,7 +11,8 @@ class CodingGuidelinesProcessor(GenericProcessor):
             ['system', 'codingguidelines-role-system.prompt']],
             None,
             {'model': OpenAIDefaults.boost_default_gpt_model,
-             'temperature': OpenAIDefaults.temperature_medium_with_explanation})
+             'temperature': OpenAIDefaults.temperature_medium_with_explanation},
+            AnalysisOutputFormat.rankedList, [AnalysisOutputFormat.bulletedList, AnalysisOutputFormat.rankedList, AnalysisOutputFormat.numberedList])
 
     def get_chunkable_input(self) -> str:
         return 'code'
