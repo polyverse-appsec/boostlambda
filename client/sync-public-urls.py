@@ -1,6 +1,7 @@
 import argparse
 import boto3
 import os
+import json
 from termcolor import colored
 
 aws_region = "us-west-2"
@@ -61,7 +62,29 @@ for stage in stages:
 
             # Check if the function already has public access
             existing_permissions = client.get_policy(FunctionName=function_name)
+            if existing_permissions:
+                policy = json.loads(existing_permissions['Policy'])
+                foundPublicAccess = False
+                for statement in policy['Statement']:
+                    if statement['Sid'] == 'FunctionURLAllowPublicAccess':
+                        if statement['Principal'] != '*':
+                            print(colored(f"    Public access Principal for {function_name} is not set to *", 'red'))
+                        elif statement['Effect'] != 'Allow':
+                            print(colored(f"    Public access Effect for {function_name} is not set to Allow", 'red'))
+                        elif statement['Action'] != 'lambda:InvokeFunctionUrl':
+                            print(colored(f"    Public access Action for {function_name} is not set to lambda:InvokeFunctionUrl", 'red'))
+                        elif statement['Condition'] is None:
+                            print(colored(f"    Public access Condition for {function_name} is not set", 'red'))
+                        elif statement['Condition']['StringEquals']['lambda:FunctionUrlAuthType'] != 'NONE':
+                            print(colored(f"    Public access Condition for {function_name} is not set to NONE", 'red'))
+                        else:
+                            # Public access already exists
+                            foundPublicAccess = True
+                            break
 
+                # if we didn't find public access, then try to create it
+                if not foundPublicAccess:
+                    existingPermissions = None
             if not config or not existing_permissions:
                 # Create public access for the function
                 if whatif:
@@ -74,6 +97,7 @@ for stage in stages:
                         response = client.add_permission(
                             FunctionName=function_name,
                             StatementId='FunctionURLAllowPublicAccess',
+                            FunctionUrlAuthType='NONE',
                             Action='lambda:InvokeFunction',
                             Conditions="StringEquals",
                             Principal='*'
