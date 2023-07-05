@@ -155,7 +155,7 @@ quickBlueprintProcessor = QuickBlueprintProcessor()
 
 @app.lambda_function(name='quick_blueprint')
 def quick_blueprint(event, context):
-    return process_request(event, quickBlueprintProcessor.generate_blueprint, quickBlueprintProcessor.api_version)
+    return process_request(event, quickBlueprintProcessor.quick_blueprint, quickBlueprintProcessor.api_version)
 
 
 draftBlueprintFunctionProcessor = DraftBlueprintFunctionProcessor()
@@ -163,7 +163,7 @@ draftBlueprintFunctionProcessor = DraftBlueprintFunctionProcessor()
 
 @app.lambda_function(name='draft_blueprint')
 def draft_blueprint(event, context):
-    return process_request(event, draftBlueprintFunctionProcessor.generate_draft_blueprint, draftBlueprintFunctionProcessor.api_version)
+    return process_request(event, draftBlueprintFunctionProcessor.draft_blueprint, draftBlueprintFunctionProcessor.api_version)
 
 
 customProcessor = CustomProcessor()

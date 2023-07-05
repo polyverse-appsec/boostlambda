@@ -1,25 +1,30 @@
 from chalicelib.processors.FunctionGenericProcessor import FunctionGenericProcessor
 from chalicelib.version import API_VERSION
+from chalice import BadRequestError
 
 import json
+import math
 
 
-draft_blueprint_function = {
+build_draft_blueprint = {
     "name": "build_draft_blueprint",
     "description": "The API that will build a draft Architectural Blueprint Summary based on a filelist, recommend a representative source file and identify the main project build/package description file",
     "parameters": {
-        "draftBlueprint": {
-            "type": "string",
-            "description": "The Architectural Blueprint Summary that was drafted"
-        },
-        "recommendedSampleSourceFile": {
-            "type": "string",
-            "description": "The sample source file that most represents the type of development principles being used"
-        },
-        "recommendedProjectDeploymentFile": {
-            "type": "string",
-            "description": "The project build or deployment file that describes how the project code is built and deployed"
-        },
+        "type": "object",
+        "properties": {
+            "draftBlueprint": {
+                "type": "string",
+                "description": "The Architectural Blueprint Summary that was drafted"
+            },
+            "recommendedSampleSourceFile": {
+                "type": "string",
+                "description": "The sample source file that most represents the type of development principles being used"
+            },
+            "recommendedProjectDeploymentFile": {
+                "type": "string",
+                "description": "The project build or deployment file that describes how the project code is built and deployed"
+            },
+        }
     }
 }
 
@@ -29,8 +34,12 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
         super().__init__(API_VERSION,
                          'draft-blueprint-function.prompt',
                          'draft-blueprint-function-role-system.prompt',
-                         'draft-blueprint',
-                         draft_blueprint_function)
+                         'build_draft_blueprint',
+                         build_draft_blueprint)
+
+    def calculate_input_token_buffer(self, total_max) -> int:
+        # we'll leave 90% of the buffer for the input, and the last 10% for the generated blueprint
+        return math.floor(total_max * 0.9)
 
     # default is capturing bugs in the function output
     def process_function_output(self, result, log):
@@ -68,9 +77,39 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
             success = 0
 
         return {
-            "status": str(success),
+            "status": success,
             "details": arguments
         }
 
+    def get_chunkable_input(self) -> str:
+        return "filelist"
+
+    def collect_inputs_for_processing(self, data):
+        # Extract the fileList from the json data
+        filelist = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
+        if filelist is None:
+            raise BadRequestError("Error: Please provide a filelist to build draft blueprint")
+        elif not isinstance(filelist, list) or not all(isinstance(elem, str) for elem in filelist):
+            raise BadRequestError("Error: filelist must be a list of strings")
+
+        # convert filelist from a list of strings to a single string with newline delimited filenames
+        filelist = "\n".join(filelist)
+
+        # Extract the projectName from the json data
+        projectName = data['projectName'] if 'projectName' in data else None
+        if projectName is None:
+            raise BadRequestError("Error: please provide a projectName to build draft blueprint")
+
+        prompt_format_args = {self.get_chunkable_input(): filelist,
+                              "projectName": projectName}
+
+        if 'inputMetadata' in data:
+            inputMetadata = json.loads(data['inputMetadata'])
+            lineNumberBase = inputMetadata['lineNumberBase']
+            prompt_format_args['lineNumberBase'] = f"When identifying source numbers for issues," \
+                                                   f" treat the first line of the code as line number {lineNumberBase + 1}"
+
+        return prompt_format_args
+
     def draft_blueprint(self, data, account, function_name, correlation_id):
-        return self.check_code_with_function(data, account, function_name, correlation_id)
+        return self.process_input_with_function_output(data, account, function_name, correlation_id)

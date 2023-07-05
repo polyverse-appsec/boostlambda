@@ -25,7 +25,7 @@ class QuickBlueprintProcessor(GenericProcessor):
     def get_chunkable_input(self) -> str:
         return 'code'
 
-    def blueprint_code(self, data, account, function_name, correlation_id):
+    def quick_blueprint(self, data, account, function_name, correlation_id):
         filelist = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
         if filelist is None:
             raise BadRequestError("Error: please provide the filelist")
