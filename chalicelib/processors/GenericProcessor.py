@@ -736,6 +736,20 @@ class GenericProcessor:
                 result = "\n\n".join([r['response'] for r in results])  # by concatenating all results into a single string
 
             success = True
+
+        # tracing repro for invalid max tokens
+        except openai.error.InvalidRequestError as e:
+            if "maximum context length" in str(e):
+                if 'contextMetadata' in data:
+                    contextMetadata = json.loads(data['contextMetadata'])
+                    sourceFile = contextMetadata['sourceFile'] if 'sourceFile' in contextMetadata else ''
+                if 'inputMetadata' in data:
+                    inputMetadata = json.loads(data['inputMetadata'])
+                    cellId = inputMetadata['id'] if 'id' in inputMetadata else ''
+
+                log(f"InvalidRequestError: sourceFile:{sourceFile}, cellId:{cellId}")
+            raise
+
         finally:
 
             try:

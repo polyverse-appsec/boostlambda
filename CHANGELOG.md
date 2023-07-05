@@ -18,6 +18,7 @@ Polyverse Boost Cloud Service
 - Add automatic retry (one time) for all GitHub server requests to increase network resilience
 - Ensure the Blueprint / Summary info is sent as training AFTER the initial system prompt
 - Enable polytest.ai as a "paid" Organization account for testing (e.g. AWS monitors and unit tests)
+- Added source/cell tracing for errors exceeding max token limit
 
 ### Bug Fixes
 - Fixed bug where Functions reporting bugs when none were found
