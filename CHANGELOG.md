@@ -12,6 +12,7 @@ Polyverse Boost Cloud Service
 - Improved default output formatting of Analyze, Data Compliance, Coding Guidelines
 - Added Performance service for reporting issues in structured JSON
 - Added Performance Function service for finding source line-level issues
+- Add Quick-Blueprint generator, which builds on draft Blueprint builder
 
 ### Enhancements
 - Add automatic retry (one time) for all GitHub server requests to increase network resilience

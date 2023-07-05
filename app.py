@@ -20,6 +20,7 @@ from chalicelib.processors.ComplianceFunctionProcessor import ComplianceFunction
 from chalicelib.processors.CompareCodeProcessor import CompareCodeProcessor
 from chalicelib.processors.PerformanceProcessor import PerformanceProcessor
 from chalicelib.processors.PerformanceFunctionProcessor import PerformanceFunctionProcessor
+from chalicelib.processors.QuickBlueprintProcessor import QuickBlueprintProcessor
 
 import uuid
 import json
@@ -146,6 +147,14 @@ blueprintProcessor = BlueprintProcessor()
 @app.lambda_function(name='blueprint')
 def blueprint(event, context):
     return process_request(event, blueprintProcessor.blueprint_code, blueprintProcessor.api_version)
+
+
+quickBlueprintProcessor = QuickBlueprintProcessor()
+
+
+@app.lambda_function(name='quick_blueprint')
+def quick_blueprint(event, context):
+    return process_request(event, quickBlueprintProcessor.generate_blueprint, quickBlueprintProcessor.api_version)
 
 
 customProcessor = CustomProcessor()
