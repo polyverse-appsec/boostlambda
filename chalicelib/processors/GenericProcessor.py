@@ -707,12 +707,32 @@ class GenericProcessor:
                                                      prompt_set[singleIndex][1], params, account, function_name, correlation_id)]
                 result = results[0]['response']
 
-            # after we run the analysis, we need to update the result with the truncation warning
-            if truncated:
-                truncation = markdown_emphasize(f"Truncated input, discarded ~{max_tokens_for_model(data.get('model')) - prompt_set[0][1]} words\n\n")
+            def reassemble_function_results(results):
+                if 'function_call' not in results[0]['message']:
+                    return False, None
+
+                items = []
+                # if we get here, we have a function call in the results array.  loop through each of the results and add the array of arguments to the bugs array
+                # result['results'][0]['message']['function_call']['arguments'] is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore
+                # any errors
+                for r in results:
+                    json_items = json.loads(r['message']['function_call']['arguments'])
+                    items.extend(json_items)
+
+                return True, items
+
+            isFunction, items = reassemble_function_results(results)
+            if isFunction:
+                # this isn't a very useful representation, but it allows us to correctly calculate cost of the function call
+                result = json.dumps(items)
+
+            # otherwise, we need to update the result with the truncation warning to user
+            elif truncated:
+                truncation = markdown_emphasize(
+                    f"Truncated input, discarded ~{max_tokens_for_model(data.get('model')) - prompt_set[0][1]} words\n\n")
                 result = f"{truncation}{results[0]['response']}"
 
-            # if chunked, we're going to reassemble all the chunks
+            # or if chunked, we're going to reassemble all the chunks
             elif chunked:
                 result = "\n\n".join([r['response'] for r in results])  # by concatenating all results into a single string
 
