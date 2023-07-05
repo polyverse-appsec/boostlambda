@@ -47,6 +47,18 @@
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "justMyCode": true
+    },
+    {
+        "name": "Sync Public URIs",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/client/sync-public-urls.py",
+        "args": [
+            "dev"
+          ],
+          "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "justMyCode": true
     }
     ]
 }
