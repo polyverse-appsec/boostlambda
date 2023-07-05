@@ -57,3 +57,10 @@ def test_quick_blueprint():
 
         assert len(blueprint) > 0
         print(blueprint)
+
+        assert request_body['projectName'] in blueprint
+
+        # check for all sections in blueprint
+        for header in ['Project Type', 'Principles', 'High-Level Summary',
+                       'Data', 'Licensing', 'Security', 'Performance', 'resiliency', 'soundness', 'Problems Identified']:
+            assert header in blueprint
