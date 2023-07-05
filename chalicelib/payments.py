@@ -220,7 +220,7 @@ def check_customer_account_status(customer):
     invoice = stripe.Invoice.upcoming(customer=customer.id)
 
     # We're going to treat polyverse accounts as paid, even though no credit card on file
-    if customer['email'].endswith("@polyverse.io"):
+    if customer['email'].endswith("@polyverse.io") or customer['email'].endswith("@polytest.ai"):
         return True, "paid"
 
     # Check if the customer has a default payment method (or manually entered payment)
