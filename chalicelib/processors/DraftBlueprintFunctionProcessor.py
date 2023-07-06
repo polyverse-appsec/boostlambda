@@ -89,8 +89,10 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
         filelist = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
         if filelist is None:
             raise BadRequestError("Error: Please provide a filelist to build draft blueprint")
-        elif not isinstance(filelist, list) or not all(isinstance(elem, str) for elem in filelist):
-            raise BadRequestError("Error: filelist must be a list of strings")
+        else:
+            filelist = json.loads(filelist)
+            if not isinstance(filelist, list) or not all(isinstance(elem, str) for elem in filelist):
+                raise BadRequestError("Error: filelist must be a list of strings")
 
         # convert filelist from a list of strings to a single string with newline delimited filenames
         filelist = "\n".join(filelist)

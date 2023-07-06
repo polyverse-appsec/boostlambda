@@ -4,6 +4,7 @@ from chalicelib.usage import OpenAIDefaults
 from chalice import BadRequestError
 
 import math
+import json
 
 
 class QuickBlueprintProcessor(GenericProcessor):
@@ -26,9 +27,16 @@ class QuickBlueprintProcessor(GenericProcessor):
         return 'code'
 
     def quick_blueprint(self, data, account, function_name, correlation_id):
-        filelist = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
+        filelist = data['filelist'] if 'filelist' in data else None
         if filelist is None:
             raise BadRequestError("Error: please provide the filelist")
+        else:
+            filelist = json.loads(filelist)
+            if not isinstance(filelist, list) or not all(isinstance(elem, str) for elem in filelist):
+                raise BadRequestError("Error: filelist must be a list of strings")
+
+        # convert filelist from a list of strings to a single string with newline delimited filenames
+        filelist = "\n".join(filelist)
 
         projectFile = data['projectFile'] if 'projectFile' in data else None
         if projectFile is None:
