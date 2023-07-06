@@ -28,7 +28,7 @@ def test_quick_blueprint():
         }
 
         response = client.lambda_.invoke(
-            'draft_blueprint', request_body)
+            'draft-blueprint', request_body)
 
         assert response.payload['statusCode'] == 200
 
@@ -48,7 +48,7 @@ def test_quick_blueprint():
         request_body['code'] = sample_code_ts
 
         response = client.lambda_.invoke(
-            'quick_blueprint', request_body)
+            'quick-blueprint', request_body)
 
         assert response.payload['statusCode'] == 200
 
