@@ -98,7 +98,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                 continue
 
             # exclude polyverse accounts (dev and test) unless specifically requested
-            if ('polyverse' in customer.email) and not includePolyverse:
+            if ('polyverse' in customer.email or 'polytest.ai' in customer.email) and not includePolyverse:
                 if debug:
                     print(f"Test Account: {customer.email}")
                 continue
