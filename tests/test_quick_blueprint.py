@@ -16,11 +16,11 @@ def test_quick_blueprint():
     with Client(app) as client:
 
         request_body = {
-            'filelist': json.dumps(['src/extension.ts',
-                                    'src/test/runTest.ts',
-                                    'src/test/suite/index.ts',
-                                    'src/test/suite/extension.test.ts',
-                                    'package.json']),
+            'filelist': ['src/extension.ts',
+                         'src/test/runTest.ts',
+                         'src/test/suite/index.ts',
+                         'src/test/suite/extension.test.ts',
+                         'package.json'],
             'projectName': 'typescript-sample-extension',
             'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',

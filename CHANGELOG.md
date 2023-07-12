@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.7.3: July 12th, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Fix wireformat handling of blueprint file lists - double JSON encoded
+
 ## Version 0.7.2: July 5th, 2023
 
 ### New Features

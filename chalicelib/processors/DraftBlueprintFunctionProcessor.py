@@ -90,7 +90,6 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
         if filelist is None:
             raise BadRequestError("Error: Please provide a filelist to build draft blueprint")
         else:
-            filelist = json.loads(filelist)
             if not isinstance(filelist, list) or not all(isinstance(elem, str) for elem in filelist):
                 raise BadRequestError("Error: filelist must be a list of strings")
 

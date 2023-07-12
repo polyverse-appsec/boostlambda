@@ -4,7 +4,6 @@ from chalicelib.usage import OpenAIDefaults
 from chalice import BadRequestError
 
 import math
-import json
 
 
 class QuickBlueprintProcessor(GenericProcessor):
@@ -31,7 +30,6 @@ class QuickBlueprintProcessor(GenericProcessor):
         if filelist is None:
             raise BadRequestError("Error: please provide the filelist")
         else:
-            filelist = json.loads(filelist)
             if not isinstance(filelist, list) or not all(isinstance(elem, str) for elem in filelist):
                 raise BadRequestError("Error: filelist must be a list of strings")
 
