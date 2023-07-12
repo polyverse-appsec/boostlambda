@@ -61,12 +61,12 @@ class CustomProcessor(GenericProcessor):
         if 'messages' in data:
             # if we're using raw messages, discard code and prompt completely
             code = None
-            if 'code' in data:
+            if ('code' in data and len(data['code']) > 0):
                 del data['code']
                 print("Warning: code was provided but is not used when messages are provided")
 
             prompt = None
-            if 'prompt' in data:
+            if ('prompt' in data and len(data['prompt']) > 0):
                 del data['prompt']
                 print("Warning: prompt was provided but is not used when messages are provided")
         else:
