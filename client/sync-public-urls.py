@@ -4,25 +4,18 @@ import os
 import json
 from termcolor import colored
 
-aws_region = "us-west-2"
 
-parser = argparse.ArgumentParser(description="Check and update functions in specified stage(s)")
-parser.add_argument("cloud_stage", choices=["dev", "test", "staging", "prod", "all"], help="Specify the cloud stage: dev, test, staging, prod, all")
-parser.add_argument("--monitors", action="store_true", help="Update service monitors instead of services")
-parser.add_argument("--whatif", action="store_true", help="Echo the actions without executing them")
-parser.add_argument("--client_src", nargs="?", help="Relative path to the location of client source code")
+def split_server_parts(url):
+    aws_server = ".lambda-url.us-west-2.on.aws/"
 
-args = parser.parse_args()
+    return url.split(aws_server)[0], aws_server
 
-cloud_stage = args.cloud_stage
-monitors = args.monitors
-whatif = args.whatif
-client_src = args.client_src
-exit_code = 0
-missing_functions = 0
-missing_client_src = 0
 
-def main():
+def main(cloud_stage, monitors, whatif, client_src):
+    exit_code = 0
+    missing_functions = 0
+    missing_client_src = 0
+
     # Get a list of all Lambda functions in the specified stage(s)
     if cloud_stage == "all":
         # Get all stages
@@ -35,6 +28,8 @@ def main():
     # Iterate over each stage
     for stage in stages:
         print(f"Checking and updating functions in stage: {stage}")
+
+        aws_region = "us-west-2"
 
         # Get a list of all Lambda functions in the stage
         client = boto3.client('lambda', region_name=aws_region)
@@ -101,7 +96,7 @@ def main():
 
                     # if we didn't find public access, then try to create it
                     if not foundPublicAccess:
-                        existingPermissions = None
+                        existing_permissions = None
 
                 url = None
                 # if the config for the URL is missing, rebuild it
@@ -125,17 +120,22 @@ def main():
                                     FunctionName=f'{function_name}',
                                     AuthType='NONE',
                                 )
-                                print(colored(f"    Created public URI for function {function_name}", 'green'))
+                                if 'FunctionUrl' not in response or response['FunctionUrl'] is None:
+                                    print(colored(f"    Failed to validate public URI for function {function_name} after creation", 'red'))
+                                    exit_code = 1
+                                    missing_functions += 1
+                                else:
+                                    print(colored(f"    Created public URI for function {function_name}", 'green'))
 
                                 config = client.get_function_url_config(FunctionName=function_name)
                                 url = config['FunctionUrl'] if config else None
                                 if url is None:
-                                    print(colored(f"    Failed to create public URI for function {function_name}", 'red'))
+                                    print(colored(f"    Failed to retrieve public URI for function {function_name}", 'red'))
                                     exit_code = 1
                                     missing_functions += 1
 
                                 else:
-                                    print(colored(f"    Public URI for function {function_name} is {url}", 'green'))
+                                    print(colored(f"    Public URI validated for function {function_name} is {url}", 'green'))
 
                             if existing_permissions is None:
                                 response = client.add_permission(
@@ -153,7 +153,8 @@ def main():
                             missing_functions += 1
 
                 if url is not None:
-                    print(f"    {function_name} public: {url}")
+                    first, second = split_server_parts(url)
+                    print(f"    {function_name} public: {colored(first, 'yellow')}{second}")
 
                     if client_src:
                         # Search for URI in source code files
@@ -189,9 +190,20 @@ def main():
     else:
         print(colored("Success", 'green'))
 
+    return exit_code
+
+
+parser = argparse.ArgumentParser(description="Check and update functions in specified stage(s)")
+parser.add_argument("cloud_stage", choices=["dev", "test", "staging", "prod", "all"], help="Specify the cloud stage: dev, test, staging, prod, all")
+parser.add_argument("--monitors", action="store_true", help="Update service monitors instead of services")
+parser.add_argument("--whatif", action="store_true", help="Echo the actions without executing them")
+parser.add_argument("--client_src", nargs="?", help="Relative path to the location of client source code")
+
+args = parser.parse_args()
+
 
 try:
-    main()
+    exit_code = main(args.cloud_stage, args.monitors, args.whatif, args.client_src)
     exit(exit_code)
 except KeyboardInterrupt:
     print(colored("Interrupted by user", 'red'))
