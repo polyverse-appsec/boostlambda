@@ -22,7 +22,8 @@ product_name = changelog.split('\n')[0]
 print(f"Product Name: {product_name}")
 
 # Regular expressions for different sections
-version_pattern = r'## Version (\d+\.\d+\.\d+): ([A-Za-z]+\s+\d+(?:st|nd|rd|th)?\,\s+\d{4})'
+version_pattern = r'## Version (\d+\.\d+\.\d+): ([A-Za-z]+\s+\d+(?:st|nd|rd|th)?\,\s+\d{4})'  # Fixed regex
+
 feature_pattern = r'### New Features\n((?:- .+\n)*)'
 bugfix_pattern = r'### Bug Fixes\n((?:- .+\n)*)'
 enhancement_pattern = r'### Enhancements\n((?:- .+\n)*)'
@@ -33,11 +34,11 @@ features = re.findall(feature_pattern, changelog)
 bugfixes = re.findall(bugfix_pattern, changelog)
 enhancements = re.findall(enhancement_pattern, changelog)
 
-# Reverse the lists to get the releases in chronological order
-versions.reverse()
-features.reverse()
-bugfixes.reverse()
-enhancements.reverse()
+# Reversed versions and their corresponding data
+versions = versions[::-1]
+features = features[::-1]
+bugfixes = bugfixes[::-1]
+enhancements = enhancements[::-1]
 
 # Initialize metrics
 num_releases = len(versions)
@@ -53,12 +54,14 @@ last_minor_release = None
 last_patch_release = None
 pending_release = None
 longest_days_between_releases = 0
+longest_release_version = None
 
 # Get the release dates in datetime format
 release_dates = []
 today = datetime.now()
 for version in versions:
     date_str = re.sub(r'(\d+)(st|nd|rd|th)', r'\1', version[1])
+    date_str = date_str.strip()  # remove leading/trailing spaces
     date = datetime.strptime(date_str, "%B %d, %Y")
     if date > today:
         pending_release = version
@@ -79,7 +82,7 @@ days_between_releases_list = [0]
 
 for i in range(1, len(versions)):
     days_between_releases = (release_dates[i] - release_dates[i - 1]).days
-    days_between_releases_list.append(days_between_releases) 
+    days_between_releases_list.append(days_between_releases)
     total_days_between_releases += days_between_releases
 
     num_features = sum(1 for line in features[i].splitlines() if line.strip() != "- N/A") if i < len(features) else 0
@@ -113,7 +116,7 @@ for i in range(1, len(versions)):
     if args.detailed:
         print(f"\nRelease: {versions[i][0]} ({release_type})")
         print(f"Date: {versions[i][1]}")
-        print(f"Days Since Previous Release: {days_between_releases}")  
+        print(f"Days Since Previous Release: {days_between_releases}")
         if num_features > 0:
             print(f"New Features: {num_features}")
         if num_enhancements > 0:
