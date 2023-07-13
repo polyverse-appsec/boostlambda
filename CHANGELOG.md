@@ -100,8 +100,6 @@ Polyverse Boost Cloud Service
 ### Bug Fixes
 - Improve Mermaid code markdown blocks in Summary blocks
 
-# Release Notes
-
 ## Version 0.6.2: June 22, 2023
 
 ### New Features
@@ -237,7 +235,7 @@ Polyverse Boost Cloud Service
 - Fix email logging in customer_portal
 - Add server logging for GitHub API failures (e.g. throttling, access, etc)
 
-## Version 0.4.9: (Proposed) May 13, 2023
+## Version 0.4.9: May 13, 2023
 
 ### New Features
 - N/A
