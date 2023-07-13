@@ -11,10 +11,31 @@ def split_server_parts(url):
     return url.split(aws_server)[0], aws_server
 
 
-def main(cloud_stage, monitors, whatif, client_src):
+def search_calling_code(calling_src, url):
+    result = False
+    # Search for URI in source code files
+    for root, _, files in os.walk(calling_src):
+        for file in files:
+            # Check client source code
+            if file.endswith(".ts"):
+                with open(os.path.join(root, file), "r") as file:
+                    if url in file.read():
+                        print(colored(f"      Found full URL in client {file.name}", 'green'))
+                        result = True
+                        break
+            # check lambda monitor code
+            elif file.endswith(".py"):
+                with open(os.path.join(root, file), "r") as file:
+                    first, _ = split_server_parts(url)
+                    if first in file.read():
+                        print(colored(f"      Found short URL in monitor {file.name}", 'green'))
+                        result = True
+                        break
+    return result
+
+
+def main(cloud_stage, monitors, whatif, check_src):
     exit_code = 0
-    missing_functions = 0
-    missing_client_src = 0
 
     # Get a list of all Lambda functions in the specified stage(s)
     if cloud_stage == "all":
@@ -27,6 +48,9 @@ def main(cloud_stage, monitors, whatif, client_src):
 
     # Iterate over each stage
     for stage in stages:
+        missing_functions = 0
+        missing_calling_src = 0
+
         print(f"Checking and updating functions in stage: {stage}")
 
         aws_region = "us-west-2"
@@ -156,34 +180,25 @@ def main(cloud_stage, monitors, whatif, client_src):
                     first, second = split_server_parts(url)
                     print(f"    {function_name} public: {colored(first, 'yellow')}{second}")
 
-                    if client_src:
-                        # Search for URI in source code files
-                        uri_found = 0
-                        for root, dirs, files in os.walk(client_src):
-                            for file in files:
-                                if file.endswith(".ts"):
-                                    with open(os.path.join(root, file), "r") as file:
-                                        if url in file.read():
-                                            print(f"      Found in client {file}")
-                                            uri_found = 1
-                                            break
-                        if uri_found == 0:
-                            print(colored(f"      URI {url} not found in client source", 'red'))
+                    if check_src:
+                        if (not search_calling_code(check_src, url)):
+                            print(colored(f"      URI {url} not found in source", 'red'))
                             exit_code = 1
-                            missing_client_src += 1
+                            missing_calling_src += 1
 
         print(f"  Finished processing functions in stage: {stage}")
         if missing_functions > 0:
             print(colored(f"  Missing functions count in stage {stage}: {missing_functions}", 'red'))
-        elif client_src:
+        else:
             print(colored(f"  All functions public in stage {stage}", 'green'))
         missing_functions = 0
 
-        if missing_client_src > 0:
-            print(colored(f"  Missing client references in stage {stage}: {missing_client_src}", 'red'))
-        else:
-            print(colored(f"  All public functions referenced in client in stage {stage}", 'green'))
-        missing_client_src = 0
+        if check_src:
+            if missing_calling_src > 0:
+                print(colored(f"  Missing client references in stage {stage}: {missing_calling_src}", 'red'))
+            else:
+                print(colored(f"  All public functions referenced in client in stage {stage}", 'green'))
+        missing_calling_src = 0
 
     if exit_code > 0:
         print(colored(f"Errors - code {exit_code}", 'red'))
@@ -197,13 +212,13 @@ parser = argparse.ArgumentParser(description="Check and update functions in spec
 parser.add_argument("cloud_stage", choices=["dev", "test", "staging", "prod", "all"], help="Specify the cloud stage: dev, test, staging, prod, all")
 parser.add_argument("--monitors", action="store_true", help="Update service monitors instead of services")
 parser.add_argument("--whatif", action="store_true", help="Echo the actions without executing them")
-parser.add_argument("--client_src", nargs="?", help="Relative path to the location of client source code")
+parser.add_argument("--check_src", nargs="?", help="Relative path to the location of client or monitor source code")
 
 args = parser.parse_args()
 
 
 try:
-    exit_code = main(args.cloud_stage, args.monitors, args.whatif, args.client_src)
+    exit_code = main(args.cloud_stage, args.monitors, args.whatif, args.check_src)
     exit(exit_code)
 except KeyboardInterrupt:
     print(colored("Interrupted by user", 'red'))
