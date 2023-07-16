@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Enhancements
-- N/A
+- Treat all polyverse.com accounts as 'paid' regardless of credit card status
 
 ### Bug Fixes
 - N/A
