@@ -51,13 +51,16 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
             # Convert the response to a JSON-formatted string if it's not already a string.
             response_str = json.dumps(response.payload["body"]) if not isinstance(response.payload["body"], str) else response.payload["body"]
 
-            # Send the response back to the client.
-            self.send_response(200)
-            headers = response.payload["headers"]
-            for header_name, header_value in headers.items():
-                self.send_header(header_name, header_value)
-            self.end_headers()
-            self.wfile.write(response_str.encode())
+            try:
+                # Send the response back to the client.
+                self.send_response(200)
+                headers = response.payload["headers"]
+                for header_name, header_value in headers.items():
+                    self.send_header(header_name, header_value)
+                self.end_headers()
+                self.wfile.write(response_str.encode())
+            except ConnectionResetError as e:
+                print(f"Client connection terminated: {e}")
         else:
             self.send_response(404)
             self.end_headers()
