@@ -16,6 +16,14 @@ build_draft_blueprint = {
                 "type": "string",
                 "description": "The Architectural Blueprint Summary that was drafted"
             },
+            "recommendedListOfFilesToExcludeFromAnalysis": {
+                "type": "array",
+                "description": "List of project folders and files to exclude from project analysis that do not likely contain any useful source, build or project information.",
+                "items": {
+                    "type": "string",
+                    "description": "Each folder or file that should be excluded from software project analysis."
+                }
+            },
             "recommendedSampleSourceFile": {
                 "type": "string",
                 "description": "The sample source file that most represents the type of development principles being used"
@@ -54,6 +62,7 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
                 arguments["draftBlueprint"] = json_arguments["draftBlueprint"]
                 arguments["recommendedSampleSourceFile"] = json_arguments["recommendedSampleSourceFile"]
                 arguments["recommendedProjectDeploymentFile"] = json_arguments["recommendedProjectDeploymentFile"]
+                arguments["recommendedListOfFilesToExcludeFromAnalysis"] = json_arguments["recommendedListOfFilesToExcludeFromAnalysis"]
 
             except Exception as e:
                 log(f"Error parsing function call arguments: {e}")
@@ -66,6 +75,10 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
 
         if "draftBlueprint" not in arguments:
             log("draftBlueprint was not generated")
+            success = 0
+
+        if "recommendedListOfFilesToExcludeFromAnalysis" not in arguments:
+            log("recommendedListOfFilesToExcludeFromAnalysis was not generated")
             success = 0
 
         if "recommendedSampleSourceFile" not in arguments:

@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Treat all polyverse.com accounts as 'paid' regardless of credit card status
+- Added File Exclusion recommendation for Draft Blueprint Service
 
 ### Bug Fixes
 - Fix bug causing Draft-Blueprint service to return the recommended project file with the sample source code filename
