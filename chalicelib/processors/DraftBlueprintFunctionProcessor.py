@@ -53,7 +53,7 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
                 json_arguments = json.loads(r['message']['function_call']['arguments'])
                 arguments["draftBlueprint"] = json_arguments["draftBlueprint"]
                 arguments["recommendedSampleSourceFile"] = json_arguments["recommendedSampleSourceFile"]
-                arguments["recommendedProjectDeploymentFile"] = json_arguments["recommendedSampleSourceFile"]
+                arguments["recommendedProjectDeploymentFile"] = json_arguments["recommendedProjectDeploymentFile"]
 
             except Exception as e:
                 log(f"Error parsing function call arguments: {e}")

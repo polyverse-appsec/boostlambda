@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - Treat all polyverse.com accounts as 'paid' regardless of credit card status
 
 ### Bug Fixes
-- N/A
+- Fix bug causing Draft-Blueprint service to return the recommended project file with the sample source code filename
 
 ## Version 0.7.3: July 12th, 2023
 
