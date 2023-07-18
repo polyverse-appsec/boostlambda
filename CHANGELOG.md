@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Enhancements
-- N/A
+- Added support for truncating user messages - if allowed by processor (e.g. chunking disabled)
 
 ### Bug Fixes
 - N/A
