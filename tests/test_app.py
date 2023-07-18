@@ -229,7 +229,7 @@ def test_customprocess_messages():
     with Client(app) as client:
         code = 'print("Hello, World!")'
         prompt = "Analyze this code to identify use of code incompatible with a commercial license, such as any open source license.\n\nExamples of licenses include BSD, MIT, GPL, LGPL, Apache or other licenses that may conflict with commercial licenses.\n\nFor any identified licenses in the code, provide online web links to relevant license analysis.\n\n\n" + code
-        this_role_system = "I am a sofware architect bot. I will analyze the code for architectural, algorithmic and design issues."
+        this_role_system = "I am a software architect bot. I will analyze the code for architectural, algorithmic and design issues."
         request_body = {
             'messages': json.dumps([
                 {
