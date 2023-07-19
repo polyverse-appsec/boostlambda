@@ -6,6 +6,7 @@ import time
 from .payments import check_valid_subscriber, ExtendedAccountBillingError
 from chalicelib.version import API_VERSION
 from cachetools import TTLCache
+import random
 
 userorganizations_api_version = API_VERSION  # API version is global for now, not service specific
 print("userorganizations_api_version: ", userorganizations_api_version)
@@ -27,10 +28,15 @@ def request_get_with_retry(url, headers, max_retries=1):
     while retry_count <= max_retries:
         try:
             response = requests.get(url, headers=headers)
+            if retry_count > 0:
+                print(f"Successful GET to {url}: after attempt {retry_count + 1} retry of {max_retries + 1}")
+
             return response
         except ConnectionError as e:
             if retry_count < max_retries:
-                print(f"Connection error occurred retrieving url: {str(e)}; attempt {retry_count + 1} of {max_retries + 1}")
+                wait_time = random.randint(3, 5)  # Random wait between 3 to 5 seconds
+                time.sleep(wait_time)
+                print(f"Connection error occurred retrieving {url}: {str(e)}; attempt {retry_count + 1} of {max_retries + 1} after {wait_time} seconds")
                 retry_count += 1
             else:
                 print(f"Connection error: {str(e)} Max retries exceeded: {max_retries} retrieving url: {url}... giving up")
