@@ -28,7 +28,7 @@ class ExtendedAccountBillingError(UnauthorizedError):
         super().__init__(message)
         self.reason = reason
 
-            
+
 def stripe_retry(func, *args, **kwargs):
     retry_count = 0
     max_retries = 1
@@ -90,18 +90,18 @@ def create_price(email):
     tiers[1]['up_to'] = 'inf'
 
     # Create a new Price object with the same attributes as the original one
-    new_price = stripe_retry(stripe.Price.create(
-        currency=currency,
-        product=product,
-        billing_scheme=billing_scheme,
-        tiers=tiers,
-        tiers_mode=tiers_mode,
-        nickname=nickname,
-        recurring=recurring,
-        metadata={
-            "email": email
-        }
-    ))
+    new_price = stripe_retry(stripe.Price.create,
+                             currency=currency,
+                             product=product,
+                             billing_scheme=billing_scheme,
+                             tiers=tiers,
+                             tiers_mode=tiers_mode,
+                             nickname=nickname,
+                             recurring=recurring,
+                             metadata={
+                                 "email": email
+                             }
+                             )
 
     return new_price
 
@@ -114,7 +114,7 @@ def check_create_customer(email, org, correlation_id=0):
     # if we still can't find it, then we create it.
 
     # first see if the customer already exists, we need to look at the org field in metadata
-    customers = stripe_retry(stripe.Customer.search(query="metadata['org']:'{}'".format(org), expand=['data.subscriptions']))
+    customers = stripe_retry(stripe.Customer.search, query="metadata['org']:'{}'".format(org), expand=['data.subscriptions'])
     for customer in customers.data:
         if customer.metadata.org == org:
             return customer
@@ -123,18 +123,18 @@ def check_create_customer(email, org, correlation_id=0):
     one_hour_ago = int(time.time()) - 3600
 
     # Search for customers created in the last hour if search fails
-    customers = stripe_retry(stripe.Customer.list(created={'gte': one_hour_ago}, expand=['data.subscriptions']))
+    customers = stripe_retry(stripe.Customer.list, created={'gte': one_hour_ago}, expand=['data.subscriptions'])
 
     for customer in customers.data:
         if customer.metadata.org == org:
             return customer
 
     try:
-        customer = stripe_retry(stripe.Customer.create(
-            name=org,
-            email=email,
-            metadata={"org": org},
-        ))
+        customer = stripe_retry(stripe.Customer.create,
+                                name=org,
+                                email=email,
+                                metadata={"org": org},
+                                )
         print(f"CREATE_CUSTOMER:SUCCEEDED:: email:{email}, org:{org}")
         capture_metric(customer, email, correlation_id, "create_customer",
                        {"name": InfoMetrics.NEW_CUSTOMER, "value": 1, "unit": "None"})
@@ -165,27 +165,27 @@ def check_create_subscription(customer, email):
     # if we got here, we don't have a subscription, so create one
     # we need to create a price per email address
     price = create_price(email)
-    subscription = stripe_retry(stripe.Subscription.create(
-        customer=customer.id,
-        items=[
-            {
-                "price": price.id,
-                "metadata": {"email": email}
-            },
-        ],
-        billing_thresholds={
-            'amount_gte': 100000,
-            'reset_billing_cycle_anchor': False,
-        },
-        coupon="RNhiqVPC"
-    ))
+    subscription = stripe_retry(stripe.Subscription.create,
+                                customer=customer.id,
+                                items=[
+                                    {
+                                        "price": price.id,
+                                        "metadata": {"email": email}
+                                    },
+                                ],
+                                billing_thresholds={
+                                    'amount_gte': 100000,
+                                    'reset_billing_cycle_anchor': False,
+                                },
+                                coupon="RNhiqVPC"
+                                )
     return subscription
 
 
 # find or create a subscription item which uses email in the metadata, and using the boost_per_kb price
 def check_create_subscription_item(subscription, email):
     # first see if the customer already has a subscription
-    subscription_items = stripe_retry(stripe.SubscriptionItem.list(subscription=subscription.id))
+    subscription_items = stripe_retry(stripe.SubscriptionItem.list, subscription=subscription.id)
     for subscription_item in subscription_items.data:
         # if the email in the metadata matches the email we are looking for, return the subscription item
         if subscription_item.metadata.email == email:
@@ -196,11 +196,11 @@ def check_create_subscription_item(subscription, email):
     # we need to create a price per email address
     price = create_price(email)
 
-    subscription_item = stripe_retry(stripe.SubscriptionItem.create(
-        subscription=subscription.id,
-        price=price.id,
-        metadata={"email": email}
-    ))
+    subscription_item = stripe_retry(stripe.SubscriptionItem.create,
+                                     subscription=subscription.id,
+                                     price=price.id,
+                                     metadata={"email": email}
+                                     )
 
     return subscription_item
 
@@ -212,11 +212,11 @@ def update_usage(subscription_item, bytes):
     idempotency_key = str(uuid.uuid4())
 
     # update the usage
-    stripe_retry(stripe.SubscriptionItem.create_usage_record(
-        id=subscription_item.id,
-        quantity=usage,
-        idempotency_key=idempotency_key
-    ))
+    stripe_retry(stripe.SubscriptionItem.create_usage_record,
+                 id=subscription_item.id,
+                 quantity=usage,
+                 idempotency_key=idempotency_key
+                 )
     return subscription_item
 
 
@@ -242,7 +242,7 @@ def check_customer_account_status(customer):
     if customer['delinquent'] is True:
         return False, "suspended"
 
-    invoice = stripe_retry(stripe.Invoice.upcoming(customer=customer.id))
+    invoice = stripe_retry(stripe.Invoice.upcoming, customer=customer.id)
 
     # We're going to treat polyverse accounts as paid, even if no credit card on file
     if customer['email'].endswith(("@polyverse.io", "@polytest.ai", "@polyverse.com")):
@@ -290,8 +290,8 @@ def check_valid_subscriber(email, organization, correlation_id):
 
 
 def customer_portal_url(account):
-    session = stripe_retry(stripe.billing_portal.Session.create(
-        customer=account['customer'].id,
-        return_url='https://polyverse.com',
-    ))
+    session = stripe_retry(stripe.billing_portal.Session.create,
+                           customer=account['customer'].id,
+                           return_url='https://polyverse.com',
+                           )
     return session
