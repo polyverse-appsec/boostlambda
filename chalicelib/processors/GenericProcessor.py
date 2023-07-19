@@ -359,8 +359,7 @@ class GenericProcessor:
         # if single input, build the prompt to test length
         if 'chunks' not in prompt_format_args:
             this_messages = self.generate_messages(data, prompt_format_args)
-            this_messages, this_truncation = self.optimize_content(this_messages, data)
-            truncated += this_truncation
+            this_messages, _ = self.optimize_content(this_messages, data)
             these_tokens_count = 0
             for message in this_messages:
                 if 'content' in message:
