@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - Added support for truncating user messages - if allowed by processor (e.g. chunking disabled)
 
 ### Bug Fixes
-- N/A
+- Quick blueprint better resilience to empty projects, or no exclusions recmommended
 
 ## Version 0.7.4: July 18th, 2023
 
