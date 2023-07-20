@@ -254,8 +254,13 @@ def check_customer_account_status(customer):
 
     # it seems like a non-zero balance also implies a trial license
     # we return false to notify that trial has expired (e.g. all discounts used up, and amount due)
-    if (customer['balance'] > 0 or invoice.amount_due > 0):
-        return False, "expired"
+    open_due = customer['balance'] + invoice.amount_due
+    if open_due > 0:
+        open_credit = customer['discount']['coupon']['amount_off'] if \
+            customer['discount'] and customer['discount']['coupon'] and \
+            customer['discount']['coupon']['amount_off'] else 0
+        if open_due >= open_credit:
+            return False, "expired"
 
     # if there is active trial usage, then we will assume they are still in trial
     if invoice.total_discount_amounts and invoice.total_discount_amounts[0].amount > 0:

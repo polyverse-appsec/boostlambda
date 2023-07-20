@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Added support for truncating user messages - if allowed by processor (e.g. chunking disabled)
+- Added support for coupons with accounts - enabling Trial extensions by manual coupon
 
 ### Bug Fixes
 - Quick blueprint better resilience to empty projects, or no exclusions recmommended
