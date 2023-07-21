@@ -218,7 +218,7 @@ def customer_portal(event, context):
         if 'email' in account:
             email = account['email']
 
-        if not validated and account['status'] != 'suspended':
+        if not validated and account['status'] not in ('suspended', 'expired'):
             status = account['status']
             session = None
             print(f'{status}: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) No Customer Portal generated')
