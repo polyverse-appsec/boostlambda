@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.8.1: July 26th, 2023
+## Version 0.8.1: July 21st, 2023
 
 ### New Features
 - N/A
@@ -14,6 +14,7 @@ Polyverse Boost Cloud Service
 ### Bug Fixes
 - Fix customer_portal when a customer has an 'expired' account status
 - Fix for suspended accounts who have no active subscriptions - return status suspended instead of error
+- Fix off-by-one error in source line numbers
 
 ## Version 0.8.0: July 20th, 2023
 
