@@ -105,15 +105,9 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
             print(".", end="")
 
-            try:
-                upcoming_invoice = stripe.Invoice.upcoming(customer=customer.id) if not customer.delinquent else None
-            except Exception as e:
-                # if no upcoming invoice, just keep processing
-                if "No upcoming invoices for customer" in str(e):
-                    upcoming_invoice = None
-                    pass
-                else:
-                    raise e
+            upcoming_invoice = stripe.Invoice.upcoming(customer=customer.id) if \
+                len(stripe.Subscription.list(customer=customer.id)['data']) > 0 \
+                and not customer.delinquent else None
 
             past_invoices = stripe.Invoice.list(customer=customer.id, status='paid')
             open_invoices = stripe.Invoice.list(customer=customer.id, status='open')
