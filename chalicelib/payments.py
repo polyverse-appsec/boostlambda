@@ -239,7 +239,12 @@ def update_usage_for_text(account, bytes_of_text):
 def check_customer_account_status(customer):
 
     # if stripe thinks the customer is delinquent, then we will suspend them
-    if customer['delinquent'] is True:
+    if customer['delinquent']:
+        return False, "suspended"
+
+    # if no active subscriptions, its a suspended account
+    subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id)
+    if len(subscriptions['data']) == 0:
         return False, "suspended"
 
     invoice = stripe_retry(stripe.Invoice.upcoming, customer=customer.id)
