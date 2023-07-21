@@ -154,6 +154,10 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
                     total_usage_kb += usageInKb
 
+                    open_credit = customer['discount']['coupon']['amount_off'] if \
+                        customer['discount'] and customer['discount']['coupon'] and \
+                        customer['discount']['coupon']['amount_off'] else 0
+
                     customers_list.append([customer.metadata.org,
                                            f"{invoice_data.price.metadata.email}",
                                            f"{datetime.datetime.fromtimestamp(customer.created).date()}",
@@ -163,7 +167,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                                            f"{usageInKb}",
                                            f"${invoice_data.amount / 100:.2f}",
                                            f"${invoice.amount_due / 100:.2f}",
-                                           f"${invoice.total_discount_amounts[0].amount / 100:.2f}" if invoice.total_discount_amounts else "$0.00",
+                                           f"${open_credit / 100:.2f}",
                                            f"${invoice.total / 100:.2f}",
                                            f"${customer_discounts / 100:.2f}",
                                            f"${customer_paid_invoices / 100:.2f}"])
@@ -191,11 +195,12 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
         with open(csvFile, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['Organization', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discounted', 'Paid'])
-            for org, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
-                writer.writerow([org, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
+            for org, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, open_credit, total_pending, customer_discounts, total_paid in customers_list:
+                writer.writerow([org, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, open_credit, total_pending, customer_discounts, total_paid])
     else:
 
         # customers_list.sort()  # sort by org name
+        total_coupons = 0
 
         table = PrettyTable(['Organization', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discount', 'Paid'])
         lastCustomerEmail = ''
@@ -213,8 +218,9 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
             pending_item_cost = pending_item_cost if pending_item_cost != '$0.00' else '-'
             due = due if due != '$0.00' else '-'
             due = due if newOrg and due != '$0.00' else ''
-            discount = discount if discount != '$0.00' else '-'
+            discount = discount if discount != '0' else '-'
             discount = discount if newOrg else '"'
+            total_coupons += float(discount[1:]) * 100 if (discount != "-" and discount != '"') else 0
             total_pending = total_pending if total_pending != '$0.00' else '-'
             total_pending = total_pending if newOrg else ''
             total_paid = total_paid if total_paid != '$0.00' else '-'
@@ -261,6 +267,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
         totalTable = PrettyTable(['Total Revenue', 'Amount', '%'])
         totalTable.add_row(["DUE Amount (All Customer Invoices)", f"${total_pending_invoices / 100:.2f}", f"{total_pending_invoices / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
         totalTable.add_row(["PAID Amount (All Customer Invoices)", f"${total_paid_invoices / 100:.2f}", f"{total_paid_invoices / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
+        totalTable.add_row(["COUPON (Active) Amount (All Customer Invoices)", f"${total_coupons / 100:.2f}", f"{total_coupons / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
         totalTable.add_row(["DISCOUNTED Amount (All Customer Invoices)", f"${total_customer_discounts / 100:.2f}", f"{total_customer_discounts / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
         totalTable.add_row(["-------------------------------------------", "---------", "-----"])
         totalTable.add_row(["TOTAL Revenue/Usage (All Customer Invoices)", f"${(total_pending_invoices + total_paid_invoices + total_customer_discounts) / 100:.2f}", ""])
