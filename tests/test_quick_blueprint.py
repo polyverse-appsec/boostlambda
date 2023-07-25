@@ -91,7 +91,7 @@ def test_quick_blueprint():
 
         proposedPriorityList = prioritize_files(realProjectFiles, details['prioritizedListOfSourceFilesToAnalyze'])
         if (proposedPriorityList != prioritizedListOfSourceFilesToAnalyze):
-            print(f"Prioritized analysis list is not in the expected order; alterned analysis may occur")
+            print("Prioritized analysis list is not in the expected order; alterned analysis may occur")
 
         # but we don't want to exclude real source ever
         for file in realProjectFiles:
