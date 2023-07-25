@@ -1,6 +1,7 @@
 from chalice.test import Client
 from app import app
 import json
+import random
 
 # load the file data/simple-buf.c into a string, relative to the root directory
 with open('./tests/data/quick-blueprint/package.json', 'r') as file:
@@ -19,14 +20,25 @@ def test_quick_blueprint():
                             'src/test/runTest.ts',
                             'src/test/suite/index.ts',
                             'src/test/suite/extension.test.ts',
-                            'src/test/suite/extension.test.ts',
                             'package.json']
+        realProjectFiles = random.sample(realProjectFiles, len(realProjectFiles))
+
+        prioritizedListOfSourceFilesToAnalyze = ['package.json',
+                                                 'src/extension.ts',
+                                                 'src/test/suite/index.ts',
+                                                 'src/test/suite/extension.test.ts',
+                                                 ]
+
         projectFileList = realProjectFiles.copy()
         likelyExclusionList = ['src/info.txt',
                                'src/changelog.md',
                                'src/sample.html',
                                'src/branding.jpg']
+        likelyExclusionList = random.sample(likelyExclusionList, len(likelyExclusionList))
+
         projectFileList.extend(likelyExclusionList)
+        projectFileList = random.sample(projectFileList, len(projectFileList))
+
         request_body = {
             'filelist': projectFileList,
             'projectName': 'typescript-sample-extension',
@@ -51,6 +63,7 @@ def test_quick_blueprint():
         assert 'recommendedSampleSourceFile' in details
         assert 'recommendedProjectDeploymentFile' in details
         assert 'recommendedListOfFilesToExcludeFromAnalysis' in details
+        assert 'prioritizedListOfSourceFilesToAnalyze' in details
 
         # we want high confidence exclusions only
         excludedAtLeastOne = False
@@ -59,6 +72,26 @@ def test_quick_blueprint():
                 excludedAtLeastOne = True
                 break
         assert excludedAtLeastOne
+
+        def prioritize_files(projectFileList, prioritizedListOfSourceFiles):
+            # Create a set for faster lookup of files in the prioritized list
+            prioritized_set = set(prioritizedListOfSourceFiles)
+
+            # Sort the files based on their priority and keep the default sort order for others
+            sorted_files = sorted(projectFileList, key=lambda file: (file not in prioritized_set, prioritizedListOfSourceFiles.index(file)))
+
+            return sorted_files
+
+        for file in realProjectFiles:
+            assert file in details['prioritizedListOfSourceFilesToAnalyze']
+
+        for file in details['prioritizedListOfSourceFilesToAnalyze']:
+            if file not in realProjectFiles:
+                print(f"Prioritized analysis {file} is not in the real project files; expanded analysis may occur")
+
+        proposedPriorityList = prioritize_files(realProjectFiles, details['prioritizedListOfSourceFilesToAnalyze'])
+        if (proposedPriorityList != prioritizedListOfSourceFilesToAnalyze):
+            print(f"Prioritized analysis list is not in the expected order; alterned analysis may occur")
 
         # but we don't want to exclude real source ever
         for file in realProjectFiles:

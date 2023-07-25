@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Enhancements
-- N/A
+- Draft Blueprint service returns a prioritized list of the files to analyze
 
 ### Bug Fixes
 - N/A

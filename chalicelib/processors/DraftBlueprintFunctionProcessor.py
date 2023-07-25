@@ -24,6 +24,14 @@ build_draft_blueprint = {
                     "description": "Each folder or file that should be excluded from software project analysis."
                 }
             },
+            "prioritizedListOfSourceFilesToAnalyze": {
+                "type": "array",
+                "description": "Prioritized list of all non-excluded files in the software project file list from most important file to least important file.",
+                "items": {
+                    "type": "string",
+                    "description": "Each source, build or project file in the non-excluded software project file list from most important file to least important file."
+                }
+            },
             "recommendedSampleSourceFile": {
                 "type": "string",
                 "description": "The sample source file that most represents the type of development principles being used"
@@ -63,6 +71,7 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
                 arguments["recommendedSampleSourceFile"] = json_arguments["recommendedSampleSourceFile"] if "recommendedSampleSourceFile" in json_arguments else ""
                 arguments["recommendedProjectDeploymentFile"] = json_arguments["recommendedProjectDeploymentFile"] if "recommendedProjectDeploymentFile" in json_arguments else ""
                 arguments["recommendedListOfFilesToExcludeFromAnalysis"] = json_arguments["recommendedListOfFilesToExcludeFromAnalysis"] if "recommendedListOfFilesToExcludeFromAnalysis" in json_arguments else []
+                arguments["prioritizedListOfSourceFilesToAnalyze"] = json_arguments["prioritizedListOfSourceFilesToAnalyze"] if "prioritizedListOfSourceFilesToAnalyze" in json_arguments else []
 
             except Exception as e:
                 log(f"Error parsing function call arguments: {e}")
@@ -79,6 +88,10 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
 
         if "recommendedListOfFilesToExcludeFromAnalysis" not in arguments:
             log("recommendedListOfFilesToExcludeFromAnalysis was not generated")
+            success = 0
+
+        if "prioritizedListOfSourceFilesToAnalyze" not in arguments:
+            log("prioritizedListOfSourceFilesToAnalyze was not generated")
             success = 0
 
         if "recommendedSampleSourceFile" not in arguments:
