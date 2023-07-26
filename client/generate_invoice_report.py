@@ -118,7 +118,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
             if debug:
                 print(f"{customer.email} has {len(all_invoices)} invoices")
 
-            if customer.delinquent:
+            if customer.delinquent and debug:
                 print(f"\nSkipping reporting for Delinquent customer: {customer.email}\n")
 
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
