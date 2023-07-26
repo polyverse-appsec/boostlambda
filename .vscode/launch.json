@@ -46,6 +46,8 @@
         "program": "${workspaceFolder}/client/generate_invoice_report.py",
         "cwd": "${workspaceFolder}",
         "args": [
+            "--user",
+            "*"
         ],
         "console": "integratedTerminal",
         "justMyCode": true

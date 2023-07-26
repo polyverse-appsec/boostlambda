@@ -88,19 +88,23 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                 continue
 
             # In your 'Processing customer data' loop, add a check for the user email
-            if user and user not in customer.email:
+            if user and user != "*" and user not in customer.email:
+                print("-", end="")
                 continue
 
             # exclude any customer with test email in email address, unless the command line argument "showTest" is specified
             if ('test-email-' in customer.email) and not show_test:
                 if debug:
                     print(f"Test Account: {customer.email}")
+
+                print("-", end="")
                 continue
 
             # exclude polyverse accounts (dev and test) unless specifically requested
             if ('polyverse' in customer.email or 'polytest.ai' in customer.email) and not includePolyverse:
                 if debug:
                     print(f"Test Account: {customer.email}")
+                print("-", end="")
                 continue
 
             print(".", end="")
@@ -177,6 +181,11 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
             print(f"No upcoming invoice for customer {customer.id} or error fetching invoice: {str(traceback.format_exc())}")
 
+    if total_active_users == 0:
+        print("\n\nNo customers found", end="")
+        print(f" - user: {user}" if user else "\n\n")
+        exit(1)
+
     print()
     print("-------------------------------------------------------------------")
     print(f"Invoice Report Date/Time: {datetime.datetime.now().strftime('%B %d, %Y, %I:%M:%S %p')}")
@@ -203,9 +212,9 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
             newOrg = org != lastOrg
             org = org if org != lastOrg else '"'
             created = created if newOrg else '"'
-            email = email if email != lastCustomerEmail else '"'
-            lastCustomerEmail = email
-            percent = "{:.2f}%".format(int(usageInMb) / total_usage_kb * 100)  # usageInMb is Kb at this point
+            email = email if org != lastOrg and email != lastCustomerEmail else '"'
+            lastCustomerEmail = email if email != '"' else lastCustomerEmail
+            percent = "{:.2f}%".format(((int(usageInMb) / total_usage_kb) if total_usage_kb > 0 else 0) * 100)  # usageInMb is Kb at this point
             percent = percent if percent != '0.00%' else '-'
             usageInMb = "{:.0f} Kb".format((int(usageInMb))) if usageInMb != '0' else '-'
             # usageInMb = "{:.3f} Mb".format((int(usageInMb) / 1024)) if usageInMb != '0' else '-'
@@ -259,23 +268,25 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
         print()
         totalTable = PrettyTable(['Total Revenue', 'Amount', '%'])
-        totalTable.add_row(["DUE Amount (All Customer Invoices)", f"${total_pending_invoices / 100:.2f}", f"{total_pending_invoices / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
-        totalTable.add_row(["PAID Amount (All Customer Invoices)", f"${total_paid_invoices / 100:.2f}", f"{total_paid_invoices / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
-        totalTable.add_row(["COUPON (Active) Amount (All Customer Invoices)", f"${total_coupons / 100:.2f}", f"{total_coupons / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
-        totalTable.add_row(["DISCOUNTED Amount (All Customer Invoices)", f"${total_customer_discounts / 100:.2f}", f"{total_customer_discounts / (total_pending_invoices + total_paid_invoices + total_customer_discounts) * 100:.0f}%"])
+        total_overall = total_pending_invoices + total_paid_invoices + total_customer_discounts
+        totalTable.add_row(["DUE Amount (All Customer Invoices)", f"${total_pending_invoices / 100:.2f}", f"{((total_pending_invoices / total_overall) if total_overall > 0 else 0) * 100:.0f}%"])
+        totalTable.add_row(["PAID Amount (All Customer Invoices)", f"${total_paid_invoices / 100:.2f}", f"{((total_paid_invoices / total_overall) if total_overall > 0 else 0) * 100:.0f}%"])
+        totalTable.add_row(["COUPON (Active) Amount (All Customer Invoices)", f"${total_coupons / 100:.2f}", f"{((total_coupons / total_overall) if total_overall > 0 else 0) * 100:.0f}%"])
+        totalTable.add_row(["DISCOUNTED Amount (All Customer Invoices)", f"${total_customer_discounts / 100:.2f}", f"{((total_customer_discounts / total_overall) if total_overall > 0 else 0) * 100:.0f}%"])
         totalTable.add_row(["-------------------------------------------", "---------", "-----"])
-        totalTable.add_row(["TOTAL Revenue/Usage (All Customer Invoices)", f"${(total_pending_invoices + total_paid_invoices + total_customer_discounts) / 100:.2f}", ""])
+        totalTable.add_row(["TOTAL Revenue/Usage (All Customer Invoices)", f"${total_overall / 100:.2f}", ""])
         print(totalTable)
         print()
 
         customerTable = PrettyTable(['Total Customers', 'Amount', "%"])
-        customerTable.add_row(["Paying Customers", f"{total_paying_customers}", f"{total_paying_customers / (total_active_users) * 100:.0f}% Converted"])
-        customerTable.add_row(["Trial Customers", f"{total_active_users - total_paying_customers}", f"{(total_active_users - total_paying_customers) / (total_active_users) * 100:.0f}% of Active"])
-        customerTable.add_row(["Active Customers", f"{total_active_users}", f"{total_active_users / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
-        customerTable.add_row(["New Customers", f"{total_inactive_users}", f"{total_inactive_users / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
-        customerTable.add_row(["Suspended Customers", f"{total_suspended_customers}", f"{total_suspended_customers / (total_inactive_users + total_active_users) * 100:.0f}% of Total"])
+        total_users = total_active_users + total_inactive_users
+        customerTable.add_row(["Paying Customers", f"{total_paying_customers}", f"{(total_paying_customers / total_active_users) if total_active_users > 0 else 0 * 100:.0f}% Converted"])
+        customerTable.add_row(["Trial Customers", f"{total_active_users - total_paying_customers}", f"{((total_active_users - total_paying_customers) / total_active_users) if total_active_users > 0 else 0 * 100:.0f}% of Active"])
+        customerTable.add_row(["Active Customers", f"{total_active_users}", f"{(total_active_users / total_users) if total_users > 0 else 0 * 100:.0f}% of Total"])
+        customerTable.add_row(["New Customers", f"{total_inactive_users}", f"{(total_inactive_users / total_users) if total_users > 0 else 0 * 100:.0f}% of Total"])
+        customerTable.add_row(["Suspended Customers", f"{total_suspended_customers}", f"{(total_suspended_customers / total_users) if total_users > 0 else 0 * 100:.0f}% of Total"])
         customerTable.add_row(["----------------------", "-----", "-----------"])
-        customerTable.add_row(["TOTAL Customers", f"{total_active_users + total_inactive_users}", ""])
+        customerTable.add_row(["TOTAL Customers", f"{total_users}", ""])
         print(customerTable)
         print()
 
