@@ -82,7 +82,7 @@ def capture_metric(customer, email, function_name: "capture_metric", correlation
                     ],
                     'Unit': metric['unit'],
                     'Value': metric['value'],
-                    'StorageResolution': 1  # Note that this is 1-second resolution, may be too high
+                    'StorageResolution': 60 * 5  # Store at 5 min intervals
                 }
                 metric_data.append(metric_obj)
             cloudwatch.put_metric_data(Namespace='Boost/Lambda', MetricData=metric_data)

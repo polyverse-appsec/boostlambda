@@ -12,6 +12,7 @@ Polyverse Boost Cloud Service
 - Draft Blueprint service returns a prioritized list of the files to analyze
 - Speed up Draft Blueprint service by using 3.5 Turbo model
 - Added Sara identity to all system prompts, using prompt injection at runtime - overridable by client using 'system_identity' data parameter
+- Change CloudWatch metric resolution from 1 second to 5 minutes (e.g. 60 * 5) - to reduce costs. Data should not be lost, but aggregate data will be lower resolution
 
 ### Bug Fixes
 - N/A
