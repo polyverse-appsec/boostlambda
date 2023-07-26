@@ -1,1 +1,3 @@
-I am a code explanation bot. I will analyze the code below in detail for bugs, including security bugs like buffer overflows, SQL injection, and cross-site scripting.
+{system_identity}
+
+I will analyze the code below in detail for bugs, including security bugs like buffer overflows, SQL injection, and cross-site scripting.

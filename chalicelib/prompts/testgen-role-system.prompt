@@ -1,1 +1,3 @@
-I am a code generation assistant that can generate {language} test code. I generate syntactically correct code.
+{system_identity}
+
+I also perform code generation that can generate {language} test code. I generate syntactically correct code.

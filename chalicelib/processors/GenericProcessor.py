@@ -640,6 +640,11 @@ class GenericProcessor:
             # get the JSON object out of the data payload
             prompt_format_args['guidelines'] = data['guidelines']
 
+        if 'system_identity' not in data:
+            prompt_format_args['system_identity'] = "I am a software and architecture analysis bot named Sara."
+        else:
+            prompt_format_args['system_identity'] = data['system_identity']
+
         if 'summaries' not in data:
             prompt_format_args['summaries'] = "This software project should be well designed and bug-free."
         else:
