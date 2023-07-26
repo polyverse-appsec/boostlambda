@@ -14,7 +14,7 @@ class QuickBlueprintProcessor(GenericProcessor):
                           ['main', 'quick-blueprint.prompt']
                           ],
                          [['response', 'quick-blueprint']],
-                         {'model': OpenAIDefaults.boost_default_gpt_model,
+                         {'model': OpenAIDefaults.boost_model_gpt35_cheap_chat,
                           'temperature': OpenAIDefaults.temperature_terse_and_accurate},
                          AnalysisOutputFormat.prose)
 

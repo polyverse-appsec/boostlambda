@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Draft Blueprint service returns a prioritized list of the files to analyze
+- Speed up Draft Blueprint service by using 3.5 Turbo model
 
 ### Bug Fixes
 - N/A
