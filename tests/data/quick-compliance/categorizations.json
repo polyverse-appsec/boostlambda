@@ -1,0 +1,97 @@
+{
+  "Error": {
+    "Hardcoded Environment": { "lib/Dancer2/Core/Role/ConfigReader.pm": 1 },
+    "Data Exposure": {
+      "lib/Dancer2/Core/Role/Template.pm": 1,
+      "lib/Dancer2/Serializer/Mutable.pm": 1
+    },
+    "Error Handling": { "lib/Dancer2/Core/Role/Hookable.pm": 1 },
+    "Data Deserialization": { "lib/Dancer2/Serializer/Dumper.pm": 1 },
+    "GDPR": {
+      "lib/Dancer2/Core/Role/DSL.pm": 1,
+      "lib/Dancer2/Core/Role/Logger.pm": 1,
+      "lib/Dancer2/Session/Simple.pm": 1,
+      "lib/Dancer2/Serializer/JSON.pm": 1,
+      "lib/Dancer2/Logger/Console.pm": 1,
+      "lib/Dancer2/Logger/Capture/Trap.pm": 1,
+      "lib/Dancer2/Cookbook.pod": 1,
+      "lib/Dancer2/Template/Simple.pm": 1,
+      "lib/Dancer2/Logger/File.pm": 1,
+      "lib/Dancer2/Logger/Note.pm": 1
+    },
+    "PCI DSS": {
+      "lib/Dancer2/Core/Role/DSL.pm": 1,
+      "lib/Dancer2/Serializer/JSON.pm": 1,
+      "lib/Dancer2/Logger/Console.pm": 1,
+      "lib/Dancer2/Template/Simple.pm": 1,
+      "lib/Dancer2/Logger/File.pm": 1,
+      "lib/Dancer2/Logger/Note.pm": 1
+    },
+    "HIPAA": {
+      "lib/Dancer2/Core/Role/DSL.pm": 1,
+      "lib/Dancer2/Core/Role/Logger.pm": 1,
+      "lib/Dancer2/Serializer/JSON.pm": 1,
+      "lib/Dancer2/Logger/Console.pm": 1,
+      "lib/Dancer2/Logger/Capture/Trap.pm": 1,
+      "lib/Dancer2/Cookbook.pod": 1,
+      "lib/Dancer2/Template/Simple.pm": 1,
+      "lib/Dancer2/Logger/File.pm": 1,
+      "lib/Dancer2/Logger/Note.pm": 1
+    },
+    "GDPR/PCI DSS/HIPAA": { "lib/Dancer2/Serializer/YAML.pm": 1 },
+    "Data Serialization": { "lib/Dancer2/Session/YAML.pm": 1 },
+    "Data Compliance": {
+      "lib/Dancer2/Logger/Null.pm": 1,
+      "lib/Dancer2/Handler/File.pm": 1
+    },
+    "Logging Sensitive Information": { "lib/Dancer2/Logger/Diag.pm": 1 },
+    "GDPR/HIPAA/PCI DSS": { "lib/Dancer2/Tutorial.pod": 1 }
+  },
+  "Hint": {
+    "GDPR": {
+      "lib/Dancer2/Core/Role/Serializer.pm": 1,
+      "lib/Dancer2/Core/Role/SessionFactory.pm": 1,
+      "lib/Dancer2/Logger/Capture.pm": 1
+    },
+    "PCI DSS": {
+      "lib/Dancer2/Core/Role/Serializer.pm": 1,
+      "lib/Dancer2/Logger/Capture.pm": 1
+    },
+    "HIPAA": {
+      "lib/Dancer2/Core/Role/Serializer.pm": 1,
+      "lib/Dancer2/Logger/Capture.pm": 1
+    },
+    "Data Compliance": { "lib/Dancer2/Manual.pod": 1 },
+    "GDPR/PCI DSS/HIPAA": { "lib/Dancer2.pm": 1 }
+  },
+  "Warning": {
+    "GDPR": {
+      "lib/Dancer2/Core/Role/SessionFactory/File.pm": 1,
+      "lib/Dancer2/Core/Role/StandardResponses.pm": 1,
+      "lib/Dancer2/Template/Implementation/ForkedTiny.pm": 1,
+      "lib/Dancer2/Template/TemplateToolkit.pm": 1
+    },
+    "HIPAA": {
+      "lib/Dancer2/Core/Role/SessionFactory/File.pm": 1,
+      "lib/Dancer2/Core/Role/StandardResponses.pm": 1,
+      "lib/Dancer2/Template/Implementation/ForkedTiny.pm": 1
+    },
+    "PCI DSS": {
+      "lib/Dancer2/Core/Role/SessionFactory/File.pm": 1,
+      "lib/Dancer2/Core/Role/StandardResponses.pm": 1,
+      "lib/Dancer2/Logger/Capture/Trap.pm": 1,
+      "lib/Dancer2/Template/Implementation/ForkedTiny.pm": 1,
+      "lib/Dancer2/Cookbook.pod": 1
+    },
+    "Data Privacy": { "lib/Dancer2/Core/Role/Hookable.pm": 1 },
+    "Data Compliance": {
+      "lib/Dancer2/Core/Role/HasLocation.pm": 1,
+      "lib/Dancer2/Handler/AutoPage.pm": 1
+    },
+    "Data Integrity": { "lib/Dancer2/Serializer/Mutable.pm": 1 },
+    "Data Validation": { "lib/Dancer2/Serializer/Mutable.pm": 1 },
+    "Environment Variable Hardcoding": {
+      "lib/Dancer2/Manual/Deployment.pod": 1
+    }
+  }
+}

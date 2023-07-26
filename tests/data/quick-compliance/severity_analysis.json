@@ -1,0 +1,79 @@
+[
+  {
+    "filename": "lib/Dancer2/Core/Role/Template.pm",
+    "category": "Data Exposure",
+    "severity": "Error",
+    "message": "The function 'supported_hooks' exposes all the values of the 'hook_aliases' object. This could potentially include sensitive data, depending on what 'hook_aliases' contains. This is a violation of data minimization principles under GDPR.",
+    "relatedInformation": "Review the data contained within 'hook_aliases'. If any of it is sensitive or personally identifiable, consider refactoring the function to only return necessary data or implementing access controls. More information can be found at: https://gdpr-info.eu/art-5-gdpr/"
+  },
+  {
+    "filename": "lib/Dancer2/Tutorial.pod",
+    "category": "GDPR/HIPAA/PCI DSS",
+    "severity": "Error",
+    "message": "The database connection string is hardcoded and visible. This could potentially expose sensitive database information if the codebase is leaked or compromised.",
+    "relatedInformation": "Store sensitive information such as database connection strings in secure and encrypted environment variables or configuration files that are not included in version control. Also, consider using a secure method to handle errors that does not involve potentially exposing the error details to the user."
+  },
+  {
+    "filename": "lib/Dancer2/Serializer/YAML.pm",
+    "category": "GDPR/PCI DSS/HIPAA",
+    "severity": "Error",
+    "message": "The code provided does not give enough context to identify any specific compliance issues. It is a subroutine definition in Perl, but without more information about what data it is handling, it is impossible to identify any GDPR, PCI DSS, or HIPAA compliance issues.",
+    "relatedInformation": "Provide more context or additional code. Ensure that any data handling complies with relevant regulations. This may involve encrypting sensitive data, obtaining user consent before processing personal data, or implementing access controls."
+  },
+  {
+    "filename": "lib/Dancer2/Serializer/Mutable.pm",
+    "category": "Data Exposure",
+    "severity": "Error",
+    "message": "The function 'serialize' does not appear to implement any form of data sanitization or encryption before serializing the data. This could potentially lead to sensitive data being exposed in violation of GDPR, PCI DSS, and HIPAA compliance.",
+    "relatedInformation": "Implement data sanitization and encryption methods before serializing the data. This will help ensure that sensitive data is not exposed in an insecure manner."
+  },
+  {
+    "filename": "lib/Dancer2/Core/Role/ConfigReader.pm",
+    "category": "Hardcoded Environment",
+    "severity": "Error",
+    "message": "The environment is hardcoded to 'development'. This can lead to potential data leaks if the application is accidentally deployed with this setting, as development environments often have less stringent security controls.",
+    "relatedInformation": "Use environment variables or a configuration file to set the environment. This allows you to change the environment without modifying the code. In production, ensure the environment is set to 'production' to enforce stricter security controls. Always ensure that sensitive data is not logged or exposed in any way in a development environment."
+  },
+  {
+    "filename": "lib/Dancer2/Core/Role/DSL.pm",
+    "category": "GDPR",
+    "severity": "Error",
+    "message": "The function 'register' does not have any visible mechanisms for data anonymization or pseudonymization which is a requirement under GDPR.",
+    "relatedInformation": "Implement mechanisms to anonymize or pseudonymize data where possible. This can be done by replacing personally identifiable information with artificial identifiers or pseudonyms."
+  },
+  {
+    "filename": "lib/Dancer2/Core/Role/DSL.pm",
+    "category": "PCI DSS",
+    "severity": "Error",
+    "message": "The function 'register' does not have any visible mechanisms for data encryption, which is a requirement under PCI DSS when storing cardholder data.",
+    "relatedInformation": "Implement mechanisms to encrypt data at rest and in transit. This can be done by using industry standard encryption algorithms and secure key management practices."
+  },
+  {
+    "filename": "lib/Dancer2/Core/Role/DSL.pm",
+    "category": "HIPAA",
+    "severity": "Error",
+    "message": "The function 'register' does not have any visible mechanisms for data encryption or access control, which is a requirement under HIPAA when handling protected health information.",
+    "relatedInformation": "Implement mechanisms to encrypt data at rest and in transit, and enforce access controls to ensure only authorized individuals can access the data. This can be done by using industry standard encryption algorithms, secure key management practices, and role-based access controls."
+  },
+  {
+    "filename": "lib/Dancer2/Core/Role/Logger.pm",
+    "category": "GDPR",
+    "severity": "Error",
+    "message": "The code potentially logs user-specific data such as request headers and remote host. This might be a violation of GDPR if the data includes personally identifiable information (PII) and is not properly anonymized or user consent for logging this information is not obtained.",
+    "relatedInformation": "Ensure that any PII data is anonymized or removed from the logs. Alternatively, obtain explicit user consent for logging this data, and provide a way for users to retract their consent and delete their data."
+  },
+  {
+    "filename": "lib/Dancer2/Core/Role/Logger.pm",
+    "category": "HIPAA",
+    "severity": "Error",
+    "message": "The code logs the request ID, which might be linked to specific user requests and potentially sensitive user data. If this software handles medical data, this could be a violation of HIPAA.",
+    "relatedInformation": "Ensure that the request ID cannot be linked back to any sensitive user data, or remove the request ID from the logs."
+  },
+  {
+    "filename": "lib/Dancer2/Core/Role/Hookable.pm",
+    "category": "Error Handling",
+    "severity": "Error",
+    "message": "The function uses the 'croak' function to handle errors. This could potentially reveal sensitive information about the system or data to unauthorized users.",
+    "relatedInformation": "Instead of using 'croak', consider using a custom error handling function that conceals sensitive information. Additionally, consider logging the error for internal use, while showing a generic error message to the user."
+  }
+]
