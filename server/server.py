@@ -59,6 +59,8 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
                     self.send_header(header_name, header_value)
                 self.end_headers()
                 self.wfile.write(response_str.encode())
+            except BrokenPipeError as e:
+                print(f"Client connection terminated: {e}")
             except ConnectionResetError as e:
                 print(f"Client connection terminated: {e}")
         else:
