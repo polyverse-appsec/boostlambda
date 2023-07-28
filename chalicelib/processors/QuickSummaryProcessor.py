@@ -6,14 +6,14 @@ from chalice import BadRequestError
 import math
 
 
-class QuickComplianceSummaryProcessor(GenericProcessor):
+class QuickSummaryProcessor(GenericProcessor):
     def __init__(self):
         super().__init__(API_VERSION,
-                         [['system', 'quick-compliance-summary-role-system.prompt'],
-                          ['system', 'quick-compliance-summary-files-system.prompt'],
-                          ['system', 'quick-compliance-summary-categorization-system.prompt'],
-                          ['system', 'quick-compliance-summary-examples-system.prompt'],
-                          ['main', 'quick-compliance-summary-user.prompt']
+                         [['system', 'quick-summary-role-system.prompt'],
+                          ['system', 'quick-summary-files-system.prompt'],
+                          ['system', 'quick-summary-categorization-system.prompt'],
+                          ['system', 'quick-summary-examples-system.prompt'],
+                          ['main', 'quick-summary-user.prompt']
                           ],
                          None,
                          {'model': OpenAIDefaults.boost_default_gpt_model,

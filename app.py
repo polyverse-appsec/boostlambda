@@ -22,7 +22,7 @@ from chalicelib.processors.PerformanceProcessor import PerformanceProcessor
 from chalicelib.processors.PerformanceFunctionProcessor import PerformanceFunctionProcessor
 from chalicelib.processors.QuickBlueprintProcessor import QuickBlueprintProcessor
 from chalicelib.processors.DraftBlueprintFunctionProcessor import DraftBlueprintFunctionProcessor
-from chalicelib.processors.QuickComplianceSummaryProcessor import QuickComplianceSummaryProcessor
+from chalicelib.processors.QuickSummaryProcessor import QuickSummaryProcessor
 
 import uuid
 import json
@@ -159,12 +159,12 @@ def quick_blueprint(event, context):
     return process_request(event, quickBlueprintProcessor.quick_blueprint, quickBlueprintProcessor.api_version)
 
 
-quickComplianceSummaryProcessor = QuickComplianceSummaryProcessor()
+quickSummaryProcessor = QuickSummaryProcessor()
 
 
-@app.lambda_function(name='quick-compliance-summary')
-def quick_compliance_summary(event, context):
-    return process_request(event, quickComplianceSummaryProcessor.quick_summary, quickBlueprintProcessor.api_version)
+@app.lambda_function(name='quick-summary')
+def quick_summary(event, context):
+    return process_request(event, quickSummaryProcessor.quick_summary, quickSummaryProcessor.api_version)
 
 
 draftBlueprintFunctionProcessor = DraftBlueprintFunctionProcessor()

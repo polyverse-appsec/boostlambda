@@ -3,10 +3,10 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.8.2: July 25th, 2023
+## Version 0.9.0: July 27th, 2023
 
 ### New Features
-- New Quick Compliance service builds an executive report based on partial diagnostics data
+- New Quick Summary service builds an executive report based on partial diagnostics data
 
 ### Enhancements
 - Draft Blueprint service returns a prioritized list of the files to analyze
