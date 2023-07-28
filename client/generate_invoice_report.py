@@ -157,6 +157,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                         customer['discount']['coupon']['amount_off'] else 0
 
                     customers_list.append([customer.metadata.org,
+                                           f"{customer.email}",
                                            f"{invoice_data.price.metadata.email}",
                                            f"{datetime.datetime.fromtimestamp(customer.created).date()}",
                                            f"{account_status}",
@@ -197,23 +198,26 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
         # If --csv switch is used, write data to CSV instead of table.
         with open(csvFile, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Organization', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discounted', 'Paid'])
-            for org, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, open_credit, total_pending, customer_discounts, total_paid in customers_list:
-                writer.writerow([org, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, open_credit, total_pending, customer_discounts, total_paid])
+            writer.writerow(['Organization', "Customer", 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discounted', 'Paid'])
+            for org, customer, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, open_credit, total_pending, customer_discounts, total_paid in customers_list:
+                writer.writerow([org, customer, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, open_credit, total_pending, customer_discounts, total_paid])
     else:
 
         # customers_list.sort()  # sort by org name
         total_coupons = 0
 
-        table = PrettyTable(['Organization', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discount', 'Paid'])
+        table = PrettyTable(['Organization', 'Customer', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'Trial', 'New', 'Discount', 'Paid'])
+        lastUserEmail = ''
         lastCustomerEmail = ''
         lastOrg = ''
-        for org, email, created, status, cc, plan, usageInMb, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
+        for org, customer, email, created, status, cc, plan, usageInMb, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid in customers_list:
             newOrg = org != lastOrg
             org = org if org != lastOrg else '"'
             created = created if newOrg else '"'
-            email = email if org != lastOrg and email != lastCustomerEmail else '"'
-            lastCustomerEmail = email if email != '"' else lastCustomerEmail
+            email = email if org != lastOrg and email != lastUserEmail else '"'
+            customer = customer if customer != lastCustomerEmail else '"'
+            lastUserEmail = email if email != '"' else lastUserEmail
+            lastCustomerEmail = customer if customer != '"' else lastCustomerEmail
             percent = "{:.2f}%".format(((int(usageInMb) / total_usage_kb) if total_usage_kb > 0 else 0) * 100)  # usageInMb is Kb at this point
             percent = percent if percent != '0.00%' else '-'
             usageInMb = "{:.0f} Kb".format((int(usageInMb))) if usageInMb != '0' else '-'
@@ -242,7 +246,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                 shortOrg = org[:20] + "..."
             else:
                 shortOrg = org
-            table.add_row([shortOrg, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
+            table.add_row([shortOrg, customer, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, discount, total_pending, customer_discounts, total_paid])
 
         # If --csv is not used, print the table.
         print(table)
