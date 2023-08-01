@@ -5,6 +5,8 @@ from chalicelib.processors.FlowDiagramProcessor import sanitize_mermaid_code
 import re
 import pytest
 
+pytestmark = pytest.mark.cleanOutput
+
 
 @pytest.mark.codeInput
 def test_flowdiagram_no_code():
@@ -136,7 +138,7 @@ def test_flowdiagram_sanitize_output_missing_title_identifiers():
 @pytest.mark.cleanOutput
 def test_flowdiagram_sanitize_output_extra_brackets():
     original_mermaid_data = {
-        "data": "```mermaid\ngraph TD;\n    style Start fill:#228B22, stroke:#000000, stroke-width:2px;\n    style InitializeDistances fill:#228B22, stroke:#000000, stroke-width:4px;\n    style InitializePriorityQueue fill:#228B22, stroke:#000000, stroke-width:4px;\n    style WhileLoop fill:#228B22, stroke:#000000, stroke-width:4px;\n    style CheckCurrentDistance fill:#228B22, stroke:#000000, stroke-width:4px;\n    style IterateNeighbors fill:#228B22, stroke:#000000, stroke-width:4px;\n    style UpdateDistance fill:#228B22, stroke:#000000, stroke-width:4px;\n    style PushToQueue fill:#228B22, stroke:#000000, stroke-width:4px;\n    style End fill:#228B22, stroke:#000000, stroke-width:2px;\n\n    Start-->InitializeDistances;\n    InitializeDistances-->InitializePriorityQueue;\n    InitializePriorityQueue-->WhileLoop;\n    WhileLoop-->CheckCurrentDistance;\n    CheckCurrentDistance-->WhileLoop;\n    CheckCurrentDistance-- If Current distance <= distances[current_node] -->IterateNeighbors;\n    IterateNeighbors-->UpdateDistance;\n    UpdateDistance-->PushToQueue;\n    PushToQueue-->WhileLoop;\n    WhileLoop-->End;\n```",
-        'clean': False  # This should be cleaned, but it isn't yet - unclear how OpenAI generated this
+        "data": "This Perl source code contains a subroutine named `_flush`. It takes three parameters: `$self`, `$id`, and `$data`. This subroutine is primarily used to flush the session data to a file. The file path is built using the `path` function, `session_dir` method, `escape_filename` function, and `_suffix` method. It then opens the file, locks it, seeks to the beginning, and truncates it. After that, it sets the file mode, freezes the data to the file handle, and finally closes the file. If any of these operations fail, the subroutine dies with an error message. If all operations are successful, it returns the data.\n\nHere is the control flow graph in mermaid format:\n\n```mermaid\n    graph TD;\n    style Start fill:#228B22, stroke:#000000, stroke-width:2px;\n    style Process fill:#228B22, stroke:#000000, stroke-width:4px;\n    style ErrorPath fill:#B22222, stroke:#000000, stroke-width:2px;\n\n    Start(\"Start: _flush\") --> Process1(\"Build session file path\");\n    Process1 --> Process2(\"Open file\");\n    Process2 --> Process3(\"Lock file\");\n    Process3 --> Process4\(\"Seek to beginning of file\");\n    Process4 --> Process5(\"Truncate file\");\n    Process5 --> Process6(\"Set file mode\");\n    Process6 --> Process7(\"Freeze data to file handle\");\n    Process7 --> Process8(\"Close file\");\n    Process8 --> End(\"End: Return data\");\n\n    Process2 --> ErrorPath1(\"Error: Can't open file\");\n    Process3 --> ErrorPath2(\"Error: Can't lock file\");\n    Process4 --> ErrorPath3(\"Error: Can't seek in file\");\n    Process5 --> ErrorPath4(\"Error: Can't truncate file\");\n    Process7 --> ErrorPath5(\"Error: Can't close file\");\n\n    ErrorPath1 --> End;\n    ErrorPath2 --> End;\n    ErrorPath3 --> End;\n    ErrorPath4 --> End;\n    ErrorPath5 --> End;\n```",
+        'clean': True  # This should NOT be cleaned, as the input parses correctly
     }
     flowdiagram_sanitize_output(original_mermaid_data)

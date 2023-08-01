@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.9.1: August 2nd, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- Change Flow Diagram to be terse (in temperature), use 3.5 Turbo model for improved speed (less rate limit errors) and allow 90% of token buffer for input
+
+### Bug Fixes
+- N/A
+
 ## Version 0.9.0: July 27th, 2023
 
 ### New Features
