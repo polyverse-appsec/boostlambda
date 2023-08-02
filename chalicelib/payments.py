@@ -9,6 +9,7 @@ from . import pvsecret
 from chalicelib.telemetry import capture_metric, InfoMetrics
 import traceback
 import random
+import datetime
 
 customerportal_api_version = API_VERSION  # API version is global for now, not service specific
 print("customerportal_api_version: ", customerportal_api_version)
@@ -244,12 +245,15 @@ def check_customer_account_status(customer):
         'usage_this_month': 0.00,
         'balance_due': 0.00,
         'coupon_type': 'None',
+        'created': "",
         'org': customer.metadata.org,
         'owner': customer.email,
     }
 
     # balance starts at the customer's balance before the current invoice
     account_status['balance_due'] = round(float(customer['balance']) / 100, 2) if 'balance' in customer else 0.00
+
+    account_status['created'] = datetime.datetime.fromtimestamp(customer.created).date()
 
     # if stripe thinks the customer is delinquent (e.g. didn't pay a bill), then we will suspend them
     if customer['delinquent']:
