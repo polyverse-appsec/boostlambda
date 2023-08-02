@@ -259,12 +259,24 @@ def check_customer_account_status(customer):
     # if stripe thinks the customer is delinquent (e.g. didn't pay a bill), then we will suspend them
     if customer['delinquent']:
         account_status['status'] = 'suspended'
-        return account_status
 
     # if no active subscriptions, its a suspended account
     subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id)
     if len(subscriptions['data']) == 0:
         account_status['status'] = 'suspended'
+
+    # just return the due amount and nothing else if suspended
+    if account_status['status'] == 'suspended':
+
+        # for suspended accounts, we want to try and get the balance due so they can pay it (or we can track it)
+        if account_status['balance_due'] == 0.00:
+            all_invoices = stripe.Invoice.list(customer=customer.id)
+
+            # get all open invoices for the suspended account and add it to balance due unless its already in customer balance
+            for invoice in all_invoices['data']:
+                if invoice['status'] == 'open':
+                    account_status['balance_due'] += round(float(invoice['amount_due']) / 100, 2)
+
         return account_status
 
     invoice = stripe_retry(stripe.Invoice.upcoming, customer=customer.id)
