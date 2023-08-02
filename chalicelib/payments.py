@@ -245,6 +245,7 @@ def check_customer_account_status(customer):
         'usage_this_month': 0.00,
         'balance_due': 0.00,
         'coupon_type': 'None',
+        'credit_card_linked': False,
         'created': "",
         'org': customer.metadata.org,
         'owner': customer.email,
@@ -316,6 +317,7 @@ def check_customer_account_status(customer):
 
     # Check if the customer has a default payment method (or manually entered payment)
     elif customer['invoice_settings']['default_payment_method'] or customer['default_source']:
+        account_status['credit_card_linked'] = True
         account_status['status'] = 'paid'
 
     # it seems like a non-zero balance also implies a trial license

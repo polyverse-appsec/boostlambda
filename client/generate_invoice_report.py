@@ -152,12 +152,12 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
                     total_usage_kb += usageInKb
 
-                    customers_list.append([customer.metadata.org,
-                                           f"{customer.email}",
+                    customers_list.append([f"{account_status['org']}",
+                                           f"{account_status['owner']}",
                                            f"{invoice_data.price.metadata.email}",
-                                           f"{datetime.datetime.fromtimestamp(customer.created).date()}",
+                                           f"{account_status['created']}",
                                            f"{account_status['status']}",
-                                           f"{customer.invoice_settings.default_payment_method is not None}",
+                                           f"{account_status['credit_card_linked']}",
                                            f"{plan_name}",
                                            f"{usageInKb}",
                                            f"${invoice_data.amount / 100:.2f}",
