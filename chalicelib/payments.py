@@ -263,10 +263,10 @@ def check_customer_account_status(customer):
     # if no active subscriptions, its a suspended account
     subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id)
     if len(subscriptions['data']) == 0:
-        account_status['status'] = 'suspended'
+        account_status['status'] = 'canceled'
 
-    # just return the due amount and nothing else if suspended
-    if account_status['status'] == 'suspended':
+    # just return the due amount and nothing else if suspended or canceled
+    if account_status['status'] in ['suspended', 'canceled']:
 
         # for suspended accounts, we want to try and get the balance due so they can pay it (or we can track it)
         if account_status['balance_due'] == 0.00:
