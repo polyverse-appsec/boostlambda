@@ -245,14 +245,14 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
             raise ExtendedUnauthorizedError("Please upgrade your client software to use Boost service", reason="UpgradeRequired")
         else:
             print('Error: Please upgrade your client software to use Boost service')
-            return False, {'status': 'unregistered'}
+            return {'enabled': False, 'status': 'unregistered'}
 
     elif organization is None:
         if raiseOnError:
             raise ExtendedUnauthorizedError("Missing account organization from client request", reason="MissingOrganization")
         else:
             print('Error: Missing account organization from client request')
-            return False, {'status': 'unregistered'}
+            return {'enabled': False, 'status': 'unregistered'}
 
     # otherwise check to see if we have a valid github session token
     # parse the request body as json
@@ -272,13 +272,13 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
             raise ExtendedUnauthorizedError("Error: Please login to GitHub and select an Organization to use this service", reason="GitHubAccessNotFound")
         else:
             print(f'Error:{email}: Please login to GitHub and select an Organization to use this service')
-            return False, {'status': 'unregistered'}
+            return {'enabled': False, 'status': 'unregistered'}
 
     # if we got this far, we got a valid email. now check that the email is subscribed
-    validated, account = check_valid_subscriber(email, organization, correlation_id)
+    account = check_valid_subscriber(email, organization, correlation_id)
 
     # if not validated, we need to see if we have a billing error, or if the user is not subscribed
-    if not validated:
+    if not account['enabled']:
         if account and account['status'] == 'suspended':
             if raiseOnError:
                 raise ExtendedAccountBillingError("Billing error: Please check your credit card on file and that you have an active Polyverse Boost subscription")
@@ -296,7 +296,7 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
             else:
                 print(f'Error:{email}: Please subscribe to Polyverse Boost service')
 
-    return validated, account
+    return account
 
 
 # "user-agent": "Boost-VSCE/0.9.7"

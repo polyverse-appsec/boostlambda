@@ -141,16 +141,16 @@ def test_update_usage_large():
     trialNinetyNineDollars = 99 * oneDollarInData
 
     # now check that we correctly flag the customer as active (new account)
-    active, account_status = check_customer_account_status(customer=customer)
-    assert active is True
-    assert account_status == 'active'
+    account_status = check_customer_account_status(customer=customer)
+    assert account_status['enabled'] is True
+    assert account_status['status'] == 'active'
     # Call the updateUsage function with the test inputs
     result = update_usage(subscription_item=subscription_item, bytes=oneDollarInData)  # small amount of data
 
     # now check that we correctly flag the customer as in a trial
-    active, account_status = check_customer_account_status(customer=customer)
-    assert active is True
-    assert account_status == 'trial'
+    account_status = check_customer_account_status(customer=customer)
+    assert account_status['enabled'] is True
+    assert account_status['status'] == 'trial'
     # Call the updateUsage function with the test inputs
     result = update_usage(subscription_item=subscription_item, bytes=trialNinetyNineDollars)
 
@@ -169,9 +169,9 @@ def test_update_usage_large():
     assert customer.balance is not None
 
     # now check that we correctly flag the customer as needing to be charged
-    active, account_status = check_customer_account_status(customer=customer)
-    assert active is False
-    assert account_status == 'expired'
+    account_status = check_customer_account_status(customer=customer)
+    assert account_status['enabled'] is False
+    assert account_status['status'] == 'expired'
 
     # get the pending invoice
     invoice = stripe.Invoice.upcoming(customer=customer.id)
@@ -199,8 +199,8 @@ def test_update_usage_large():
     )
 
     # now check that we correctly flag the customer as needing to be charged
-    active, account_status = check_customer_account_status(customer=customer)
-    if not active:
+    account_status = check_customer_account_status(customer=customer)
+    if not account_status['enabled']:
         payment_method = stripe.PaymentMethod.create(
             type='card',
             card={
@@ -219,10 +219,10 @@ def test_update_usage_large():
         )
 
         # now check that we correctly flag the customer as needing to be charged
-        active, account_status = check_customer_account_status(customer=customer)
-        assert active is True
+        account_status = check_customer_account_status(customer=customer)
+        assert account_status['enabled'] is True
 
-    assert account_status == 'paid'
+    assert account_status['status'] == 'paid'
 
     # remove the card
     stripe.Customer.delete_source(
@@ -234,9 +234,9 @@ def test_update_usage_large():
     customer = stripe.Customer.retrieve(customer.id)
 
     # now check that we correctly flag the customer as needing to be charged
-    active, account_status = check_customer_account_status(customer=customer)
-    assert active is False
-    assert account_status == 'expired'
+    account_status = check_customer_account_status(customer=customer)
+    assert account_status['enabled'] is False
+    assert account_status['status'] == 'expired'
 
 
 def test_check_valid_subscriber():
@@ -244,9 +244,8 @@ def test_check_valid_subscriber():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    valid, sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
-    assert valid is True
-    assert sub is not None
+    sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+    assert sub['enabled'] is True
 
 
 def test_multiple_emails_per_org():
@@ -254,19 +253,16 @@ def test_multiple_emails_per_org():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    valid, sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
-    assert valid is True
-    assert sub is not None
+    sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+    assert sub['enabled'] is True
 
     email = generate_email("@" + org + ".com")
 
-    valid, sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
-    assert valid is True
-    assert sub is not None
+    sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+    assert sub['enabled'] is True
 
     # test a third email
     email = generate_email("@" + org + ".com")
 
-    valid, sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
-    assert valid is True
-    assert sub is not None
+    sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+    assert sub['enabled'] is True

@@ -216,18 +216,18 @@ def customer_portal(event, context):
         # If cw_client has been set, use xray_recorder.capture
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                validated, account = validate_request_lambda(json_data, function_name, correlation_id, False)
+                account = validate_request_lambda(json_data, function_name, correlation_id, False)
         else:
             # Otherwise, call the function directly
             start_time = time.monotonic()
-            validated, account = validate_request_lambda(json_data, function_name, correlation_id, False)
+            account = validate_request_lambda(json_data, function_name, correlation_id, False)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 
         if 'email' in account:
             email = account['email']
 
-        if not validated and account['status'] not in ('suspended', 'expired'):
+        if not account['enabled'] and account['status'] not in ('suspended', 'expired'):
             status = account['status']
             session = None
             print(f'{status}: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) No Customer Portal generated')
@@ -268,19 +268,26 @@ def customer_portal(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
-    json_obj = {}
     if session is None:
-        json_obj["portal_url"] = None
+        account["portal_url"] = None
+
+    # if this user is NOT the owner of the account, don't provide an account mgmt uri
+    elif account["email"] != account["owner"]:
+        # allow any polyverse user to access polyverse account data
+        if account["email"].endswith(("@polyverse.io", "@polytest.ai", "@polyverse.com")):
+            account["portal_url"] = session.url
+        else:
+            account["portal_url"] = None
+
     else:
-        json_obj["portal_url"] = session.url
-    json_obj["status"] = account['status']
+        account["portal_url"] = session.url
 
     # Now return the json object in the response
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json',
                     'X-API-Version': customerportal_api_version},
-        'body': json.dumps(json_obj)
+        'body': json.dumps(account)
     }
 
 

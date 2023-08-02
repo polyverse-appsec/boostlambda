@@ -9,6 +9,8 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Enhancements
+- Customer Status API (customer_portal) returns full current account info (balance, credit remaining, etc.)
+- Ensure only Account Owners can access the account billing portal (e.g. to change or access credit card info)
 - Change Flow Diagram to be terse (in temperature), use 3.5 Turbo model for improved speed (less rate limit errors) and allow 90% of token buffer for input
 
 ### Bug Fixes

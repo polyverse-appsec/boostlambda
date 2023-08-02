@@ -39,10 +39,10 @@ def process_request(event, function, api_version):
         # Capture the duration of the validation step
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                _, account = validate_request_lambda(json_data, function.__name__, correlation_id)
+                account = validate_request_lambda(json_data, function.__name__, correlation_id)
         else:
             start_time = time.monotonic()
-            _, account = validate_request_lambda(json_data, function.__name__, correlation_id)
+            account = validate_request_lambda(json_data, function.__name__, correlation_id)
             end_time = time.monotonic()
             print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
 

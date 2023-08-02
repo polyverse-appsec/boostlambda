@@ -237,42 +237,94 @@ def update_usage_for_text(account, bytes_of_text):
 #   - paid: the customer has a payment method
 #   - active: the customer has no usage, no invoice, no balance, no payment method
 def check_customer_account_status(customer):
+    account_status = {
+        'enabled': False,
+        'status': 'active',
+        'trial_remaining': 0.00,
+        'usage_this_month': 0.00,
+        'balance_due': 0.00,
+        'coupon_type': 'None',
+        'org': customer.metadata.org,
+        'owner': customer.email,
+    }
 
-    # if stripe thinks the customer is delinquent, then we will suspend them
+    # balance starts at the customer's balance before the current invoice
+    account_status['balance_due'] = round(float(customer['balance']) / 100, 2) if 'balance' in customer else 0.00
+
+    # if stripe thinks the customer is delinquent (e.g. didn't pay a bill), then we will suspend them
     if customer['delinquent']:
-        return False, "suspended"
+        account_status['status'] = 'suspended'
+        return account_status
 
     # if no active subscriptions, its a suspended account
     subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id)
     if len(subscriptions['data']) == 0:
-        return False, "suspended"
+        account_status['status'] = 'suspended'
+        return account_status
 
     invoice = stripe_retry(stripe.Invoice.upcoming, customer=customer.id)
 
+    # no usage, no invoice, no balance, no payment method, so we'll assume new customer
+    account_status['status'] = 'active'
+    account_status['enabled'] = True
+
+    # we use basic total usage on current pending invoice as usage for now
+    # this doesn't report past usage - which would require crawling older invoices
+    account_status['usage_this_month'] = round(invoice.subtotal / 100, 2)
+
+    # start with any data from the pending/upcoming invoice
+    invoice_coupon = invoice['discount']['coupon']['amount_off'] if invoice['discount'] and invoice['discount']['coupon'] and invoice['discount']['coupon']['amount_off'] else 0.00
+
+    # add any coupons tied to the customer (not the invoice)
+    customer_coupon = customer['discount']['coupon']['amount_off'] if customer['discount'] and customer['discount']['coupon'] and customer['discount']['coupon']['amount_off'] else 0.00
+
+    pending_due = round(float(invoice.total) / 100, 2)
+    pending_discount = pending_due if customer_coupon >= pending_due else round(float(customer_coupon / 100), 2)
+
+    # get all combined credits
+    open_credit = round(float(invoice_coupon + customer_coupon) / 100, 2)
+    # subtract new usage this month
+    open_credit -= account_status['usage_this_month'] if account_status['usage_this_month'] <= open_credit else open_credit
+    account_status['trial_remaining'] = open_credit
+    account_status['trial_remaining'] = round(account_status['trial_remaining'], 2)
+
+    # calculate how much usage they have currently that is (discounted) and subtract it from the credit
+    previous_discount = round(float(invoice.total_discount_amounts[0].amount) / 100, 2) if (invoice and invoice.total_discount_amounts) else 0.00
+    account_status['discounted_usage'] = pending_discount + previous_discount
+
+    invoice_due = round(invoice.amount_due / 100, 2)
+    pending_due = invoice_due - customer_coupon if invoice_due > customer_coupon else 0.00
+    if pending_due > 0:
+        pending_due = pending_due
+
+    account_status['balance_due'] = account_status['balance_due'] + pending_due
+
+    # start with any coupon from customer since that is primary coupon
+    account_status['coupon_type'] = customer['discount']['coupon']['name'] if customer['discount'] and customer['discount']['coupon'] and customer['discount']['coupon']['name'] else "None"
+
+    # if there's no coupon on customer, then use the invoice coupon if it exists
+    if account_status['coupon_type'] == "None":
+        account_status['coupon_type'] = invoice['discount']['coupon']['name'] if invoice['discount'] and invoice['discount']['coupon'] and invoice['discount']['coupon']['name'] else account_status['coupon_type']
+
     # We're going to treat polyverse accounts as paid, even if no credit card on file
     if customer['email'].endswith(("@polyverse.io", "@polytest.ai", "@polyverse.com")):
-        return True, "paid"
+        account_status['status'] = 'paid'
 
     # Check if the customer has a default payment method (or manually entered payment)
-    if customer['invoice_settings']['default_payment_method'] or customer['default_source']:
-        return True, "paid"
+    elif customer['invoice_settings']['default_payment_method'] or customer['default_source']:
+        account_status['status'] = 'paid'
 
     # it seems like a non-zero balance also implies a trial license
     # we return false to notify that trial has expired (e.g. all discounts used up, and amount due)
-    open_due = customer['balance'] + invoice.amount_due
-    if open_due > 0:
-        open_credit = customer['discount']['coupon']['amount_off'] if \
-            customer['discount'] and customer['discount']['coupon'] and \
-            customer['discount']['coupon']['amount_off'] else 0
-        if open_due >= open_credit:
-            return False, "expired"
+    elif account_status['balance_due'] >= 0 and account_status['trial_remaining'] <= 0.00:
+        account_status['status'] = 'expired'
+        account_status['enabled'] = False
 
     # if there is active trial usage, then we will assume they are still in trial
-    if invoice.total_discount_amounts and invoice.total_discount_amounts[0].amount > 0:
-        return True, "trial"
+    elif account_status['trial_remaining'] > 0.00 and account_status['usage_this_month'] > 0.00:
+        account_status['status'] = 'trial'
 
-    # no usage, no invoice, no balance, no payment method, so we'll assume new customer
-    return True, "active"
+    return account_status
 
 
 # if we fail validation, caller can stop call. if we pass validation, caller can continue
@@ -292,11 +344,13 @@ def check_valid_subscriber(email, organization, correlation_id):
         return False, None
 
     # return a dict with the customer, subscription, and subscription_item
-    active, account_status = check_customer_account_status(customer=customer)
-    account = {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
-    account['status'] = account_status
+    account_status = check_customer_account_status(customer=customer)
+    account_status["customer"] = customer
+    account_status["subscription"] = subscription
+    account_status["subscription_item"] = subscription_item
+    account_status["email"] = email
 
-    return active, account
+    return account_status
 
 
 def customer_portal_url(account):
