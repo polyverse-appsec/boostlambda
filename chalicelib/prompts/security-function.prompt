@@ -1,9 +1,10 @@
 Analyze the below code for security bugs - including buffer overruns, underruns, stack overflow, poor cipher or encryption algorithms, and any bugs that can lead to MITM, escalation of privilege, information disclosure, bypassing access, authorization or authentication.
 
-For each security issue, indicate a severity on a ten point scale, ten being the worst.
-Explain the security issue, including how security of the app, server or or system is compromised. If possible, suggest a solution.
-
-For each vulnerability and solution, provide web link for more education and background.
+For each security issue, please:
+ * Indicate a security severity on a ten point scale, ten being the worst - based on a scale of impact to customer, product and code security, and stability.
+ * Type of Issue - Use the OWASP or STRIDE vulnerabiluty or threat categorization model, or other recommended model if noted below.
+ * Explain the security issue, including how security of the app, server or or system is compromised. Include online web resource links about the type of issue when possible.
+ * Recommend a better approach or solutions whenever possible. Also include specific online web resources and links when possible.
 
 Please be very concise
 
