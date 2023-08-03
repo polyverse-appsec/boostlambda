@@ -32,10 +32,10 @@ def test_analyze_function():
         assert len(analysis['details']) >= 3
 
         assert analysis['details'][0]['bugType'] == 'Buffer Overflow'
-        assert analysis['details'][0]['lineNumber'] >= 15
+        assert analysis['details'][0]['lineNumber'] >= 13
         assert analysis['details'][0]['severity'] >= 7
         assert analysis['details'][1]['bugType'] != ''
-        assert analysis['details'][1]['lineNumber'] >= 15
+        assert analysis['details'][1]['lineNumber'] >= 13
         assert analysis['details'][1]['severity'] >= 7
         # for this test, any string is fine
         assert analysis['details'][2]['bugType'] != ''

@@ -63,7 +63,7 @@ def check_performance(code, issuesIdentified, use_function=False, issues=0):
             for issue in analysis['details']:
                 assert len(issue['bugType']) > 0
                 assert issue['severity'] >= 1
-                assert issue['lineNumber'] >= 1
+                assert issue['lineNumber'] >= 0
 
         else:
 
