@@ -92,9 +92,18 @@ class GenericProcessor:
 
         print(f"{self.__class__.__name__}_api_version: ", self.api_version)
 
-        self.prompts = self.load_prompts()
+        # early load the prompts to catch issues as soon as possible
+        self.prompts = None
+        self.load_prompts()
 
     def load_prompts(self):
+
+        # if prompts already loaded, do nothing
+        if (self.prompts is not None):
+            print(f"{self.__class__.__name__}: Prompts already loaded; skipping refresh of prompts")
+            return
+
+        # otherwise load the prompts
         promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
         prompts = []
 
@@ -130,7 +139,7 @@ class GenericProcessor:
                     with open(file, 'r') as f:
                         prompts[prompt_key[0]].append(f.read())
 
-        return prompts
+        self.prompts = prompts
 
     def optimize_content(self, this_messages: List[dict[str, any]], data) -> Tuple[List[dict[str, any]], int]:
         # Initialize variables
@@ -692,6 +701,8 @@ class GenericProcessor:
         return params, prompt_format_args
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
+
+        self.load_prompts()
 
         email = account['email']
         # {"customer": customer, "subscription": subscription, "subscription_item": subscription_item, "email": email}
