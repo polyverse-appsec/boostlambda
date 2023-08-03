@@ -12,6 +12,7 @@ Polyverse Boost Cloud Service
 - Customer Status API (customer_portal) returns full current account info (balance, credit remaining, etc.)
 - Ensure only Account Owners can access the account billing portal (e.g. to change or access credit card info)
 - Improvements to Performance and Security analysis including online links and better vulnerability categorization.
+- Provide regression test cases to help reproduce suspected customer security or code bugs.
 - Significant expansion of Test Case generation - including fuzzing, performance, test, regression, platform, etc.
 - Change Flow Diagram to be terse (in temperature), use 3.5 Turbo model for improved speed (less rate limit errors) and allow 90% of token buffer for input
 
