@@ -1,5 +1,14 @@
 ### Generate {language} test code from the code shown here, using the {framework} for {language}. For test cases and methodology used, provide web link for more education and background.
 
+For test generation, please generate test cases for:
+* Unit Test Coverage - testing each function independently
+* Negative Test Cases - testing invalid inputs, error conditions, and known faults in the code
+* Fuzzing Test Cases - generate random, invalid and unexpected input
+* Performance test cases - generate test cases that measure how long the api takes to round
+* Stress or repeated call test cases - if appropriate, generate test cases that call the same function multiple times
+* Platform specific test cases - identify test cases that can help identify issues on different platforms (Linux, Windows, Mac, processor architecture, etc.)
+* Regression test cases - for known defects in the below code, provide regression test cases for each bug identified
+
 Use the following architectural guidelines when performing your test generation - including for consistency with or conflicts between the testing approach and the guidelines:
 {guidelines}
 
