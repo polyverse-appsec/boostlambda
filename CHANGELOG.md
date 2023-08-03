@@ -6,7 +6,7 @@ Polyverse Boost Cloud Service
 ## Version 0.9.1: August 2nd, 2023
 
 ### New Features
-- N/A
+- Processors can reload prompts at runtime - enabling dynamic prompt updates
 
 ### Enhancements
 - Customer Status API (customer_portal) returns full current account info (balance, credit remaining, etc.)

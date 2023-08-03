@@ -98,9 +98,9 @@ class GenericProcessor:
 
     def load_prompts(self):
 
-        # if prompts already loaded, do nothing
-        if (self.prompts is not None):
-            print(f"{self.__class__.__name__}: Prompts already loaded; skipping refresh of prompts")
+        # if prompts already loaded and file timestamps have not changed, do nothing
+        if self.prompts is not None and not self.check_prompt_files_changed():
+            print(f"{self.__class__.__name__}: Prompts already loaded and files have not changed; skipping refresh of prompts")
             return
 
         # otherwise load the prompts
@@ -140,6 +140,37 @@ class GenericProcessor:
                         prompts[prompt_key[0]].append(f.read())
 
         self.prompts = prompts
+
+        # Store the last modification timestamps in the cache
+        self.cache_prompt_files_timestamps()
+
+    def check_prompt_files_changed(self):
+        # Compare the current timestamps with the cached timestamps
+        promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
+        files_changed = False
+        for prompt_filename in self.prompt_filenames:
+            file_path = os.path.join(promptdir, prompt_filename[1])
+            current_timestamp = os.path.getmtime(file_path)
+            if file_path not in self.prompt_files_timestamps:
+                files_changed = True
+                print(f"File '{prompt_filename[1]}' has changed. New timestamp: {time.strftime('%Y-%m-%d %H:%M', time.localtime(current_timestamp))}")
+            elif self.prompt_files_timestamps[file_path] != current_timestamp:
+                files_changed = True
+                old_timestamp = self.prompt_files_timestamps[file_path]
+                time_difference = (current_timestamp - old_timestamp) / 60  # Difference in minutes
+                print(f"File '{prompt_filename[1]}' has changed. New timestamp: {time.strftime('%Y-%m-%d %H:%M', time.localtime(current_timestamp))}. Time difference: {time_difference:.2f} minutes.")
+            # Update the timestamp in the cache
+            self.prompt_files_timestamps[file_path] = current_timestamp
+
+        return files_changed
+
+    def cache_prompt_files_timestamps(self):
+        # Store the last modification timestamps in the cache
+        promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
+        self.prompt_files_timestamps = {}
+        for prompt_filename in self.prompt_filenames:
+            file_path = os.path.join(promptdir, prompt_filename[1])
+            self.prompt_files_timestamps[file_path] = os.path.getmtime(file_path)
 
     def optimize_content(self, this_messages: List[dict[str, any]], data) -> Tuple[List[dict[str, any]], int]:
         # Initialize variables
