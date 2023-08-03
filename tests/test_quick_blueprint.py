@@ -47,8 +47,9 @@ def test_quick_blueprint():
             'version': client_version
         }
 
+        draft_request_body = request_body.copy()
         response = client.lambda_.invoke(
-            'draft-blueprint', request_body)
+            'draft-blueprint', draft_request_body)
 
         assert response.payload['statusCode'] == 200
 
