@@ -386,7 +386,7 @@ class GenericProcessor:
     # also returns a list of prompts to process - where each prompt includes the prompt text, and the max output tokens for that prompt
     def build_prompts_from_input(self, data, params, prompt_format_args, function_name) -> Tuple[int, List[Tuple[List[dict[str, any]], int]], int]:
 
-        max_tokens = max_tokens_for_model(data.get('model'))
+        max_tokens = max_tokens_for_model(data.get('model') if 'model' in data else params['model'])
         # get the max input buffer for this function if we are tuning tokens
         if max_tokens != 0:
             input_token_buffer = self.calculate_input_token_buffer(max_tokens)

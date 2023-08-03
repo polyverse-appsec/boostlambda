@@ -17,7 +17,7 @@ Polyverse Boost Cloud Service
 - Change Flow Diagram to be terse (in temperature), use 3.5 Turbo model for improved speed (less rate limit errors) and allow 90% of token buffer for input
 
 ### Bug Fixes
-- N/A
+- Fix max token calculation for non-default non-4.0 GPT models
 
 ## Version 0.9.0: July 27th, 2023
 
