@@ -237,7 +237,7 @@ def update_usage_for_text(account, bytes_of_text):
 #   - trial: the customer does not have a payment method, and has pending invoice = 0
 #   - paid: the customer has a payment method
 #   - active: the customer has no usage, no invoice, no balance, no payment method
-def check_customer_account_status(customer):
+def check_customer_account_status(customer, deep=False):
     account_status = {
         'enabled': False,
         'status': 'active',
@@ -249,6 +249,8 @@ def check_customer_account_status(customer):
         'created': "",
         'org': customer.metadata.org,
         'owner': customer.email,
+        'billing_threshold': 0.00,
+        'plan': 'None',
     }
 
     # balance starts at the customer's balance before the current invoice
@@ -256,13 +258,39 @@ def check_customer_account_status(customer):
 
     account_status['created'] = str(datetime.datetime.fromtimestamp(customer.created).date())
 
+    # calculate all paid invoices
+    if deep:
+        paid_invoices = stripe_retry(stripe.Invoice.list, customer=customer.id, status='paid')
+        customer_paid_invoices = round(float(sum([inv.amount_paid for inv in paid_invoices])) / 100, 2)
+        account_status['balance_paid'] = customer_paid_invoices
+
+        # tally the number of unique users in the org
+        open_invoices = stripe_retry(stripe.Invoice.list, customer=customer.id, status='open')
+
+        targetInvoices = list(paid_invoices) + list(open_invoices)
+        users = set()
+        for invoice in targetInvoices:
+            for invoice_data in invoice.lines.data:
+                users.add(invoice_data.price.metadata.email)
+        account_status['users'] = list(users)
+    else:
+        account_status['users']: []
+
+    price_id = "boost_per_kb_launch"  # new Boost pricing on combined input+output only
+    original_price = stripe_retry(stripe.Price.retrieve, price_id, expand=['tiers'])
+
+    price_per_user_per_month = round(float(original_price['tiers'][0]['unit_amount'] / 100), 2)
+    price_per_kb_unit = round(float(original_price['tiers'][1]['unit_amount'] / 100), 2)
+    account_status['plan'] = f"Boost Monthly Metered: ${price_per_user_per_month:.2f} per user + ${price_per_kb_unit:.2f} per kb"
+
+    subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id)
+
     # if stripe thinks the customer is delinquent (e.g. didn't pay a bill), then we will suspend them
     if customer['delinquent']:
         account_status['status'] = 'suspended'
 
     # if no active subscriptions, its a suspended account
-    subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id)
-    if len(subscriptions['data']) == 0:
+    elif len(subscriptions['data']) == 0:
         account_status['status'] = 'canceled'
 
     # just return the due amount and nothing else if suspended or canceled
@@ -270,7 +298,7 @@ def check_customer_account_status(customer):
 
         # for suspended accounts, we want to try and get the balance due so they can pay it (or we can track it)
         if account_status['balance_due'] == 0.00:
-            all_invoices = stripe.Invoice.list(customer=customer.id)
+            all_invoices = stripe_retry(stripe.Invoice.list, customer=customer.id)
 
             # get all open invoices for the suspended account and add it to balance due unless its already in customer balance
             for invoice in all_invoices['data']:
@@ -279,7 +307,15 @@ def check_customer_account_status(customer):
 
         return account_status
 
+    # let customer know the threshold for balance due billing threshold
+    account_status['billing_threshold'] = round(float(subscriptions['data'][0]['billing_thresholds']['amount_gte']) / 100, 2) if 'billing_thresholds' in subscriptions['data'][0] else 0.00
+
     invoice = stripe_retry(stripe.Invoice.upcoming, customer=customer.id)
+
+    if deep:
+        for invoice_data in invoice.lines.data:
+            users.add(invoice_data.price.metadata.email)
+        account_status['users'] = list(users)
 
     # no usage, no invoice, no balance, no payment method, so we'll assume new customer
     account_status['status'] = 'active'
@@ -346,23 +382,23 @@ def check_customer_account_status(customer):
 
 
 # if we fail validation, caller can stop call. if we pass validation, caller can continue
-def check_valid_subscriber(email, organization, correlation_id):
+def check_valid_subscriber(email, organization, correlation_id, deep=False):
 
     if (email is None):
         raise Exception("Email is required to create a subscription account")
 
     customer = check_create_customer(email=email, org=organization, correlation_id=correlation_id)
     if not customer:
-        return False, None
+        return {'enabled': False, 'status': 'unregistered'}
     subscription = check_create_subscription(customer=customer, email=email)
     if not subscription:
-        return False, None
+        return {'enabled': False, 'status': 'unregistered'}
     subscription_item = check_create_subscription_item(subscription=subscription, email=email)
     if not subscription_item:
-        return False, None
+        return {'enabled': False, 'status': 'unregistered'}
 
     # return a dict with the customer, subscription, and subscription_item
-    account_status = check_customer_account_status(customer=customer)
+    account_status = check_customer_account_status(customer=customer, deep=deep)
     account_status["customer"] = customer
     account_status["subscription"] = subscription
     account_status["subscription_item"] = subscription_item

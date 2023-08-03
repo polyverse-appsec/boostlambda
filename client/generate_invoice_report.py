@@ -87,23 +87,25 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                 #     print(f"Non-Boost Customer: {customer.email}")
                 continue
 
+            account_status = check_customer_account_status(customer, True)
+
             # In your 'Processing customer data' loop, add a check for the user email
-            if user and user != "*" and user not in customer.email:
+            if user and user != "*" and user not in account_status['owner']:
                 print("-", end="")
                 continue
 
             # exclude any customer with test email in email address, unless the command line argument "showTest" is specified
-            if ('test-email-' in customer.email) and not show_test:
+            if ('test-email-' in account_status['owner']) and not show_test:
                 if debug:
-                    print(f"Test Account: {customer.email}")
+                    print(f"Test Account: {account_status['owner']}")
 
                 print("-", end="")
                 continue
 
             # exclude polyverse accounts (dev and test) unless specifically requested
-            if ('polyverse' in customer.email or 'polytest.ai' in customer.email) and not includePolyverse:
+            if ('polyverse' in account_status['owner'] or 'polytest.ai' in account_status['owner']) and not includePolyverse:
                 if debug:
-                    print(f"Test Account: {customer.email}")
+                    print(f"Test Account: {account_status['owner']}")
                 print("-", end="")
                 continue
 
@@ -111,7 +113,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
             upcoming_invoice = stripe.Invoice.upcoming(customer=customer.id) if \
                 len(stripe.Subscription.list(customer=customer.id)['data']) > 0 \
-                and not customer.delinquent else None
+                and account_status['status'] not in ['suspended', 'canceled'] else None
 
             past_invoices = stripe.Invoice.list(customer=customer.id, status='paid')
             open_invoices = stripe.Invoice.list(customer=customer.id, status='open')
@@ -120,10 +122,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
 
             all_invoices = past_invoices.data + open_invoices.data + void_invoices.data + draft_invoices.data  # + ([upcoming_invoice] if upcoming_invoice else [])
             if debug:
-                print(f"{customer.email} has {len(all_invoices)} invoices")
-
-            if customer.delinquent and debug:
-                print(f"\nSkipping reporting for Delinquent customer: {customer.email}\n")
+                print(f"{account_status['owner']} has {len(all_invoices)} invoices")
 
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
             customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
@@ -133,15 +132,13 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
                 print(customer)
                 print(upcoming_invoice if upcoming_invoice else "No upcoming invoice")
 
-            account_status = check_customer_account_status(customer)
-
             thisCustomerUsage = 0
             targetInvoices = ([upcoming_invoice] if upcoming_invoice else []) + list(past_invoices) + list(open_invoices)
 
             total_pending_invoices += upcoming_invoice.amount_due if upcoming_invoice else 0
             total_paid_invoices += customer_paid_invoices
             total_customer_discounts += customer_discounts
-            total_suspended_customers += 1 if customer.delinquent else 0
+            total_suspended_customers += 1 if account_status['status'] in ['suspended', 'canceled'] else 0
             if customer.invoice_settings.default_payment_method:
                 total_paying_customers += 1
 

@@ -268,6 +268,10 @@ def customer_portal(event, context):
             'body': json.dumps({"error": str(e)})
         }
 
+    del account['customer']
+    del account['subscription']
+    del account['subscription_item']
+
     if session is None:
         account["portal_url"] = None
 

@@ -275,7 +275,7 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
             return {'enabled': False, 'status': 'unregistered'}
 
     # if we got this far, we got a valid email. now check that the email is subscribed
-    account = check_valid_subscriber(email, organization, correlation_id)
+    account = check_valid_subscriber(email, organization, correlation_id, not raiseOnError)
 
     # if not validated, we need to see if we have a billing error, or if the user is not subscribed
     if not account['enabled']:
