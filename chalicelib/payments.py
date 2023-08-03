@@ -254,7 +254,7 @@ def check_customer_account_status(customer):
     # balance starts at the customer's balance before the current invoice
     account_status['balance_due'] = round(float(customer['balance']) / 100, 2) if 'balance' in customer else 0.00
 
-    account_status['created'] = datetime.datetime.fromtimestamp(customer.created).date()
+    account_status['created'] = str(datetime.datetime.fromtimestamp(customer.created).date())
 
     # if stripe thinks the customer is delinquent (e.g. didn't pay a bill), then we will suspend them
     if customer['delinquent']:
