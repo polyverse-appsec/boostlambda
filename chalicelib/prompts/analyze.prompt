@@ -3,8 +3,6 @@ Analyze the below code for bugs, including security bugs, race conditions, timin
 For each bug, indicate a severity on a ten point scale, ten being the worse.
 Explain the bug and if possible, suggest a solution. Provide online web links for more education and background on vulnerability and solution.
 
-Whenever possible, please provide a regression test case that can trigger the suspected bug, or sample code that could help reproduce the issue.
-
 Use the following architectural guidelines when performing your bug and security analysis - including for consistency with or conflicts between the code and security and reliability practices in the guidelines:
 {guidelines}
 
