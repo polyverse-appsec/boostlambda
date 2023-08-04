@@ -8,6 +8,7 @@ import datetime
 import re
 import csv
 import traceback
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 
 # Determine the parent directory's path.
@@ -306,6 +307,12 @@ if __name__ == "__main__":
 
     try:
         main(args.showTest, args.debug, args.dev, args.printAll, args.csv, args.user, args.includePolyverse)
+    except ClientError:
+        print('Network connection error. Please check connection and try again')
+        sys.exit(1)
+    except EndpointConnectionError:
+        print('Network connection error. Please check connection and try again')
+        sys.exit(1)
     except KeyboardInterrupt:
         print('Canceling...')
         sys.exit(0)
