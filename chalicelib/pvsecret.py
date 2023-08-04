@@ -1,7 +1,7 @@
 import json
 import boto3
 import os
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 secret_json = None
 
@@ -25,6 +25,8 @@ def get_secrets():
         get_secret_value_response = client.get_secret_value(
             SecretId=secret_name
         )
+    except EndpointConnectionError as e:
+        raise e
     except ClientError as e:
         # For a list of exceptions thrown, see
         # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
