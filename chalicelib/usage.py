@@ -26,8 +26,9 @@ class OpenAIDefaults:
     boost_default_gpt_model = boost_model_gpt4_current
 
     # tokenizer encodings
-    encoding_gpt = "cl100k_base"  # used for gpt4
+    encoding_gpt4_and_gpt35 = "cl100k_base"  # used for gpt4, 3.5 turbo
     encoding_codex = "p50k_base"  # used for codex/davinci
+    encoding_gpt3 = "gpt2"  # used for gpt3
 
     # temperature settings
     temperature_terse_and_accurate = 0.1
@@ -85,13 +86,16 @@ cost_codex_per_token = 0.02 / 1000
 
 cost_codex_cheap_per_token = 0.0004 / 1000
 
+encoding_calculated_variation_buffer = 1.025  # 2.5% buffer for variation in encoding size
+
 try:
-    # text_encoding = tiktoken.encoding_for_model(OpenAIDefaults.boost_default_gpt_model)
-    text_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt)
+    text_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt4_and_gpt35)
     code_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_codex)
+    original_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt3)
 except Exception as error:
     text_encoding = None
     code_encoding = None
+    original_encoding = None
     print("Failed to load OpenAI encodings due to error: " + str(error))
     pass
 
@@ -100,50 +104,91 @@ if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
     print("Loaded OpenAI encodings")
 
 
-def num_tokens_from_string(string: str) -> Tuple[int, List[int]]:
-    # Returns the number of tokens in a text string, and the encoded string
-    if ((OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4) or (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4_current)):
-        if (code_encoding is None):
-            raise Exception("No encoding available")
+# Returns the number of tokens in a text string, and the encoded string
+def num_tokens_from_string(string: str, model=OpenAIDefaults.boost_default_gpt_model) -> Tuple[int, List[int]]:
+    # oldest models from 3.0 or earlier
+    if model in [OpenAIDefaults.boost_model_cheap_fast_generic]:
+        if (original_encoding is None):
+            raise Exception("No original encoding available")
+
+        tokenized = original_encoding.encode(string)
+
+    # code focused models
+    elif model in [
+            OpenAIDefaults.boost_model_codex,
+            OpenAIDefaults.boost_model_gpt35_generic]:
+        if code_encoding is None:
+            raise Exception("No code encoding available")
 
         tokenized = code_encoding.encode(string)
-        num_tokens = len(tokenized)
-        return num_tokens, tokenized
 
-    # else we assume we are using gpt3.5 or older
-    if (text_encoding is None):
-        raise Exception("No encoding available")
+    else:
+        if model not in [
+                OpenAIDefaults.boost_model_gpt4,
+                OpenAIDefaults.boost_model_gpt4_current,
+                OpenAIDefaults.boost_model_gpt35_cheap_chat,
+                OpenAIDefaults.boost_model_gpt35_generic,
+                OpenAIDefaults.boost_model_gpt4_32k]:
+            print(f"Using default Token Encoding due to known model: {model}")
+
+        # else we assume we are using gpt3.5 or newer
+        if text_encoding is None:
+            raise Exception("No text encoding available")
 
     tokenized = text_encoding.encode(string)
+
     num_tokens = len(tokenized)
+
+    # to accomodate OpenAI engine variation in encoding - we'll add 2.5%
+    num_tokens = round(encoding_calculated_variation_buffer * float(num_tokens))
+
     return num_tokens, tokenized
 
 
-def decode_string_from_input(input: list[int]) -> str:
-    # Returns the number of tokens in a text string, and the encoded string
-    if ((OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4) or (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4_current)):
-        if (code_encoding is None):
-            raise Exception("No encoding available")
+# Returns the decoded string from an array of tokens based on a specific model
+def decode_string_from_input(input: list[int], model=OpenAIDefaults.boost_default_gpt_model) -> str:
+    if model in [OpenAIDefaults.boost_model_cheap_fast_generic]:
+        if (original_encoding is None):
+            raise Exception("No original encoding available")
+
+        output = original_encoding.decode(input)
+        return output
+
+    # code focused models
+    elif model in [
+            OpenAIDefaults.boost_model_codex,
+            OpenAIDefaults.boost_model_gpt35_generic]:
+        if code_encoding is None:
+            raise Exception("No code encoding available")
 
         output = code_encoding.decode(input)
         return output
 
-    # else we assume we are using gpt3.5 or older
-    if (text_encoding is None):
-        raise Exception("No encoding available")
+    if model not in [
+            OpenAIDefaults.boost_model_gpt4,
+            OpenAIDefaults.boost_model_gpt4_current,
+            OpenAIDefaults.boost_model_gpt35_cheap_chat,
+            OpenAIDefaults.boost_model_gpt35_generic,
+            OpenAIDefaults.boost_model_gpt4_32k]:
+        print(f"Using default Token Encoding due to known model: {model}")
+
+    # else we assume we are using gpt3.5 or newer
+    if text_encoding is None:
+        raise Exception("No text encoding available")
 
     output = text_encoding.decode(input)
     return output
 
 
-def get_openai_usage_per_string(payload: str, input: bool) -> Tuple[int, float]:
-    token_count, _ = num_tokens_from_string(payload)
-    return get_openai_usage_per_token(token_count, input)
+def get_openai_usage_per_string(payload: str, input: bool, model=OpenAIDefaults.boost_default_gpt_model) -> Tuple[int, float]:
+    token_count, _ = num_tokens_from_string(payload, model)
+
+    return get_openai_usage_per_token(token_count, input, model)
 
 
-def get_openai_usage_per_token(num_tokens: int, input: bool) -> Tuple[int, float]:
+def get_openai_usage_per_token(num_tokens: int, input: bool, model=OpenAIDefaults.boost_default_gpt_model) -> Tuple[int, float]:
 
-    if ((OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4) or (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt4_current)):
+    if model in [OpenAIDefaults.boost_model_gpt4, OpenAIDefaults.boost_model_gpt4_current]:
         if (input):
             if (num_tokens < OpenAIDefaults.boost_max_tokens_gpt_4):
                 cost_per_token = cost_gpt4_per_prompt_token_lt_8000
@@ -154,11 +199,11 @@ def get_openai_usage_per_token(num_tokens: int, input: bool) -> Tuple[int, float
                 cost_per_token = cost_gpt4_per_completion_token_lt_8000
             else:
                 cost_per_token = cost_gpt4_per_completion_token_lt_32000
-    elif (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt35_generic):
+    elif model == OpenAIDefaults.boost_model_gpt35_generic:
         cost_per_token = cost_codex_per_token
-    elif (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_gpt35_cheap_chat):
+    elif model == OpenAIDefaults.boost_model_gpt35_cheap_chat:
         cost_per_token = cost_gpt35_per_token
-    elif (OpenAIDefaults.boost_default_gpt_model == OpenAIDefaults.boost_model_cheap_fast_generic):
+    elif model == OpenAIDefaults.boost_model_cheap_fast_generic:
         cost_per_token = cost_codex_cheap_per_token
     else:
         cost_per_token = cost_codex_per_token

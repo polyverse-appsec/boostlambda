@@ -19,8 +19,14 @@ from .. import pvsecret
 
 from chalicelib.markdown import markdown_emphasize
 from chalicelib.telemetry import capture_metric, InfoMetrics, CostMetrics
-from chalicelib.usage import (get_openai_usage_per_token, get_openai_usage_per_string, max_tokens_for_model,
-                              get_boost_cost, OpenAIDefaults, num_tokens_from_string, decode_string_from_input)
+from chalicelib.usage import (
+    get_openai_usage_per_token,
+    get_openai_usage_per_string,
+    max_tokens_for_model,
+    get_boost_cost,
+    OpenAIDefaults,
+    num_tokens_from_string,
+    decode_string_from_input)
 from chalicelib.payments import update_usage_for_text
 
 key_ChunkedInputs = 'chunked_inputs'
@@ -180,7 +186,7 @@ class GenericProcessor:
         # Determine the total number of tokens in system messages and collect system messages
         for message in this_messages:
             if 'content' in message and message['role'] == 'system':
-                token_count, _ = num_tokens_from_string(message['content'])
+                token_count, _ = num_tokens_from_string(message['content'], data.get('model'))
                 total_system_tokens += token_count
                 system_messages.append(message)
 
@@ -209,7 +215,7 @@ class GenericProcessor:
                 continue
 
             if message['role'] == 'system':
-                sys_token_count, sys_tokens = num_tokens_from_string(message['content'])
+                sys_token_count, sys_tokens = num_tokens_from_string(message['content'], data.get('model'))
                 # Allocate tokens to this message proportionally to its original size
                 proportion = sys_token_count / total_system_tokens
                 min_quota = max(min_token_quota, int(total_system_buffer * min_quota_percent))
@@ -217,7 +223,7 @@ class GenericProcessor:
 
                 if sys_token_count > retained_tokens:
                     truncated_system_messages += 1
-                    message['content'] = decode_string_from_input(sys_tokens[:retained_tokens])
+                    message['content'] = decode_string_from_input(sys_tokens[:retained_tokens], data.get('model'))
                     truncated += sys_token_count - retained_tokens
                     discard_percent = retained_tokens / sys_token_count
                     print(f"{self.__class__.__name__}:Truncation:"
@@ -249,7 +255,7 @@ class GenericProcessor:
         fullMessageContentTokensCount = 0
         for message in this_messages:
             if 'content' in message:
-                fullMessageContentTokensCount += num_tokens_from_string(message["content"])[0]
+                fullMessageContentTokensCount += num_tokens_from_string(message["content"], data.get('model'))[0]
 
         # if we can fit the chunk into one token buffer, we'll process and be done
         max_tokens = max_tokens_for_model(data.get('model'))
@@ -260,7 +266,7 @@ class GenericProcessor:
 
         # otherwise, we'll need to break the chunk into smaller chunks
         # we're going to extract ONLY the bit of user-content (not the prompt wrapper) that we can try and break up
-        userContentTokenCount, userContentTokens = num_tokens_from_string(data[self.get_chunkable_input()])
+        userContentTokenCount, userContentTokens = num_tokens_from_string(data[self.get_chunkable_input()], data.get('model'))
 
         # let's figure out how big the non-user content is... since we'll create user chunks that can accomodate the non-user content added back
         nonUserContentTokenCount = fullMessageContentTokensCount - userContentTokenCount
@@ -293,7 +299,7 @@ class GenericProcessor:
 
             # decode this smaller chunk of the original user content
             user_chunk_tokens = userContentTokens[i:i + chunk_size]
-            user_chunk_text = decode_string_from_input(user_chunk_tokens)
+            user_chunk_text = decode_string_from_input(user_chunk_tokens, data.get('model'))
 
             # rebuild the prompt with the smaller user input chunk
             data_copy = data.copy()
@@ -307,7 +313,7 @@ class GenericProcessor:
             these_tokens_count = 0
             for message in this_messages:
                 if 'content' in message:
-                    these_tokens_count += num_tokens_from_string(message["content"])[0]
+                    these_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
 
             # get the new remaining max tokens we can accomodate with output
             max_tokens = max_tokens_for_model(data.get('model'))
@@ -339,12 +345,12 @@ class GenericProcessor:
         ten_percent_total = total_max * 0.1
         minimum_buffer = int(min(remainingBuffer, ten_percent_total))
 
-        # the lesser of the remainingBuffer or 5x the input_buffer (for very tine inputs)
+        # the lesser of the remainingBuffer or 2x the input_buffer (for very tiny inputs)
         buffer_size = int(min(remainingBuffer, math.floor(input_buffer_size * 2)))
 
         return max(buffer_size, minimum_buffer)
 
-    def truncate_user_messages(self, messages: List[dict[str, any]], input_token_buffer):
+    def truncate_user_messages(self, messages: List[dict[str, any]], input_token_buffer, data):
         truncated_token_count = 0
         discarded_token_count = 0
         discard_future_messages = False  # Flag to indicate if further messages should be discarded
@@ -358,17 +364,17 @@ class GenericProcessor:
                 continue
 
             if discard_future_messages:
-                discarded_token_count += num_tokens_from_string(message["content"])[0]
+                discarded_token_count += num_tokens_from_string(message["content"], data.get('model'))[0]
                 discarded_messages += 1
                 message['content'] = ""
                 continue
 
-            token_count, user_tokens = num_tokens_from_string(message["content"])
+            token_count, user_tokens = num_tokens_from_string(message["content"], data.get('model'))
 
             if truncated_token_count + token_count > input_token_buffer:
                 remaining_tokens = input_token_buffer - truncated_token_count
                 truncated_token_count += remaining_tokens
-                message['content'] = decode_string_from_input(user_tokens[:remaining_tokens])
+                message['content'] = decode_string_from_input(user_tokens[:remaining_tokens], data.get('model'))
                 discarded_token_count += token_count - remaining_tokens
                 discard_future_messages = True  # Set the flag to discard further messages
             else:
@@ -403,13 +409,13 @@ class GenericProcessor:
             these_tokens_count = 0
             for message in this_messages:
                 if 'content' in message:
-                    these_tokens_count += num_tokens_from_string(message["content"])[0]
+                    these_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
 
             # include the function-related content as part of the input buffer
             for key in ['function_call', 'functions']:
                 if key in params:
                     # note that the function-related params are stored as dictionaries, unlike other user content
-                    these_tokens_count += num_tokens_from_string(json.dumps(params[key]))[0]
+                    these_tokens_count += num_tokens_from_string(json.dumps(params[key]), data.get('model'))[0]
 
             if input_token_buffer == 0:
                 prompts_set = [(this_messages, 0)]
@@ -426,11 +432,11 @@ class GenericProcessor:
                     # If we are over the token limit, we're going to need to split it into chunks to process in parallel and then reassemble
                     # enough buffer to get a useful result - say 20% - 50% of the original input
                     prompts_set, this_truncation = self.chunk_input_based_on_token_limit(data, prompt_format_args, input_token_buffer)
-                    # we'll ignore this truncation since we're chunking it anywayzoom
+                    # we'll ignore this truncation since we're chunking it anyway
 
                 # otherwise, we'll just truncate the last user message
                 else:
-                    this_messages, truncated_tokens_count = self.truncate_user_messages(this_messages, input_token_buffer)
+                    this_messages, truncated_tokens_count = self.truncate_user_messages(this_messages, input_token_buffer, data)
 
                     tuned_max_tokens = max_tokens - truncated_tokens_count
                     tuned_output = self.calculate_output_token_buffer(truncated_tokens_count, tuned_max_tokens, max_tokens)
@@ -852,7 +858,7 @@ class GenericProcessor:
                     inputMetadata = json.loads(data['inputMetadata'])
                     cellId = inputMetadata['id'] if 'id' in inputMetadata else ''
 
-                log(f"InvalidRequestError: sourceFile:{sourceFile}, cellId:{cellId}")
+                log(f"InvalidRequestError:MaxTokens error: sourceFile:{sourceFile}, cellId:{cellId}: {str(e)}")
             raise
 
         finally:
@@ -860,9 +866,9 @@ class GenericProcessor:
             try:
                 user_input = self.collate_all_user_input(prompt_format_args)
                 user_input_size = len(user_input)
-                openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage_per_string(user_input, True)
+                openai_customerinput_tokens, openai_customerinput_cost = get_openai_usage_per_string(user_input, True, data.get('model'))
                 openai_input_tokens, openai_input_cost = get_openai_usage_per_token(
-                    sum([r['input_tokens'] for r in results]), True) if results is not None else (0, 0)
+                    sum([r['input_tokens'] for r in results]), True, data.get('model')) if results is not None else (0, 0)
 
                 # Get the cost of the outputs and prior inputs - so we have visibiity into our cost per user API
                 output_size = len(result) if result is not None else 0
@@ -870,7 +876,7 @@ class GenericProcessor:
                 boost_cost = get_boost_cost(user_input_size + output_size)
 
                 openai_output_tokens, openai_output_cost = get_openai_usage_per_token(
-                    sum([r['output_tokens'] for r in results]), False) if results is not None else (0, 0)
+                    sum([r['output_tokens'] for r in results]), False, data.get('model')) if results is not None else (0, 0)
                 openai_tokens = openai_input_tokens + openai_output_tokens
                 openai_cost = openai_input_cost + openai_output_cost
 

@@ -15,6 +15,7 @@ Polyverse Boost Cloud Service
 - Provide regression test cases to help reproduce suspected customer security or code bugs.
 - Significant expansion of Test Case generation - including fuzzing, performance, test, regression, platform, etc.
 - Change Flow Diagram to be terse (in temperature), use 3.5 Turbo model for improved speed (less rate limit errors) and allow 90% of token buffer for input
+- Rewrote and enhanced tokenizer encoding/decoding for higher precision and more accurate mapping to GPT models (fix more Max Token errors)
 
 ### Bug Fixes
 - Fix max token calculation for non-default non-4.0 GPT models
