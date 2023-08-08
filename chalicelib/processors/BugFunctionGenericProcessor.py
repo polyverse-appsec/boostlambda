@@ -1,4 +1,5 @@
 from chalicelib.processors.FunctionGenericProcessor import FunctionGenericProcessor
+from chalice import BadRequestError
 
 import json
 
@@ -19,7 +20,7 @@ report_bug_function = {
                     "properties": {
                         "lineNumber": {
                             "type": "integer",
-                            "description": "the line number where the bug begins, caculated from the original line number of the chunk if given"
+                            "description": "the line number where the bug begins, calculated from the original line number of the chunk if given"
                         },
                         "severity": {
                             "type": "integer",
@@ -49,8 +50,13 @@ class BugFunctionGenericProcessor(FunctionGenericProcessor):
     def __init__(self, api_version, main_prompt, system_prompt, function_name, bugTypeDescription=None):
         my_function_schema = report_bug_function.copy()
 
-        function_call = f"report_{function_name}_bugs"
+        if function_name is None:
+            raise BadRequestError("Error: please provide a function name to run against the code fragment")
 
+        if bugTypeDescription is None:
+            raise BadRequestError("Error: please provide a bug type description to categorize the bugs found in the code")
+
+        function_call = f"report_{function_name}_bugs"
         my_function_schema['name'] = function_call
         my_function_schema['description'] = f"reports {function_name} bugs in the code"
         my_function_schema['parameters']['properties']['bugs']['items']['properties']['bugType']['description'] = bugTypeDescription
