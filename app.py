@@ -23,6 +23,7 @@ from chalicelib.processors.PerformanceFunctionProcessor import PerformanceFuncti
 from chalicelib.processors.QuickBlueprintProcessor import QuickBlueprintProcessor
 from chalicelib.processors.DraftBlueprintFunctionProcessor import DraftBlueprintFunctionProcessor
 from chalicelib.processors.QuickSummaryProcessor import QuickSummaryProcessor
+from chalicelib.processors.CustomScanFunctionProcessor import CustomScanFunctionProcessor
 
 import uuid
 import json
@@ -141,6 +142,14 @@ performanceFunctionProcessor = PerformanceFunctionProcessor()
 @app.lambda_function(name='performance_function')
 def performance_function(event, context):
     return process_request(event, performanceFunctionProcessor.check_performance, performanceFunctionProcessor.api_version)
+
+
+customScanFunctionProcessor = CustomScanFunctionProcessor()
+
+
+@app.lambda_function(name='customscan_function')
+def customscan_function(event, context):
+    return process_request(event, customScanFunctionProcessor.custom_scan, customScanFunctionProcessor.api_version)
 
 
 blueprintProcessor = BlueprintProcessor()

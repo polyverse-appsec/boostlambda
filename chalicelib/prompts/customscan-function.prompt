@@ -1,0 +1,21 @@
+Analyze the below code for {customScanGuidance}.
+
+For each issue, please:
+ * Indicate a severity on a ten point scale, ten being the worst. Base severity on a scale of impact to code.
+ * Categorize as one of the following issue types: {customScanCategories}.
+ * Identify key potential factors causing the issue in the code.
+ * Recommend a code fix or better approach or solution whenever possible. Also include online resource links where available.
+
+Please be very concise.
+
+Use the following architectural guidelines when performing your analysis - including for consistency with or conflicts between the code and requirements in the guidelines:
+{guidelines}
+
+{chunking}
+
+{lineNumberBase}
+
+Here is the code to analyze:
+
+```
+{code}

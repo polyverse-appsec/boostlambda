@@ -6,7 +6,7 @@ Polyverse Boost Cloud Service
 ## Version 0.9.2: August 9th, 2023
 
 ### New Features
-- N/A
+- Added custom code scan service - enabling clients to get line numbers of issues identified by a custom analysis
 
 ### Enhancements
 - N/A
