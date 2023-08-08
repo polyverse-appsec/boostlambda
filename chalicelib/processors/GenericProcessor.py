@@ -664,8 +664,7 @@ class GenericProcessor:
                   f"Finish:{result['finish'] if result is not None and 'finish' in result and result['finish'] is not None else 'Incomplete'}::error:{str(e)}")
             raise
 
-    def initialize_from_data(self, log, data, account, function_name, correlation_id, prompt_format_args) -> Tuple[dict, dict]:
-        params = self.default_params.copy()  # Create a copy of the defaults
+    def initialize_from_data(self, log, data, account, function_name, correlation_id, prompt_format_args, params) -> Tuple[dict, dict]:
 
         # enable user to override the model to gpt-3 or gpt-4
         if 'model' in data:
@@ -755,7 +754,8 @@ class GenericProcessor:
             else:
                 print(f"{function_name}:{email}:{correlation_id}:{message}")
 
-        params, prompt_format_args = self.initialize_from_data(log, data, account, function_name, correlation_id, prompt_format_args)
+        params = self.default_params.copy()  # Create a copy of the defaults so derived classes can make changes per input call
+        params, prompt_format_args = self.initialize_from_data(log, data, account, function_name, correlation_id, prompt_format_args, params)
 
         prompt_set: List[Tuple[str, int]] = []
 
