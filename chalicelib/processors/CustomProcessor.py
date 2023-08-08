@@ -15,7 +15,10 @@ class CustomProcessor(GenericProcessor):
             None,
             {'model': OpenAIDefaults.boost_default_gpt_model,
              'temperature': OpenAIDefaults.temperature_medium_with_explanation},
-            AnalysisOutputFormat.prose, [AnalysisOutputFormat.bulletedList, AnalysisOutputFormat.rankedList, AnalysisOutputFormat.numberedList])
+            AnalysisOutputFormat.prose, [
+                AnalysisOutputFormat.bulletedList,
+                AnalysisOutputFormat.rankedList,
+                AnalysisOutputFormat.numberedList])
 
     def get_chunkable_input(self) -> str:
         return 'code'
