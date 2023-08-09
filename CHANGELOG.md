@@ -12,7 +12,8 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Bug Fixes
-- N/A
+- Change CloudWatch metric storage resolution from 5 minutes (invalid unsupported) to 1 minute (regular resolution maximum)
+
 
 ## Version 0.9.1: August 2nd, 2023
 

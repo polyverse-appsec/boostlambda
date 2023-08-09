@@ -45,6 +45,10 @@ class CostMetrics:
     OPENAI_OUTPUT_TOKENS = 'OpenAIOutputTokens'
 
 
+regularResolutionCloudWatchMetric = 60
+highResolutionCloudWatchMetric = 1
+
+
 # Capture a metric to CloudWatch or local console
 # Usage: capture_metric(customer, email, function_name, correlation_id, {'name': 'PromptSize', 'value': prompt_size, 'unit': 'Bytes'})
 # Customer is a dictionary of customer data from the billing database
@@ -82,7 +86,7 @@ def capture_metric(customer, email, function_name: "capture_metric", correlation
                     ],
                     'Unit': metric['unit'],
                     'Value': metric['value'],
-                    'StorageResolution': 60 * 5  # Store at 5 min intervals
+                    'StorageResolution': regularResolutionCloudWatchMetric
                 }
                 metric_data.append(metric_obj)
             cloudwatch.put_metric_data(Namespace='Boost/Lambda', MetricData=metric_data)
