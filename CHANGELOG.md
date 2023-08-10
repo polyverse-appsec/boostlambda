@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - Added custom code scan service - enabling clients to get line numbers of issues identified by a custom analysis
 
 ### Enhancements
-- N/A
+- Blueprint will report what programming languages are found in the project
 
 ### Bug Fixes
 - Change CloudWatch metric storage resolution from 5 minutes (invalid unsupported) to 1 minute (regular resolution maximum)
