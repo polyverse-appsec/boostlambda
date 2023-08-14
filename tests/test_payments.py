@@ -1,5 +1,8 @@
 # test_payments.py
 import stripe
+from chalice.test import Client
+import json
+from app import app
 
 # Import the checkCreateCustomer function from the payments module in the chalicelib directory
 from chalicelib.payments import check_create_customer, check_create_subscription, check_create_subscription_item, update_usage, check_customer_account_status, check_valid_subscriber
@@ -266,3 +269,31 @@ def test_multiple_emails_per_org():
 
     sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
     assert sub['enabled'] is True
+
+
+client_version = '0.9.5'
+
+
+def test_account_status_unregistered_account():
+    with Client(app) as client:
+        request_body = {
+            'code': 'print("Hello, World!")',
+            'session': 'foo@bar.test',
+            'organization': 'foobar',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'explain', request_body)
+
+        assert response.payload['statusCode'] == 401
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
+        assert response.payload['account'] is not None
+
+        account = json.loads(response.payload['account'])
+        assert account['enabled'] is False
+        assert account['status'] == 'unregistered'
+        assert account['email'] == 'unknown'
+        assert account['org'] == 'foobar'

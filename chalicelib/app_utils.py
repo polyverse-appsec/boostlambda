@@ -8,8 +8,10 @@ import os
 from chalice import BadRequestError
 
 from chalicelib.telemetry import cloudwatch, xray_recorder
-from chalicelib.auth import validate_request_lambda
-from chalicelib.auth import extract_client_version
+from chalicelib.auth import \
+    validate_request_lambda, \
+    clean_account, \
+    extract_client_version
 
 
 def process_request(event, function, api_version):
@@ -18,6 +20,7 @@ def process_request(event, function, api_version):
     print("correlation_id is: " + correlation_id)
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
+    account = None
 
     print(f'Inbound request {correlation_id} {function.__name__}')
 
@@ -39,14 +42,35 @@ def process_request(event, function, api_version):
         # Capture the duration of the validation step
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
-                account = validate_request_lambda(json_data, function.__name__, correlation_id)
+                # first we check if the account is enabled
+                account = validate_request_lambda(json_data, function.__name__, correlation_id, False)
+
+                email = account['email'] if 'email' in account else email
+
+                # if not enabled, then we're going to raise an error
+                # note: we could return the error in the account object and save
+                # calling validate again, but for now, we're going to keep it simple
+                if not (account['enabled'] if 'enabled' in account else False):
+                    validate_request_lambda(json_data, function.__name__, correlation_id, True)
         else:
             start_time = time.monotonic()
-            account = validate_request_lambda(json_data, function.__name__, correlation_id)
-            end_time = time.monotonic()
-            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+            account = validate_request_lambda(json_data, function.__name__, correlation_id, False)
 
-        email = account['email']
+            email = account['email'] if 'email' in account else email
+
+            # if not enabled, then we're going to raise an error
+            # note: we could return the error in the account object and save
+            # calling validate again, but for now, we're going to keep it simple
+            if not (account['enabled'] if 'enabled' in account else False):
+                try:
+                    validate_request_lambda(json_data, function.__name__, correlation_id, True)
+                finally:
+                    end_time = time.monotonic()
+                    print(f'Execution time {correlation_id} validate_request FAILED: {end_time - start_time:.3f} seconds')
+            else:
+                end_time = time.monotonic()
+                print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
 
@@ -93,19 +117,25 @@ def process_request(event, function, api_version):
 
         status_code = getattr(e, 'STATUS_CODE', 500)
 
+        account = clean_account(account, email, organization)
+
         return {
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': api_version},
-            'body': json.dumps({"error": serviceFailureDetails})
+            'body': json.dumps({"error": serviceFailureDetails}),
+            'account': json.dumps(account)
         }
 
     # Put this into a JSON object - assuming the result is already an object
     json_obj = result
 
+    account = clean_account(account)
+
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json',
                     'X-API-Version': api_version},
-        'body': json.dumps(json_obj)
+        'body': json.dumps(json_obj),
+        'account': json.dumps(account)
     }

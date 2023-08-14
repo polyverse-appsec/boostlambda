@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.9.3: August 14th, 2023
+
+### New Features
+- Return account status on all analysis API calls - to reduce extra calls to check account status
+
+### Enhancements
+- Improvements to auth handling for non-validated email accounts (not found in GitHub)
+
+### Bug Fixes
+- None
+
 ## Version 0.9.2: August 9th, 2023
 
 ### New Features
@@ -13,7 +24,6 @@ Polyverse Boost Cloud Service
 
 ### Bug Fixes
 - Change CloudWatch metric storage resolution from 5 minutes (invalid unsupported) to 1 minute (regular resolution maximum)
-
 
 ## Version 0.9.1: August 2nd, 2023
 
