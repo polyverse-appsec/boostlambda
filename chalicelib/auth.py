@@ -86,7 +86,7 @@ def fetch_email(access_token):
 token_2_user_cache = TTLCache(maxsize=100, ttl=300)
 
 
-def fetch_email_and_username(access_token):
+def fetch_email_and_username(access_token, raiseOnError=True):
     headers = {
         'Authorization': f'token {access_token}',
         'Accept': 'application/vnd.github+json',
@@ -95,7 +95,10 @@ def fetch_email_and_username(access_token):
     # get email from github
     email = fetch_email(access_token)
     if email is None:
-        raise Exception("GitHub Email is required to access Boost account")
+        if raiseOnError:
+            raise ExtendedUnauthorizedError("GitHub Email is required to access Boost account")
+        else:
+            return None, None
 
     # Check if the username is already cached
     if access_token in token_2_user_cache:
@@ -120,6 +123,7 @@ def fetch_email_and_username(access_token):
 
         return email, username
     else:
+        # if the user is a test user, return the email as the username
         email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
         match = re.search(email_pattern, access_token)
 
@@ -131,8 +135,9 @@ def fetch_email_and_username(access_token):
 
             return username, username
 
+        # if its not a test user, we've failed to find the user in GitHub
+        #     so we don't know if this is a valid user or not
         print(f"ERROR: GitHub User query failure: {response.json()}")
-
         return None, None
 
 
@@ -189,15 +194,21 @@ def fetch_orgs(access_token):
 
 
 # function to get the domain from an email address, returns true if validated, and returns email if found in token
-def validate_github_session(access_token, organization, function_name, correlation_id):
+def validate_github_session(access_token, organization, correlation_id, raiseOnError=True):
     if cloudwatch is not None:
         with xray_recorder.capture('fetch_email_and_username'):
-            email, username = fetch_email_and_username(access_token)
+            email, username = fetch_email_and_username(access_token, raiseOnError)
     else:
         start_time = time.monotonic()
-        email, username = fetch_email_and_username(access_token)
+        email, username = fetch_email_and_username(access_token, raiseOnError)
         end_time = time.monotonic()
         print(f'Execution time {correlation_id} fetch_email_and_username: {end_time - start_time:.3f} seconds')
+
+    if email is None:
+        if raiseOnError:
+            raise ExtendedUnauthorizedError("GitHub Email is required to access Boost account")
+        else:
+            return False, None
 
     # if the username matches the user's requested org, then we'll use a "personal" org
     if username == organization:
@@ -258,7 +269,7 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
     # parse the request body as json
     try:
         # extract the code from the json data
-        validated, email = validate_github_session(session, organization, function_name, correlation_id)
+        validated, email = validate_github_session(session, organization, correlation_id, raiseOnError)
     except ValueError:
         pass
 
@@ -297,6 +308,25 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
                 print(f'Error:{email}: Please subscribe to Polyverse Boost service')
 
     return account
+
+
+def clean_account(account, email=None, organization=None):
+    # if we are in an extreme error path without account info
+    #   then return unknown for statu and email
+    if (account is None):
+        return {
+            'enabled': False,
+            'status': 'unknown',
+            'org': organization if organization is not None else 'unknown',
+            'email': email if email is not None else 'unknown',
+        }
+
+    return {
+        'enabled': account['enabled'],
+        'status': account['status'],
+        'org': account['org'] if 'org' in account else organization if organization is not None else 'unknown',
+        'email': account['email'] if 'email' in account else email if email is not None else 'unknown',
+    }
 
 
 # "user-agent": "Boost-VSCE/0.9.7"
