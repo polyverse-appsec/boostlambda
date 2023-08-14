@@ -21,11 +21,10 @@ def test_explain():
 
         print(f"\nResponse:\n\n{response.payload['body']}")
 
-        assert response.payload['account'] is not None
-
-        account = json.loads(response.payload['account'])
-        assert account['email'] == 'unittest@polytest.ai'
-        assert account['org'] == 'polytest.ai'
+        result = json.loads(response.payload['body'])
+        assert result['account'] is not None
+        assert result['account']['email'] == 'unittest@polytest.ai'
+        assert result['account']['org'] == 'polytest.ai'
 
 
 def test_explain_with_guideline():

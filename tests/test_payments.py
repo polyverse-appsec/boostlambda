@@ -290,10 +290,8 @@ def test_account_status_unregistered_account():
 
         print(f"\nResponse:\n\n{response.payload['body']}")
 
-        assert response.payload['account'] is not None
-
-        account = json.loads(response.payload['account'])
-        assert account['enabled'] is False
-        assert account['status'] == 'unregistered'
-        assert account['email'] == 'unknown'
-        assert account['org'] == 'foobar'
+        result = json.loads(response.payload['body'])
+        assert result['account']['enabled'] is False
+        assert result['account']['status'] == 'unregistered'
+        assert result['account']['email'] == 'unknown'
+        assert result['account']['org'] == 'foobar'

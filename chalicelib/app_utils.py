@@ -123,19 +123,19 @@ def process_request(event, function, api_version):
             'statusCode': status_code,
             'headers': {'Content-Type': 'application/json',
                         'X-API-Version': api_version},
-            'body': json.dumps({"error": serviceFailureDetails}),
-            'account': json.dumps(account)
+            'body': json.dumps({
+                "error": serviceFailureDetails,
+                'account': account
+            }),
         }
 
+    result['account'] = clean_account(account)
     # Put this into a JSON object - assuming the result is already an object
     json_obj = result
-
-    account = clean_account(account)
 
     return {
         'statusCode': 200,
         'headers': {'Content-Type': 'application/json',
                     'X-API-Version': api_version},
         'body': json.dumps(json_obj),
-        'account': json.dumps(account)
     }
