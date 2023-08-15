@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.9.4: August 23rd, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- N/A
+
 ## Version 0.9.3: August 14th, 2023
 
 ### New Features
@@ -12,7 +23,7 @@ Polyverse Boost Cloud Service
 - Improvements to auth handling for non-validated email accounts (not found in GitHub)
 
 ### Bug Fixes
-- None
+- N/A
 
 ## Version 0.9.2: August 9th, 2023
 
