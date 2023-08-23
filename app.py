@@ -24,6 +24,7 @@ from chalicelib.processors.QuickBlueprintProcessor import QuickBlueprintProcesso
 from chalicelib.processors.DraftBlueprintFunctionProcessor import DraftBlueprintFunctionProcessor
 from chalicelib.processors.QuickSummaryProcessor import QuickSummaryProcessor
 from chalicelib.processors.CustomScanFunctionProcessor import CustomScanFunctionProcessor
+from chalicelib.processors.ChatProcessor import ChatProcessor
 
 import uuid
 import json
@@ -182,6 +183,14 @@ draftBlueprintFunctionProcessor = DraftBlueprintFunctionProcessor()
 @app.lambda_function(name='draft-blueprint')
 def draft_blueprint(event, context):
     return process_request(event, draftBlueprintFunctionProcessor.draft_blueprint, draftBlueprintFunctionProcessor.api_version)
+
+
+chatProcessor = ChatProcessor()
+
+
+@app.lambda_function(name='chat')
+def chatprocess(event, _):
+    return process_request(event, chatProcessor.process_chat, chatProcessor.api_version)
 
 
 customProcessor = CustomProcessor()

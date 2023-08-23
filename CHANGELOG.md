@@ -6,7 +6,7 @@ Polyverse Boost Cloud Service
 ## Version 0.9.4: August 23rd, 2023
 
 ### New Features
-- N/A
+- Added Chat/Query Cloud Service - processes arbitrary prompts across summaries and analysis and code
 
 ### Enhancements
 - N/A
