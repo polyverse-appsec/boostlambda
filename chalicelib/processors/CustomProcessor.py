@@ -25,7 +25,7 @@ class CustomProcessor(GenericProcessor):
 
     def calculate_input_token_buffer(self, total_max) -> int:
         # we'll leave 90% of the buffer for the input, and 10% for the output
-        return math.floor(total_max * 0.8)
+        return math.floor(total_max * 0.9)
 
     def generate_messages(self, data, prompt_format_args):
         if 'messages' in data:

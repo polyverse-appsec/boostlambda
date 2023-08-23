@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - Added Chat/Query Cloud Service - processes arbitrary prompts across summaries and analysis and code
 
 ### Enhancements
-- N/A
+- Expand custom processor input buffer to 90%
 
 ### Bug Fixes
 - N/A
