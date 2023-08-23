@@ -22,9 +22,13 @@ class ChatProcessor(GenericProcessor):
     def get_chunkable_input(self) -> str:
         return 'code'
 
+    # chat is mostly background info, so let's use most of it (75%)
+    def calculate_system_message_token_buffer(self, total_max) -> int:
+        return math.floor(self.calculate_input_token_buffer(total_max) * 0.75)
+
     def calculate_input_token_buffer(self, total_max) -> int:
         # we'll leave 90% of the buffer for the input, and 10% for the output
-        return math.floor(total_max * 0.8)
+        return math.floor(total_max * 0.9)
 
     def process_chat(self, data, account, function_name, correlation_id):
         # Code is optional and may not be present
