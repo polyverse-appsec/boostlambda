@@ -72,7 +72,7 @@ class GenericProcessor:
         self.supported_output_formats.append(default_output_format)
 
         # Create a new list with the blueprint summary
-        blueprint_summary = ['system', 'blueprint-summary-system.prompt']
+        summaries = ['system', 'summaries-system.prompt']
 
         # If prompt_filenames is not None, create a copy, otherwise initialize an empty list
         new_prompt_filenames = prompt_filenames.copy() if prompt_filenames is not None else []
@@ -81,8 +81,8 @@ class GenericProcessor:
         for i, prompt in enumerate(new_prompt_filenames):
             # Check if the prompt type is 'system'
             if prompt[0] == 'system':
-                # Insert the blueprint summary after the first system prompt
-                new_prompt_filenames.insert(i + 1, blueprint_summary)
+                # Insert the summaries after the first system prompt
+                new_prompt_filenames.insert(i + 1, summaries)
                 break
 
         self.prompt_filenames = new_prompt_filenames
@@ -684,7 +684,12 @@ class GenericProcessor:
             prompt_format_args['guidelines'] = "This software project has no additional special architectural guidelines or constraints."
         else:
             # get the JSON object out of the data payload
-            prompt_format_args['guidelines'] = data['guidelines']
+            guidelines_data = json.loads(data['guidelines'])
+            guidelines_data = guidelines_data[1]  # the first element is the 'system' role of guidelines
+            guidelines = ""
+            for guideline in guidelines_data:
+                guidelines = f"{guidelines}\n\n {guideline}"
+            prompt_format_args['guidelines'] = guidelines
 
         if 'system_identity' not in data:
             prompt_format_args['system_identity'] = "I am a software and architecture analysis bot named Sara."
@@ -692,10 +697,15 @@ class GenericProcessor:
             prompt_format_args['system_identity'] = data['system_identity']
 
         if 'summaries' not in data:
-            prompt_format_args['summaries'] = "This software project should be well designed and bug-free."
+            prompt_format_args['summaries'] = 'This software project should be well designed and bug-free.'
         else:
             # get the JSON object out of the data payload
-            prompt_format_args['summaries'] = data['summaries']
+            summaries_data = json.loads(data['summaries'])
+            summaries_data = summaries_data[1]  # the first element is the 'system' role of summaries
+            summaries = ""
+            for summary in summaries_data:
+                summaries = f"{summaries}\n\n {summary}"
+            prompt_format_args['summaries'] = summaries
 
         # use the client's requested output format, or the default
         outputFormat = self.default_output_format if 'outputFormat' not in data else data['outputFormat']

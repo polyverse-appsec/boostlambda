@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - Expand custom processor input buffer to 90%
 
 ### Bug Fixes
-- N/A
+- Fix unpacking of JSON guidelines and summaries
 
 ## Version 0.9.3: August 14th, 2023
 
