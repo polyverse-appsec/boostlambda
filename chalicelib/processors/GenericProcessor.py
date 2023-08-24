@@ -57,6 +57,13 @@ class AnalysisOutputFormat:
     defaultFormat = prose
 
 
+class AnalysisContextType:
+    projectSummary = "projectSummary"
+    userFocus = "userFocus"
+    history = "history"
+    related = "related"
+
+
 class GenericProcessor:
 
     def __init__(self, api_version, prompt_filenames, numbered_prompt_keys,
@@ -696,16 +703,7 @@ class GenericProcessor:
         else:
             prompt_format_args['system_identity'] = data['system_identity']
 
-        if 'summaries' not in data:
-            prompt_format_args['summaries'] = 'This software project should be well designed and bug-free.'
-        else:
-            # get the JSON object out of the data payload
-            summaries_data = json.loads(data['summaries'])
-            summaries_data = summaries_data[1]  # the first element is the 'system' role of summaries
-            summaries = ""
-            for summary in summaries_data:
-                summaries = f"{summaries}\n\n {summary}"
-            prompt_format_args['summaries'] = summaries
+        self.inject_context(data, prompt_format_args)
 
         # use the client's requested output format, or the default
         outputFormat = self.default_output_format if 'outputFormat' not in data else data['outputFormat']
@@ -746,6 +744,41 @@ class GenericProcessor:
                 prompt_format_args['outputFormat'] = outputExample
 
         return params, prompt_format_args
+
+    def inject_context(self, data, prompt_format_args):
+        if 'summaries' not in data and 'context' not in data:
+            prompt_format_args['summaries_type'] = 'general'
+            prompt_format_args['summaries_data'] = 'This software project should be well designed and bug-free.'
+            return
+
+        # for backward compatibility - old clients pass array with first element the 'system' role
+        if 'summaries' in data:
+            # get the JSON object out of the data payload
+            summaries_data = json.loads(data['summaries'])
+            summaries_data = summaries_data[1]  # the first element is the 'system' role of summaries
+            summaries = ""
+
+            for summary in summaries_data:
+                summaries = f"{summaries}\n\n {summary}"
+            prompt_format_args['summaries_type'] = 'general'
+            prompt_format_args['summaries_data'] = summaries
+
+            return
+
+        # get the JSON object out of the data payload
+        context_json = json.loads(data['context'])
+        context_names = ""
+        context_data = ""
+        for context in context_json:
+            if context['type'] == AnalysisContextType.projectSummary:
+                context_names = f"{context_names}, {context['name']}" if context_names != "" else f"{context['name']}"
+                context_data = f"{context['data']}\n\n {context_data}" if context_data != "" else f"{context['data']}"
+            else:
+                print(f"Unsupported context type {context.type} - appending plain data only")
+                context_data = f"{context['data']}\n\n {context_data}" if context_data != "" else f"{context['data']}"
+
+        prompt_format_args['summaries_type'] = context_names
+        prompt_format_args['summaries_data'] = context_data
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
 
