@@ -8,7 +8,7 @@ Then do the following:
 4. Prioritize all of the non-excluded files in the software project file list to analyze from most important file to least important file.
 5. Produce an Architectural Blueprint Summary using this format - replacing the text in each section with your best guess based on only the file list and the type of software architecture you believe this project has:
 
-    # Architectural Blueprint Summary for: {projectName}
+    ## Architectural Blueprint Summary for: {projectName}
     * Software Project Type: web app, server code, cloud web service, mobile app, shared library, etc.
     * High-Level Summary: Short summary of software project in a 2-3 sentences
     * Programming Languages: List of programming languages used in project

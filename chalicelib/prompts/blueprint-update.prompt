@@ -1,7 +1,7 @@
 Based on samples of software code files in a project, you produce an Architectural Blueprint Summary of the overall project in the following format:
 
 ```
-# Architectural Blueprint Summary for: Name of Software
+## Architectural Blueprint Summary for: Name of Software
 * Software Project Type: web app, server code, cloud web service, mobile app, shared library, etc.
 * Programming Languages: List of programming languages used in project
 * Software Principles: multi-threaded, event-driven, data transformation, server processing, client app code, etc
