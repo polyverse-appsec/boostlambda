@@ -699,7 +699,9 @@ class GenericProcessor:
             prompt_format_args['guidelines'] = "This software project has no additional special architectural guidelines or constraints."
         else:
             # get the JSON object out of the data payload
-            guidelines_data = json.loads(data['guidelines'])
+            # older clients sent the structure as an embedded JSON string
+            # newer clients send the data as a normal object
+            guidelines_data = data['guidelines'] if data['guidelines'] is not str else json.loads(data['guidelines'])
             guidelines_data = guidelines_data[1]  # the first element is the 'system' role of guidelines
             guidelines = ""
             for guideline in guidelines_data:
@@ -762,7 +764,9 @@ class GenericProcessor:
         # for backward compatibility - old clients pass array with first element the 'system' role
         if 'summaries' in data:
             # get the JSON object out of the data payload
-            summaries_data = json.loads(data['summaries'])
+            # older clients sent the structure as an embedded JSON string
+            # newer clients send the data as a normal object
+            summaries_data = data['summaries'] if data['summaries'] is not str else json.loads(data['summaries'])
             summaries_data = summaries_data[1]  # the first element is the 'system' role of summaries
             summaries = ""
 
@@ -774,7 +778,7 @@ class GenericProcessor:
             return
 
         # get the JSON object out of the data payload
-        context_json = json.loads(data['context'])
+        context_json = data['context']
         context_names = ""
         context_data = ""
         for context in context_json:
