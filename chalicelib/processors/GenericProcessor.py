@@ -9,7 +9,7 @@ import concurrent.futures
 import threading
 import random
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 import glob
 import re
 
@@ -185,72 +185,80 @@ class GenericProcessor:
             file_path = os.path.join(promptdir, prompt_filename[1])
             self.prompt_files_timestamps[file_path] = os.path.getmtime(file_path)
 
-    def optimize_content(self, this_messages: List[dict[str, any]], data) -> Tuple[List[dict[str, any]], int]:
-        # Initialize variables
-        total_system_tokens = 0
-        system_messages = []
+    def optimize_content(self, this_messages: List[Dict[str, Any]], data) -> Tuple[List[Dict[str, Any]], int]:
+        def truncate_system_message(sys_message, total_system_buffer, total_system_tokens):
+            sys_token_count, sys_tokens = num_tokens_from_string(sys_message['content'], data.get('model'))
+            proportion = sys_token_count / total_system_tokens
+            min_quota = max(min_token_quota, int(total_system_buffer * min_quota_percent))
+            retained_tokens = int(min(max_quota, max(min_quota, int(total_system_buffer * proportion))))
 
-        # Determine the total number of tokens in system messages and collect system messages
-        for message in this_messages:
-            if 'content' in message and message['role'] == 'system':
-                token_count, _ = num_tokens_from_string(message['content'], data.get('model'))
-                total_system_tokens += token_count
-                system_messages.append(message)
+            if sys_token_count > retained_tokens:
+                sys_message['content'] = decode_string_from_input(sys_tokens[:retained_tokens], data.get('model'))
+                truncated = sys_token_count - retained_tokens
+                discard_percent = retained_tokens / sys_token_count
+                print(f"{self.__class__.__name__}:Truncation:"
+                      f"System message quota: {proportion * 100:.1f}% of {total_system_buffer} tokens,"
+                      f" max per quota {max_quota}, discarded {truncated} of {sys_token_count}: {discard_percent * 100:.1f}% retained")
+                return True, truncated
+            return False, 0
 
-        # Compute the total token buffer for all system messages
+        total_system_tokens = sum(num_tokens_from_string(message['content'], data.get('model'))[0]
+                                  for message in this_messages if 'content' in message and message['role'] == 'system')
+
+        system_messages = [message for message in this_messages if 'content' in message and message['role'] == 'system']
+
         total_system_buffer = self.calculate_system_message_token_buffer(max_tokens_for_model(data.get('model')))
 
-        # Minimum and maximum quota for each system message
         min_quota_threshold_for_message_count = 5
-        min_quota_percent = 1 / min_quota_threshold_for_message_count  # 20%
+        min_quota_percent = 1 / min_quota_threshold_for_message_count
         min_token_quota = 250
-        max_quota = total_system_buffer / len(system_messages)
+        max_quota = total_system_buffer / len(system_messages) if system_messages else 0
 
         if len(system_messages) > min_quota_threshold_for_message_count:
             min_quota_percent = None
             min_token_quota = None
 
-        # Initialize list for new messages
         new_messages = []
-
+        in_sequence_system_messages = []
+        non_system_messages_between = 0
         truncated_system_messages = 0
-        truncated = 0
-        # Handle each message
+        total_truncated = 0
+
         for message in this_messages:
             if 'content' not in message or message['content'] == '':
-                # Skip messages without content
                 continue
 
-            if message['role'] == 'system':
-                sys_token_count, sys_tokens = num_tokens_from_string(message['content'], data.get('model'))
-                # Allocate tokens to this message proportionally to its original size
-                proportion = sys_token_count / total_system_tokens
-                min_quota = max(min_token_quota, int(total_system_buffer * min_quota_percent))
-                retained_tokens = int(min(max_quota, max(min_quota, int(total_system_buffer * proportion))))
+            if message in [this_messages[0], this_messages[-1]] or message['role'] != 'system':
+                if in_sequence_system_messages:
+                    in_sequence_system_messages.sort(key=lambda x: len(x.get('content', '')))
 
-                if sys_token_count > retained_tokens:
-                    truncated_system_messages += 1
-                    message['content'] = decode_string_from_input(sys_tokens[:retained_tokens], data.get('model'))
-                    truncated += sys_token_count - retained_tokens
-                    discard_percent = retained_tokens / sys_token_count
-                    print(f"{self.__class__.__name__}:Truncation:"
-                          f"System message quota: {proportion * 100:.1f}% of {total_system_buffer} tokens, max per quota {max_quota}, discarded {sys_token_count - retained_tokens} of {sys_token_count}: {discard_percent * 100:.1f}% retained")
+                    for sys_message in in_sequence_system_messages:
+                        was_truncated, truncated = truncate_system_message(sys_message, total_system_buffer, total_system_tokens)
+                        truncated_system_messages += was_truncated
+                        total_truncated += truncated
+                        new_messages.append(sys_message)
 
-            # Append the message to the new_messages list
-            new_messages.append(message)
+                    in_sequence_system_messages = []
+                    non_system_messages_between = 0
+
+                new_messages.append(message)
+                if message['role'] != 'system':
+                    non_system_messages_between += 1
+
+            else:
+                in_sequence_system_messages.append(message)
 
         if truncated_system_messages > 0:
             print(f"{self.__class__.__name__}:Truncation:"
-                  f"Truncated {truncated_system_messages} out of {len(system_messages)} system messages to meet total system token quota: {total_system_buffer}")
+                  f"Truncated {truncated_system_messages} out of {len(system_messages)} system messages"
+                  f" to meet total system token quota: {total_system_buffer}")
 
-        # Inform about the number of messages discarded due to lack of content
         discarded_messages = len(this_messages) - len(new_messages)
         if discarded_messages > 0:
             print(f"{self.__class__.__name__}:Truncation:"
                   f"Discarded {discarded_messages} messages with no content")
 
-        # Return the list of optimized messages
-        return new_messages, truncated
+        return new_messages, total_truncated
 
     def chunk_input_based_on_token_limit(self, data, prompt_format_args, input_token_buffer) -> Tuple[List[Tuple[List[dict[str, any]], int]], int]:
 
