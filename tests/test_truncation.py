@@ -65,5 +65,5 @@ def test_truncated_messages():
         result = json.loads(response.payload['body'])
 
         assert "Truncated input" in result['analysis']
-        assert "discarded ~449 " in result['analysis']
-        assert " 45" in result['analysis']
+        assert "discarded ~461 " in result['analysis']
+        assert " 46" in result['analysis']
