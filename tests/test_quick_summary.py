@@ -36,7 +36,7 @@ def test_quick_compliance():
         }
 
         response = client.lambda_.invoke(
-            'quick-compliance-summary', request_body)
+            'quick-summary', request_body)
 
         assert response.payload['statusCode'] == 200
 
