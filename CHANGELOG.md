@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Expand custom processor input buffer to 90%
+- Tiny (10-100 tokens) reduction in customer input from boost usage calculation (exclude system identity)
 
 ### Bug Fixes
 - Fix unpacking of JSON guidelines and summaries

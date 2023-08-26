@@ -975,7 +975,23 @@ class GenericProcessor:
         }
 
     def get_excluded_input_keys(self) -> list[str]:
-        return ['model', 'top_p', 'temperature', 'chunking']
+        openai_config_params = [
+            'model',
+            'top_p',
+            'temperature'
+        ]
+        processor_params = [
+            'chunking',
+        ]
+        system_context_params = [
+            'system_identity']
+
+        # large_system_context_params = [
+        #     'guidelines',
+        #     'summaries_type',
+        #     'summaries_data']
+
+        return openai_config_params + processor_params + system_context_params
 
     def flatten_and_join(self, lst):
         result = []
