@@ -786,7 +786,7 @@ class GenericProcessor:
                 context_names = f"{context_names}, {context['name']}" if context_names != "" else f"{context['name']}"
                 context_data = f"{context['data']}\n\n {context_data}" if context_data != "" else f"{context['data']}"
             else:
-                print(f"Unsupported context type {context.type} - appending plain data only")
+                print(f"Unsupported context type {context['type']} - appending plain data only")
                 context_data = f"{context['data']}\n\n {context_data}" if context_data != "" else f"{context['data']}"
 
         prompt_format_args['summaries_type'] = context_names
