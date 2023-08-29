@@ -78,8 +78,13 @@ class GenericProcessor:
         self.supported_output_formats = supported_output_formats.copy()
         self.supported_output_formats.append(default_output_format)
 
-        # Create a new list with the blueprint summary
+        # Create a new list with the project summaries data
         summaries = ['system', 'summaries-system.prompt']
+
+        # create the context-aware prompts
+        context_history = ['system', 'context-history-system.prompt']
+        context_related = ['system', 'context-related-system.prompt']
+        context_userFocus = ['system', 'context-userFocus-system.prompt']
 
         # If prompt_filenames is not None, create a copy, otherwise initialize an empty list
         new_prompt_filenames = prompt_filenames.copy() if prompt_filenames is not None else []
@@ -90,6 +95,14 @@ class GenericProcessor:
             if prompt[0] == 'system':
                 # Insert the summaries after the first system prompt
                 new_prompt_filenames.insert(i + 1, summaries)
+
+                # insert the context-aware prompts after the summaries
+                #   we start with historical data
+                new_prompt_filenames.insert(i + 2, context_history)
+                #   then add related info
+                new_prompt_filenames.insert(i + 3, context_related)
+                # and finally add the key user focus
+                new_prompt_filenames.insert(i + 4, context_userFocus)
                 break
 
         self.prompt_filenames = new_prompt_filenames
@@ -123,34 +136,37 @@ class GenericProcessor:
         # load prompts specified in 'prompt_filenames'
         for prompt_filename in self.prompt_filenames:
             with open(os.path.join(promptdir, prompt_filename[1]), 'r') as f:
-                prompts.append([prompt_filename[0], f.read()])
+                prompts.append([prompt_filename, f.read()])
 
         # load numbered prompts
         for prompt_key in self.numbered_prompt_keys if self.numbered_prompt_keys is not None else []:
-            # if the definition is a prompt & response, pairing, load both files and process in order
+            # if the definition is a prompt & response pairing, load both files and process in order
             if prompt_key[0] == 'response':
                 for file in sorted(glob.glob(os.path.join(promptdir, f"{prompt_key[1]}-user-*.prompt"))):
+                    # Get the filename from the full path
+                    response_user_prompt_filename = os.path.basename(file)
+
                     # response has a user prompt....
                     with open(file, 'r') as f:
-                        prompts.append(["user", f.read()])
+                        prompts.append([["user", response_user_prompt_filename], f.read()])
 
                     # construct the corresponding assistant file name
                     assistant_file = file.replace("-user-", "-assistant-")
+                    response_assistant_prompt_filename = os.path.basename(assistant_file)
 
                     # Open assistant file, if it exists
                     if os.path.isfile(assistant_file):
                         with open(assistant_file, 'r') as f:
-                            prompts.append(["assistant", f.read()])
+                            prompts.append([["assistant", response_assistant_prompt_filename], f.read()])
                     else:
                         raise FileNotFoundError(f"Assistant file {assistant_file} not found for {file}")
             else:
                 file_list = sorted(glob.glob(os.path.join(promptdir, f"{prompt_key[1]}-{prompt_key[0]}-*.prompt")))
-                if prompt_key not in prompts:
-                    prompts.append([prompt_key, prompt_key[1]])
 
                 for file in file_list:
+                    dynamic_filename = os.path.basename(file)
                     with open(file, 'r') as f:
-                        prompts[prompt_key[0]].append(f.read())
+                        prompts.append([[prompt_key[0], dynamic_filename], f.read()])
 
         self.prompts = prompts
 
@@ -508,7 +524,7 @@ class GenericProcessor:
     def safe_dict(self, d):
         return {k: v if v is not None else '' for k, v in d.items()}
 
-    def generate_messages(self, _, prompt_format_args) -> List[dict[str, any]]:
+    def generate_messages(self, _, prompt_format_args) -> List[Dict[str, Any]]:
         prompt_format_args = self.safe_dict(prompt_format_args)
 
         # handle variable replacements safely
@@ -516,13 +532,20 @@ class GenericProcessor:
 
         # Generate messages for all roles
         for prompt in self.prompts:
-            if prompt[0] == 'main':  # we handle 'main' last
+            if prompt[0][0] == 'main':  # we handle 'main' last
                 main_prompt = prompt[1]
                 continue
 
+            # context prompts are special - they are only included if the tags are present
+            #   and they can replicate depending on number of context inputs
+            if prompt[0][1].startswith('context-'):
+                if any(tag not in prompt_format_args for tag in re.findall(r'\{(.+?)\}', prompt[1])):
+                    print(f"Skipping {prompt[0][0]} prompt {prompt[0][1]} due to missing tags")
+                    continue
+
             # Check if this prompt text contains a '{tag}' that exists in our reformatting args
             for tag in re.findall(r'\{(.+?)\}', prompt[1]):
-                if tag is None or tag not in prompt_format_args:
+                if tag not in prompt_format_args:
                     continue
 
                 if not isinstance(prompt_format_args.get(tag), list):
@@ -550,11 +573,11 @@ class GenericProcessor:
             content = self.safe_format(prompt[1], **prompt_format_args)
             # skip empty content
             if str.isspace(content):
-                print(f"Skipping empty prompt for role {prompt[0]}")
+                print(f"Skipping empty {prompt[0][0]} prompt {prompt[0][1]}")
                 continue
 
             this_messages.append({
-                "role": prompt[0],
+                "role": prompt[0][0],
                 "content": content
             })
 
@@ -785,15 +808,28 @@ class GenericProcessor:
         context_names = ""
         context_data = ""
         for context in context_json:
+
+            # store contextual project summary data for use in prompts
             if context['type'] == AnalysisContextType.projectSummary:
                 context_names = f"{context_names}, {context['name']}" if context_names != "" else f"{context['name']}"
                 context_data = f"{context['data']}\n\n {context_data}" if context_data != "" else f"{context['data']}"
-            else:
-                print(f"Unsupported context type {context['type']} - appending plain data only")
-                context_data = f"{context['data']}\n\n {context_data}" if context_data != "" else f"{context['data']}"
 
-        prompt_format_args['summaries_type'] = context_names
-        prompt_format_args['summaries_data'] = context_data
+                prompt_format_args['summaries_type'] = context_names
+                prompt_format_args['summaries_data'] = context_data
+
+            # for related and historical data, we send mulitple messages for each entry to managed and truncated
+            elif context['type'] in [AnalysisContextType.history, AnalysisContextType.related]:
+                if f"context_{context['type']}" not in prompt_format_args:
+                    prompt_format_args[f"context_{context['type']}"] = ['system', [context['data']]]
+                else:
+                    prompt_format_args[f"context_{context['type']}"][1].append(context['data'])
+
+            # for user focus, we send one system prompt so analysis sees all user-focus in one message
+            elif context['type'] == AnalysisContextType.userFocus:
+                prompt_format_args['context_userFocus'] = ['system', context['data']] if 'context_userFocus' not in prompt_format_args else f"{prompt_format_args['context_userFocus']}\n\n {context['data']}"
+
+            else:
+                print(f"Unsupported context type {context['type']} - discarding data for {context['name']}")
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
 
@@ -993,6 +1029,12 @@ class GenericProcessor:
         #     'guidelines',
         #     'summaries_type',
         #     'summaries_data']
+
+        # context_data = [
+        #    'context_userFocus',
+        #    'context_history',
+        #    'context_related',
+        #    'context_projectSummary']
 
         return openai_config_params + processor_params + system_context_params
 
