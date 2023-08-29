@@ -209,14 +209,17 @@ class GenericProcessor:
 
         total_system_buffer = self.calculate_system_message_token_buffer(max_tokens_for_model(data.get('model')))
 
+        # if there are less than 5 system messages, we're going to use minimum quotas to
+        #   ensure even large messages have some minimum quota
         min_quota_threshold_for_message_count = 5
         min_quota_percent = 1 / min_quota_threshold_for_message_count
         min_token_quota = 250
-        max_quota = total_system_buffer / len(system_messages) if system_messages else 0
+        max_quota = total_system_buffer / len(system_messages) if len(system_messages) > 0 else 0
 
+        # but if we have a large number of system messages, don't enforce a minimum quota
         if len(system_messages) > min_quota_threshold_for_message_count:
-            min_quota_percent = None
-            min_token_quota = None
+            min_quota_percent = 0
+            min_token_quota = 0
 
         new_messages = []
         in_sequence_system_messages = []
