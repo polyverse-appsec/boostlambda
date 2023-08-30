@@ -17,7 +17,7 @@ try:
 except Exception as e:
     print(f"Error loading test data: {str(e)}")
 
-client_version = '0.9.5'
+from test_version import client_version
 
 
 def test_quick_compliance():

@@ -23,7 +23,7 @@ with open('./tests/data/performance/exponential_fibonacci.py', 'r') as file:
 with open('./tests/data/performance/constant_lookup.py', 'r') as file:
     constant_lookup = file.read()
 
-client_version = '0.9.5'
+from test_version import client_version
 
 
 def check_performance(code, issuesIdentified, use_function=False, issues=0):

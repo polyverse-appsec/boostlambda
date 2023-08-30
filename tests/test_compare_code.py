@@ -14,7 +14,7 @@ with open('./tests/data/comparison/sync_urls.py', 'r') as file:
 with open('./tests/data/comparison/sync_urls_2.py', 'r') as file:
     sync_urls_2_py = file.read()
 
-client_version = '0.9.5'
+from test_version import client_version
 
 
 def test_compare_code():

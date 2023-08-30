@@ -1,7 +1,6 @@
 from chalicelib.processors.CustomProcessor import CustomProcessor
 from chalice import Chalice
 
-client_version = '0.9.5'
 
 app = Chalice(app_name='boost')
 
