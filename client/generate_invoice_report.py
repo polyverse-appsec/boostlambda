@@ -52,7 +52,7 @@ def split_leading_number_from_description(description):
     return number, plan
 
 
-def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse):
+def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sort):
 
     if not dev:
         os.environ['CHALICE_STAGE'] = 'prod'
@@ -302,11 +302,12 @@ if __name__ == "__main__":
     parser.add_argument("--dev", action='store_true', help="Use Dev Server")
     parser.add_argument("--csv", action='store_true', help="Generate CSV file instead of printing table")
     parser.add_argument("--user", type=str, help="Show invoice data for a single user")
+    parser.add_argument("--sort", type=str, help="Sort by type (user or org)")
     parser.add_argument("--includePolyverse", action='store_true', help="Include Polyverse account data")
     args = parser.parse_args()
 
     try:
-        main(args.showTest, args.debug, args.dev, args.printAll, args.csv, args.user, args.includePolyverse)
+        main(args.showTest, args.debug, args.dev, args.printAll, args.csv, args.user, args.includePolyverse, args.sort)
     except ClientError:
         print('Network connection error. Please check connection and try again')
         sys.exit(1)
