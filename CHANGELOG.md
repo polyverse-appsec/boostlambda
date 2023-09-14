@@ -3,13 +3,14 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.9.5: September 1st, 2023
+## Version 0.9.5: September 16th, 2023
 
 ### New Features
 - N/A
 
 ### Enhancements
-- Improved quick summary reports for single files 
+- Improved quick summary reports for single files
+- Improved compliance code scan to be more stringent and less false-positives
 
 ### Bug Fixes
 - N/A

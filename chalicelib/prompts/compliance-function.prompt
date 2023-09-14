@@ -1,9 +1,14 @@
-Analyze this code for data and privacy compliance issues related to GDPR, PCI DSS, and HIPAA compliance. For each issue, indicate a severity on a ten point scale, ten being the worse. Explain the data and privacy compliance issue and if possible, suggest a solution. For each compliance issue, provide web link for more education and background.
-
+Analyze this code for compliance issues related to GDPR, PCI DSS, and HIPAA compliance.
 For each data compliance or privacy issue, indicate a severity on a ten point scale, ten being the worst.
 Explain the compliance issue, including how data compliance of the app, server or or system is compromised. If possible, suggest a solution.
 
 For each data compliance or privacy issue and solution, provide web link for more education and background.
+
+Severities greater than 5 should be clear and identifiable data compliance or privacy errors or warnings with very high confidence.
+For example, if your basis for identifying a potential data compliance issue is solely based on a reference to an unknown library or import, please rate no higher than 3.
+When setting the severity, increase the severity to at least 6 if the issue is found in code that has clear variables and data referencing PII or data that likely requires encryption or protection.
+Do not flag variables as PII related unless the variable name or function name or comments specific reference personal data.
+Severity of 7 or higher should only be used for the clearest data compliance or privacy issues, and not highly speculative issues.
 
 Please be very concise
 
