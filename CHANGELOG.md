@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Enhancements
-- N/A
+- Improved quick summary reports for single files 
 
 ### Bug Fixes
 - N/A

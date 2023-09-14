@@ -3,10 +3,11 @@ Based on the above info, including:
  - Categorized Metrics on Issues by Severity and Issue Type, and which Files are affected
  - Sample of Highest-Severity issues found
 
-Produce a short, executive level report on the architectural impact, risk analysis, potential customer impact, and overall issues for this software project. Base your analysis on which files have the most severe issues, and their potential impact on the overall project.
-Provide a risk assessment as well of the overall health of the project source - based on which how many files have no detected issues, and what percentage of the project files have issues by severity.
+Produce a short, executive level report on the architectural impact, risk analysis, potential customer impact, and overall issues for this software project. Base your analysis on which files or functions have the most severe issues, and their potential impact on the overall project or file.
+Provide a risk assessment of the overall health of the source code - based on how many files have issues with severity 7 or higher, and what percentage of the project files have issues by severity.
+If you identify recurring issues of a specific type, identify the root cause of the type of issue as: developer education, code quality or policy/regulatory risks/violations. Depending on the types of issue and root cause, identify 2-3 specific concrete actions that can be taken to address these specific issues.
 
-Include 4-5 bullet points of highlights of your analysis. And for each bullet point, try to representitative info about the highlight including providing explicit details, metrics or context.
+Include 4-5 bullet points of highlights of your analysis - including the most severe issues, files or function examples, and impact. For each bullet point, try to provide representative info about the highlight including providing explicit details of sample high severity issues, where they occurred, metrics on the issue or context of the issue against the overall source code base.
 
 Use the following specific architectural guidelines for this development project when performing your architectural analysis - including for consistency with or conflicts between the architecture you see in the code and way the architecture principle is defined in the guidelines:
 {guidelines}
