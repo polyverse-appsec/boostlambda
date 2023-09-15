@@ -603,15 +603,16 @@ class GenericProcessor:
     def makeOpenAICall(self, account, function_name, correlation_id, attempt, timeBufferRemaining, params) -> dict:
         print(f"{function_name}:{account['email']}:{correlation_id}:Starting OpenAI API call (Attempt {attempt + 1})")
 
+        start_time = time.time()
         try:
-            response = openai.ChatCompletion.create(**params, timeout=timeBufferRemaining)
+            response = openai.ChatCompletion.create(**params, timeout=timeBufferRemaining, request_timeout=timeBufferRemaining)
 
-            print(f"{function_name}:{account['email']}:{correlation_id}:SUCCESS:Finished OpenAI API call (Attempt {attempt + 1})")
+            print(f"{function_name}:{account['email']}:{correlation_id}:SUCCESS:Finished OpenAI API call (Attempt {attempt + 1} in {time.time() - start_time:.3f} seconds)")
 
             return response
 
         except Exception as e:
-            print(f"{function_name}:{account['email']}:{correlation_id}:ERROR({str(e)}):Finished OpenAI API call (Attempt {attempt + 1})")
+            print(f"{function_name}:{account['email']}:{correlation_id}:ERROR({str(e)}):Finished OpenAI API call (Attempt {attempt + 1} in {time.time() - start_time:.3f} seconds)")
             raise
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
@@ -657,18 +658,25 @@ class GenericProcessor:
                     output_tokens=response.usage.completion_tokens)
 
             except (openai.error.Timeout, requests.exceptions.Timeout) as e:
+                error = e
                 error_msg = str(e)
-                error_type = "Timeout Error"
+                error_type = "Timeout"
+
             except (openai.error.ServiceUnavailableError) as e:
+                error = e
                 error_msg = str(e)
-                error_type = "Service Unavailable Error"
+                error_type = "Service Unavailable"
+
             except (openai.error.APIConnectionError, openai.error.APIError) as e:
+                error = e
                 error_msg = str(e)
-                error_type = "API Error"
+                error_type = "API"
+
             except openai.error.RateLimitError as e:
+                error = e
 
                 error_msg = str(e)
-                error_type = "Rate Limit Error"
+                error_type = "Rate Limit"
 
                 if "40000 / min" in error_msg:
                     randomSleep = random.uniform(30, 60)
@@ -689,7 +697,7 @@ class GenericProcessor:
 
                 time.sleep(randomSleep)
 
-            if attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < totalAnalysisTimeBuffer:
+            if error_type != "Timeout" and attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < totalAnalysisTimeBuffer:
 
                 timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
 
@@ -700,8 +708,8 @@ class GenericProcessor:
                 print(f"{function_name}:{account['email']}:{correlation_id}:Retrying in {randomSleep} seconds after {error_type}: {error_msg}")
                 time.sleep(randomSleep)
             else:
-                print(f"{function_name}:{account['email']}:{correlation_id}:FAILED after {attempt} retries:Error: {error_msg}")
-                raise
+                print(f"{function_name}:{account['email']}:{correlation_id}:FAILED after {attempt} retries:Error: {error_type}: {error_msg}")
+                raise error
 
     def runAnalysisForPrompt(self, i, this_messages, max_output_tokens, params_template, account, function_name, correlation_id) -> dict:
         params = params_template.copy()  # Create a copy of the template to avoid side effects
