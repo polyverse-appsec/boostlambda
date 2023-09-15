@@ -849,7 +849,7 @@ class GenericProcessor:
 
             # for user focus, we send one system prompt so analysis sees all user-focus in one message
             elif context['type'] == AnalysisContextType.userFocus:
-                prompt_format_args['context_userFocus'] = ['system', context['data']] if 'context_userFocus' not in prompt_format_args else f"{prompt_format_args['context_userFocus']}\n\n {context['data']}"
+                prompt_format_args['context_userFocus'] = ['system', [context['data']]] if 'context_userFocus' not in prompt_format_args else ['system', [f"{prompt_format_args['context_userFocus'][1][0]}\n\n {context['data']}"]]
 
             else:
                 print(f"Unsupported context type {context['type']} - discarding data for {context['name']}")

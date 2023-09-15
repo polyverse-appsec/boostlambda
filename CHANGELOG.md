@@ -15,6 +15,7 @@ Polyverse Boost Cloud Service
 
 ### Bug Fixes
 - Fix JSON conversion in guidelines, summaries in context
+- Fix User Context injection into all services
 
 ## Version 0.9.4: August 29th, 2023
 
