@@ -831,6 +831,9 @@ class GenericProcessor:
         context_names = ""
         context_data = ""
         for context in context_json:
+            if 'data' not in context:
+                print(f"Skipping context {context['name']} due to missing data")
+                continue
 
             # store contextual project summary data for use in prompts
             if context['type'] == AnalysisContextType.projectSummary:
