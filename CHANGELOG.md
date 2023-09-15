@@ -14,7 +14,7 @@ Polyverse Boost Cloud Service
 - Improved compliance code scan to be more stringent and less false-positives
 
 ### Bug Fixes
-- N/A
+- Fix JSON conversion in guidelines, summaries in context
 
 ## Version 0.9.4: August 29th, 2023
 

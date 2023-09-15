@@ -815,7 +815,7 @@ class GenericProcessor:
             # get the JSON object out of the data payload
             # older clients sent the structure as an embedded JSON string
             # newer clients send the data as a normal object
-            summaries_data = data['summaries'] if data['summaries'] is not str else json.loads(data['summaries'])
+            summaries_data = data['summaries'] if not isinstance(data['summaries'], str) else json.loads(data['summaries'])
             summaries_data = summaries_data[1]  # the first element is the 'system' role of summaries
             summaries = ""
 
