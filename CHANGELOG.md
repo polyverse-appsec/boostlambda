@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Enhancements
-- Ensure OpenAI calls stay within the 4 minute Lambda timeout window (e.g. no more than 3 mins per call)
+- Ensure OpenAI calls stay within the 15 minute Lambda timeout window (e.g. no more than 6 mins per call)
 - Improved quick summary reports for single files
 - Improved compliance code scan to be more stringent and less false-positives
 

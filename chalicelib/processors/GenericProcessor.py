@@ -617,9 +617,16 @@ class GenericProcessor:
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
 
-        totalAnalysisTimeBuffer = int(3.25 * 60)  # 3 minutes 15 seconds
+        secondsInAMinute = 60
 
-        MaxTimeoutSecondsForOpenAICall = int(3 * 60)  # 3 minutes
+        # Lambda calls must be done in 15 mins or less
+        #   We'll give ourselves a little buffer in case other operations 
+        #   than OpenAI take 30-90 seconds (including stripe or GitHub calls)
+        totalAnalysisTimeBuffer = int(13.50 * secondsInAMinute)  # 13 minutes 30 seconds
+
+        MaxTimeoutSecondsForAllOpenAICalls = int(12 * secondsInAMinute)  # 12 minutes
+
+        MaxTimeoutSecondsForSingleOpenAICall = int(6 * secondsInAMinute)  # 6 minutes
 
         max_retries = 3
         start_time = time.time()
@@ -637,14 +644,25 @@ class GenericProcessor:
                 if timeBufferRemaining < 0:
                     raise Exception(f"Timeout exceeded for OpenAI call: {totalAnalysisTimeBuffer} seconds")
 
-                openAICallTimeBufferRemaining = MaxTimeoutSecondsForOpenAICall - (time.time() - start_time)
+                openAICallTimeBufferRemaining = MaxTimeoutSecondsForAllOpenAICalls - (time.time() - start_time)
+
+                # we'll let the OpenAI call take at most the per-call max, or what's remaining
+                #       of the total calls buffer
+                allotedTimeBufferForThisOpenAPICall = min(
+                    openAICallTimeBufferRemaining, 
+                    MaxTimeoutSecondsForSingleOpenAICall)
+
+                print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{totalAnalysisTimeBuffer}, "
+                      f"allotedTimeBufferForThisOpenAPICall:{allotedTimeBufferForThisOpenAPICall}, "
+                      f"openAICallTimeBufferRemaining:{openAICallTimeBufferRemaining}, "
+                      f"timeBufferRemaining:{timeBufferRemaining}")
 
                 response = self.makeOpenAICall(
                     account,
                     function_name,
                     correlation_id,
                     attempt,
-                    openAICallTimeBufferRemaining,
+                    allotedTimeBufferForThisOpenAPICall,
                     params)
 
                 if attempt > 0:
