@@ -34,6 +34,9 @@ def search_calling_code(calling_src, url):
     return result
 
 
+DEFAULT_LAMBDA_TIMEOUT = 900  # 15 minutes in seconds
+
+
 def main(cloud_stage, monitors, whatif, check_src):
     exit_code = 0
 
@@ -50,6 +53,7 @@ def main(cloud_stage, monitors, whatif, check_src):
     for stage in stages:
         missing_functions = 0
         missing_calling_src = 0
+        missing_config = 0
 
         print(f"Checking and updating functions in stage: {stage}")
 
@@ -80,12 +84,12 @@ def main(cloud_stage, monitors, whatif, check_src):
                         continue
 
                 try:
-                    config = client.get_function_url_config(FunctionName=function_name)
+                    url_config = client.get_function_url_config(FunctionName=function_name)
                 except Exception as e:
                     if "ResourceNotFoundException" not in str(e):
                         raise
 
-                    config = None
+                    url_config = None
                     pass
 
                 # Check if the function already has public access
@@ -96,6 +100,16 @@ def main(cloud_stage, monitors, whatif, check_src):
                         raise
 
                     existing_permissions = None
+                    pass
+
+                # get the configuration of the service, to verify its correct and update if needed
+                try:
+                    config = client.get_function_configuration(FunctionName=function_name)
+                except Exception as e:
+                    if "ResourceNotFoundException" not in str(e):
+                        raise
+
+                    config = None
                     pass
 
                 if existing_permissions:
@@ -122,15 +136,22 @@ def main(cloud_stage, monitors, whatif, check_src):
                     if not foundPublicAccess:
                         existing_permissions = None
 
+                if config:
+                    timeout = config['Timeout']
+                    if timeout < DEFAULT_LAMBDA_TIMEOUT:
+                        print(colored(f"    Timeout for {function_name} is {timeout / 60} (less than 15 minutes)", 'red'))
+                        missing_config += 1
+                        config = None
+
                 url = None
                 # if the config for the URL is missing, rebuild it
-                if config:
-                    if config['FunctionUrl'] is None:
-                        config = None
+                if url_config:
+                    if url_config['FunctionUrl'] is None:
+                        url_config = None
                     else:
-                        url = config['FunctionUrl']
+                        url = url_config['FunctionUrl']
 
-                if not config or not existing_permissions:
+                if not url_config or not existing_permissions:
                     # Create public access for the function
                     if whatif:
                         print(colored(f"    Missing Public Uri for {function_name}; would create via create-function-url-config and add-permission", 'red'))
@@ -139,7 +160,7 @@ def main(cloud_stage, monitors, whatif, check_src):
 
                     else:
                         try:
-                            if config is None:
+                            if url_config is None:
                                 response = client.create_function_url_config(
                                     FunctionName=f'{function_name}',
                                     AuthType='NONE',
@@ -151,8 +172,8 @@ def main(cloud_stage, monitors, whatif, check_src):
                                 else:
                                     print(colored(f"    Created public URI for function {function_name}", 'green'))
 
-                                config = client.get_function_url_config(FunctionName=function_name)
-                                url = config['FunctionUrl'] if config else None
+                                url_config = client.get_function_url_config(FunctionName=function_name)
+                                url = url_config['FunctionUrl'] if url_config else None
                                 if url is None:
                                     print(colored(f"    Failed to retrieve public URI for function {function_name}", 'red'))
                                     exit_code = 1
@@ -186,12 +207,30 @@ def main(cloud_stage, monitors, whatif, check_src):
                             exit_code = 1
                             missing_calling_src += 1
 
+                if not config:
+                    response = client.update_function_configuration(
+                        FunctionName=function_name,
+                        Timeout=DEFAULT_LAMBDA_TIMEOUT  # 15 minutes in seconds
+                    )
+                    print(colored(f"    Updated timeout for function {function_name} to {DEFAULT_LAMBDA_TIMEOUT}", 'green'))
+
+                    response = client.get_function_configuration(FunctionName=function_name)
+                    timeout = response['Timeout']
+                    if timeout != DEFAULT_LAMBDA_TIMEOUT:
+                        print(colored(f"    Failed to update timeout for function {function_name} - still {timeout}", 'red'))
+                        exit_code = 1
+
         print(f"  Finished processing functions in stage: {stage}")
         if missing_functions > 0:
             print(colored(f"  Missing functions count in stage {stage}: {missing_functions}", 'red'))
         else:
             print(colored(f"  All functions public in stage {stage}", 'green'))
         missing_functions = 0
+        if missing_config > 0:
+            print(colored(f"  Missing config count in stage {stage}: {missing_config}", 'red'))
+        else:
+            print(colored(f"  All functions config updated in stage {stage}", 'green'))
+        missing_config = 0
 
         if check_src:
             if missing_calling_src > 0:
