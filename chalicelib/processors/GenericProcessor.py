@@ -600,85 +600,108 @@ class GenericProcessor:
 
         return this_messages
 
+    def makeOpenAICall(self, account, function_name, correlation_id, attempt, timeBufferRemaining, params) -> dict:
+        print(f"{function_name}:{account['email']}:{correlation_id}:Starting OpenAI API call (Attempt {attempt + 1})")
+
+        try:
+            response = openai.ChatCompletion.create(**params, timeout=timeBufferRemaining)
+
+            print(f"{function_name}:{account['email']}:{correlation_id}:SUCCESS:Finished OpenAI API call (Attempt {attempt + 1})")
+
+            return response
+
+        except Exception as e:
+            print(f"{function_name}:{account['email']}:{correlation_id}:ERROR({str(e)}):Finished OpenAI API call (Attempt {attempt + 1})")
+            raise
+
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
+
+        totalAnalysisTimeBuffer = int(3.25 * 60)  # 3 minutes 15 seconds
+
+        MaxTimeoutSecondsForOpenAICall = int(3 * 60)  # 3 minutes
+
         max_retries = 3
+        start_time = time.time()
+
         # we're going to retry on intermittent network issues
         # e.g. throttling, connection issues, service down, etc..
         # Note that with RateLimit error, we could actually make it worse...
-        #    So don't retry on rate limit
+        #    So for rate limit we wait a lot longer to retry (e.g. 30-60 seconds)
         # https://platform.openai.com/docs/guides/error-codes/python-library-error-types
         for attempt in range(max_retries + 1):
+
             try:
-                try:
-                    response = openai.ChatCompletion.create(**params)
+                timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
 
-                    if attempt > 0:
-                        print(f"{function_name}:{account['email']}:{correlation_id}:Succeeded after {attempt} retries")
+                if timeBufferRemaining < 0:
+                    raise Exception(f"Timeout exceeded for OpenAI call: {totalAnalysisTimeBuffer} seconds")
 
-                    return dict(
-                        message=response.choices[0].message,
-                        response=response.choices[0].message.content,
-                        finish=response.choices[0].finish_reason,
-                        input_tokens=response.usage.prompt_tokens,
-                        output_tokens=response.usage.completion_tokens)
+                openAICallTimeBufferRemaining = MaxTimeoutSecondsForOpenAICall - (time.time() - start_time)
 
-                except openai.error.Timeout as e:
-                    if attempt >= max_retries:  # If not the last attempt
-                        raise
-                    else:
-                        recoverableError = e
-                        pass  # Try again
-                except requests.exceptions.Timeout as e:
-                    if attempt >= max_retries:  # If not the last attempt
-                        raise
-                    else:
-                        recoverableError = e
-                        pass  # Try again
-                except openai.error.APIConnectionError as e:
-                    if attempt >= max_retries:  # If not the last attempt
-                        raise
-                    else:
-                        recoverableError = e
-                        pass  # Try again
-                except openai.error.APIError as e:
-                    if attempt >= max_retries:  # If not the last attempt
-                        raise
-                    else:
-                        recoverableError = e
-                        pass  # Try again
-                except openai.error.ServiceUnavailableError as e:
-                    if attempt >= max_retries:  # If not the last attempt
-                        raise
-                    else:
-                        recoverableError = e
-                        pass  # Try again
-                except openai.error.RateLimitError as e:
-                    # if we hit the rate limit, send a cloudwatch alert and raise the error
-                    capture_metric(
-                        account['customer'], account['email'], function_name, correlation_id,
-                        {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
-                    if attempt >= max_retries:  # If not the last attempt
-                        raise
-                    else:
-                        # throttle way back if we hit the 40k processing limit
-                        if "40000 / min" in str(e):
-                            randomSleep = random.uniform(30, 60)
-                        else:
-                            randomSleep = random.uniform(5, 15)
-                        print(f"{function_name}:{correlation_id}:RateLimitError, sleeping for {randomSleep} seconds before retry")
-                        time.sleep(randomSleep)  # Sleep for 5-15 seconds to throttle, and avoid stampeding on retry
-                        recoverableError = e
-                        pass  # Try again
-                except Exception:
-                    raise
+                response = self.makeOpenAICall(
+                    account,
+                    function_name,
+                    correlation_id,
+                    attempt,
+                    openAICallTimeBufferRemaining,
+                    params)
 
-            except Exception as e:
-                print(f"{function_name}:{account['email']}:{correlation_id}:FAILED after {attempt} retries:Error: {str(e)}")
+                if attempt > 0:
+                    print(f"{function_name}:{account['email']}:{correlation_id}:Succeeded after {attempt} retries")
+
+                return dict(
+                    message=response.choices[0].message,
+                    response=response.choices[0].message.content,
+                    finish=response.choices[0].finish_reason,
+                    input_tokens=response.usage.prompt_tokens,
+                    output_tokens=response.usage.completion_tokens)
+
+            except (openai.error.Timeout, requests.exceptions.Timeout) as e:
+                error_msg = str(e)
+                error_type = "Timeout Error"
+            except (openai.error.ServiceUnavailableError) as e:
+                error_msg = str(e)
+                error_type = "Service Unavailable Error"
+            except (openai.error.APIConnectionError, openai.error.APIError) as e:
+                error_msg = str(e)
+                error_type = "API Error"
+            except openai.error.RateLimitError as e:
+
+                error_msg = str(e)
+                error_type = "Rate Limit Error"
+
+                if "40000 / min" in error_msg:
+                    randomSleep = random.uniform(30, 60)
+                else:
+                    randomSleep = random.uniform(5, 15)
+
+                print(f"{function_name}:{correlation_id}:RateLimitError, sleeping for {randomSleep} seconds before retry")
+
+                # if we hit the rate limit, send a cloudwatch alert and raise the error
+                capture_metric(
+                    account['customer'], account['email'], function_name, correlation_id,
+                    {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
+
+                timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
+
+                if timeBufferRemaining < 0:
+                    raise Exception(f"Timeout exceeded for OpenAI call: {totalAnalysisTimeBuffer} seconds")
+
+                time.sleep(randomSleep)
+
+            if attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < totalAnalysisTimeBuffer:
+
+                timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
+
+                if timeBufferRemaining < 0:
+                    raise Exception(f"Timeout exceeded for OpenAI call: {totalAnalysisTimeBuffer} seconds")
+
+                randomSleep = random.uniform(2, 5)
+                print(f"{function_name}:{account['email']}:{correlation_id}:Retrying in {randomSleep} seconds after {error_type}: {error_msg}")
+                time.sleep(randomSleep)
+            else:
+                print(f"{function_name}:{account['email']}:{correlation_id}:FAILED after {attempt} retries:Error: {error_msg}")
                 raise
-
-            randomSleep = random.uniform(2, 5)
-            print(f"{function_name}:{account['email']}:{correlation_id}:Retrying in {randomSleep} seconds after recoverable error: {str(recoverableError)}")
-            time.sleep(randomSleep)  # Sleep for 2-5 seconds to throttle, and avoid stampeding on retry
 
     def runAnalysisForPrompt(self, i, this_messages, max_output_tokens, params_template, account, function_name, correlation_id) -> dict:
         params = params_template.copy()  # Create a copy of the template to avoid side effects
@@ -727,7 +750,7 @@ class GenericProcessor:
             # get the JSON object out of the data payload
             # older clients sent the structure as an embedded JSON string
             # newer clients send the data as a normal object
-            guidelines_data = data['guidelines'] if data['guidelines'] is not str else json.loads(data['guidelines'])
+            guidelines_data = data['guidelines'] if not isinstance(data['guidelines'], str) else json.loads(data['guidelines'])
             guidelines_data = guidelines_data[1]  # the first element is the 'system' role of guidelines
             guidelines = ""
             for guideline in guidelines_data:
