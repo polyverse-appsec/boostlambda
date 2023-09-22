@@ -556,7 +556,7 @@ class GenericProcessor:
                     # inject each piece of custom content into the prompt
                     this_prompt_format_args = prompt_format_args.copy()
                     this_prompt_format_args[tag] = content
-                    formatted_content = self.safe_format(content, **this_prompt_format_args)
+                    formatted_content = self.safe_format(prompt[1], **this_prompt_format_args)
 
                     if str.isspace(formatted_content):
                         print(f"Skipping empty prompt for role {role}")

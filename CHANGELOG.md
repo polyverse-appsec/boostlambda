@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.9.6: September 22nd, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Fix for broken prompts using lists of injected content (e.g. chat with multiple user contexts)
+
 ## Version 0.9.5: September 15th, 2023
 
 ### New Features
