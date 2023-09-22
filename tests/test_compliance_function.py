@@ -6,7 +6,7 @@ import json
 with open('./tests/data/compliance/simple-compliance.js', 'r') as file:
     simple_buf_c = file.read()
 
-from test_version import client_version
+from .test_version import client_version
 
 
 def test_compliance_function():

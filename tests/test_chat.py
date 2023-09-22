@@ -2,7 +2,7 @@ from chalice.test import Client
 from app import app
 import json
 
-from test_version import client_version
+from .test_version import client_version
 
 
 # load the file data/simple-buf.c into a string, relative to the root directory

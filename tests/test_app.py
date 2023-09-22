@@ -1,7 +1,7 @@
 from chalice.test import Client
 from app import app
 import json
-from test_version import client_version
+from .test_version import client_version
 
 
 def test_explain():

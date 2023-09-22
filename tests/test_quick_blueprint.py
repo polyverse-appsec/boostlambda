@@ -10,7 +10,7 @@ with open('./tests/data/quick-blueprint/package.json', 'r') as file:
 with open('./tests/data/quick-blueprint/sample.ts', 'r') as file:
     sample_code_ts = file.read()
 
-from test_version import client_version
+from .test_version import client_version
 
 
 def test_quick_blueprint():

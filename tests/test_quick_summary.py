@@ -17,7 +17,7 @@ try:
 except Exception as e:
     print(f"Error loading test data: {str(e)}")
 
-from test_version import client_version
+from .test_version import client_version
 
 
 def test_quick_compliance():

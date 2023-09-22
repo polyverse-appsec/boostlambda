@@ -4,7 +4,7 @@ from chalice.test import Client
 import json
 from chalice import Chalice
 
-from test_version import client_version
+from .test_version import client_version
 
 app = Chalice(app_name='boost')
 

@@ -6,7 +6,7 @@ import json
 with open('./tests/data/customscan/missingawait.ts', 'r') as file:
     missingawait_ts = file.read()
 
-from test_version import client_version
+from .test_version import client_version
 
 
 def test_customscan_function():
