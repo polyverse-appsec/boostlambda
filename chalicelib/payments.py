@@ -20,7 +20,9 @@ if 'AWS_CHALICE_CLI_MODE' not in os.environ:
     service_stage = variable_value = os.getenv('CHALICE_STAGE')
     if (service_stage == "prod" or service_stage == "staging"):
         stripe.api_key = secret_json["stripe_prod"]
+        print("Using Production Stripe Key - from Secret Store")
     else:  # dev, test, or local
+        print("Using Test Stripe Key - from Secret Store")
         stripe.api_key = secret_json["stripe_dev"]
 
 
@@ -43,6 +45,15 @@ def stripe_retry(func, *args, **kwargs):
                 print(f"Successful Stripe call to {func.__name__}: after attempt {retry_count + 1} retry of {max_retries + 1}")
 
             return response
+        except stripe.error.RateLimitError as e:
+            if retry_count < max_retries:
+                wait_time = random.randint(1, 3)  # Random wait between 1 to 3 seconds
+                time.sleep(wait_time)
+                print(f"Rate Limiting Error with Stripe call {func.__name__}: {str(e)}; attempt {retry_count + 1} of {max_retries + 1} after {wait_time} seconds")
+                retry_count += 1
+            else:
+                print(f"Rate Limiting error: {str(e)} Max retries exceeded: {max_retries} retrieving Stripe call: {func.__name__}... giving up")
+                raise e
         except stripe.error.APIConnectionError as e:
             if retry_count < max_retries:
                 wait_time = random.randint(3, 5)  # Random wait between 3 to 5 seconds

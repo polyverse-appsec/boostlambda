@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.9.7: September 29th, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- Introduce backoff and retry logic for handling Stripe Rate Limit Errors
+
+### Bug Fixes
+- N/A
+
 ## Version 0.9.6: September 22nd, 2023
 
 ### New Features
