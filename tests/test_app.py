@@ -51,7 +51,7 @@ def test_generate_outputlanguage():
         output_language = 'python'  # Replace this with the desired output language
         request_body = {
             'explanation': 'This is a simple program that prints "Hello, World!" to the console.',
-            'originalCode': 'public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
+            'code': 'public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
             'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version,
@@ -65,7 +65,7 @@ def test_generate_outputlanguage():
         print(f"\nResponse:\n\n{response.payload['body']}")
 
         conversion = json.loads(response.payload['body'])
-        assert 'print("Hello, World!")' in conversion['code']
+        assert 'print("Hello, World!")' in conversion['code'] or 'print(\'Hello, World!\')' in conversion['code']
 
 
 # test the authentication with the session parameter
