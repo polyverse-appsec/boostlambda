@@ -88,12 +88,12 @@ class UIDriverFunctionProcessor(FunctionGenericProcessor):
         return None
 
     def collect_inputs_for_processing(self, data):
-        # Extract the explanation and code from the json data
+        # Extract the user command from the json data
         userCommand = data.get('userCommand') if 'userCommand' in data else None
         if userCommand is None:
             raise BadRequestError("Error: please provide the user command request")
 
-        # set a very small token max since we're only translating a short user request into a UI command
+        # set a small token max since we're only translating a short user request into a UI command
         data['max_tokens'] = self.get_default_max_tokens()
 
         return {'userCommand': userCommand}
