@@ -41,6 +41,10 @@ def extract_values(obj, key):
 
 
 def split_leading_number_from_description(description):
+
+    if 'Polyverse Boost' not in description and 'Tier' not in description:
+        return 0, description
+
     # Split the string by ' × '
     parts = description.split(' × ')
 
@@ -152,7 +156,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
 
                     customers_list.append([f"{account_status['org']}",
                                            f"{account_status['owner']}",
-                                           f"{invoice_data.price.metadata.email}",
+                                           f"{invoice_data.price.metadata.email if invoice_data.price.metadata.get('email') else customer.email}",
                                            f"{account_status['created']}",
                                            f"{account_status['status']}",
                                            f"{account_status['credit_card_linked']}",
