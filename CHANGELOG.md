@@ -13,6 +13,7 @@ Polyverse Boost Cloud Service
 
 ### Bug Fixes
 - Restore code explanation data in code conversion service input
+- Enable Customer status lookup to handle manual invoice objects (with no metadata)
 
 ## Version 0.9.7: September 29th, 2023
 

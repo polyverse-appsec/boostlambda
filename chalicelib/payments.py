@@ -282,7 +282,12 @@ def check_customer_account_status(customer, deep=False):
         users = set()
         for invoice in targetInvoices:
             for invoice_data in invoice.lines.data:
-                users.add(invoice_data.price.metadata.email)
+                invoice_email = invoice_data.price.metadata.get('email', customer.email)
+                if invoice_email:
+                    users.add(invoice_email)
+                else:
+                    print(f"WARNING: Email missing on {customer.email} invoice {invoice.id} price metadata")
+                    users.add(customer.email)
         account_status['users'] = list(users)
     else:
         account_status['users']: []
@@ -325,7 +330,12 @@ def check_customer_account_status(customer, deep=False):
 
     if deep:
         for invoice_data in invoice.lines.data:
-            users.add(invoice_data.price.metadata.email)
+            invoice_email = invoice_data.price.metadata.get('email')
+            if invoice_email:
+                users.add(invoice_email)
+            else:
+                print(f"WARNING: Email missing on {customer.email} invoice {invoice.id} price metadata")
+            users.add(customer.email)
         account_status['users'] = list(users)
 
     # no usage, no invoice, no balance, no payment method, so we'll assume new customer
