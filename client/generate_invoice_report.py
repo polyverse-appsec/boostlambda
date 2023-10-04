@@ -278,11 +278,12 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
 
         customerTable = PrettyTable(['Total Customers', 'Amount', "%"])
         total_users = total_active_users + total_inactive_users
-        customerTable.add_row(["Paying Customers", f"{total_paying_customers}", f"{(total_paying_customers / total_active_users) if total_active_users > 0 else 0 * 100:.0f}% Converted"])
-        customerTable.add_row(["Trial Customers", f"{total_active_users - total_paying_customers}", f"{((total_active_users - total_paying_customers) / total_active_users) if total_active_users > 0 else 0 * 100:.0f}% of Active"])
-        customerTable.add_row(["Active Customers", f"{total_active_users}", f"{(total_active_users / total_users) if total_users > 0 else 0 * 100:.0f}% of Total"])
-        customerTable.add_row(["New Customers", f"{total_inactive_users}", f"{(total_inactive_users / total_users) if total_users > 0 else 0 * 100:.0f}% of Total"])
-        customerTable.add_row(["Suspended Customers", f"{total_suspended_customers}", f"{(total_suspended_customers / total_users) if total_users > 0 else 0 * 100:.0f}% of Total"])
+
+        customerTable.add_row(["Paying Customers", f"{total_paying_customers}", f"{((total_paying_customers / total_active_users) * 100) if total_active_users > 0 else 0:.0f}% Converted"])
+        customerTable.add_row(["Trial Customers", f"{total_active_users - total_paying_customers}", f"{(((total_active_users - total_paying_customers) / total_active_users) * 100) if total_active_users > 0 else 0:.0f}% of Active"])
+        customerTable.add_row(["Active Customers", f"{total_active_users}", f"{((total_active_users / total_users) * 100) if total_users > 0 else 0:.0f}% of Total"])
+        customerTable.add_row(["New Customers", f"{total_inactive_users}", f"{((total_inactive_users / total_users) * 100) if total_users > 0 else 0:.0f}% of Total"])
+        customerTable.add_row(["Suspended Customers", f"{total_suspended_customers}", f"{((total_suspended_customers / total_users) * 100) if total_users > 0 else 0:.0f}% of Total"])
         customerTable.add_row(["----------------------", "-----", "-----------"])
         customerTable.add_row(["TOTAL Customers", f"{total_users}", ""])
         print(customerTable)
