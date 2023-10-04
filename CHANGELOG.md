@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Bug Fixes
-- N/A
+- Restore code explanation data in code conversion service input
 
 ## Version 0.9.7: September 29th, 2023
 
