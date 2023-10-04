@@ -47,7 +47,7 @@ report_bug_function = {
 
 
 class BugFunctionGenericProcessor(FunctionGenericProcessor):
-    def __init__(self, api_version, main_prompt, system_prompt, function_name, bugTypeDescription=None):
+    def __init__(self, api_version, prompts, function_name, bugTypeDescription=None):
         my_function_schema = report_bug_function.copy()
 
         if function_name is None:
@@ -62,10 +62,12 @@ class BugFunctionGenericProcessor(FunctionGenericProcessor):
         my_function_schema['parameters']['properties']['bugs']['items']['properties']['bugType']['description'] = bugTypeDescription
 
         super().__init__(api_version,
-                         main_prompt,
-                         system_prompt,
+                         prompts,
                          function_call,
                          my_function_schema)
+
+    def get_function_definition(self):
+        return report_bug_function
 
     # default is capturing bugs in the function output
     def process_function_output(self, result, log):

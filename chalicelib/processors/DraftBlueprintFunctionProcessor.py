@@ -48,14 +48,17 @@ build_draft_blueprint = {
 class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
     def __init__(self):
         super().__init__(API_VERSION,
-                         'draft-blueprint-function.prompt',
-                         'draft-blueprint-function-role-system.prompt',
+                         [['main', 'draft-blueprint-function.prompt'],
+                          ['system', 'draft-blueprint-function-role-system.prompt']],
                          'build_draft_blueprint',
                          build_draft_blueprint)
 
     def calculate_input_token_buffer(self, total_max) -> int:
         # we'll leave 90% of the buffer for the input, and the last 10% for the generated blueprint
         return math.floor(total_max * 0.9)
+
+    def get_function_definition(self):
+        return build_draft_blueprint
 
     # default is capturing bugs in the function output
     def process_function_output(self, result, log):

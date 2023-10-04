@@ -6,8 +6,8 @@ from chalice import BadRequestError
 class CustomScanFunctionProcessor(BugFunctionGenericProcessor):
     def __init__(self):
         super().__init__(API_VERSION,
-                         'customscan-function.prompt',
-                         'customscan-function-role-system.prompt',
+                         [['main', 'customscan-function.prompt'],
+                          ['system', 'customscan-function-role-system.prompt']],
                          'customScan',
                          'the type of issue')
 
