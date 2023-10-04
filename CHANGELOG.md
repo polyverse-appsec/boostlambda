@@ -11,6 +11,7 @@ Polyverse Boost Cloud Service
 ### Enhancements
 - Added validation to GenericProcessor for required main prompt
 - Enable access to max_tokens on GenericProcessor
+- Validate the function schema on construction to ensure it fits in token buffers
 
 ### Bug Fixes
 - Restore code explanation data in code conversion service input

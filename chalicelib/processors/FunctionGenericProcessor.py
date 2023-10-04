@@ -1,14 +1,32 @@
 from chalicelib.processors.GenericProcessor import GenericProcessor, AnalysisOutputFormat
 from chalice import BadRequestError
-from chalicelib.usage import OpenAIDefaults
+from chalicelib.usage import OpenAIDefaults, num_tokens_from_string
 
 import json
 import math
 
 
 class FunctionGenericProcessor(GenericProcessor):
-    def __init__(self, api_version, prompts, function_call, custom_function_schema):
+    def __init__(self, api_version, prompts, function_call, custom_function_schema, custom_params=None):
         my_function_schema = custom_function_schema.copy()
+
+        default_params = {
+            'model': OpenAIDefaults.boost_default_gpt_model,
+            'temperature': OpenAIDefaults.temperature_medium_with_explanation,
+            'functions': [my_function_schema],
+            'function_call': {"name": f"{function_call}"}}
+
+        my_default_params = default_params.copy()
+
+        # Update my_default_params with values from custom_params (if provided)
+        if custom_params:
+            my_default_params.update(custom_params)
+
+        super().__init__(api_version,
+                         prompts,
+                         None,
+                         my_default_params,
+                         AnalysisOutputFormat.json)
 
         # Validate that the function definition has all the necessary properties
         # We check now, so we don't fail suddenly during post-processing of analysis results
@@ -17,14 +35,13 @@ class FunctionGenericProcessor(GenericProcessor):
             print("Error: The function definition is missing necessary properties.")
             raise BadRequestError("Error: The function definition is missing necessary properties.")
 
-        super().__init__(api_version,
-                         prompts,
-                         None,
-                         {'model': OpenAIDefaults.boost_default_gpt_model,
-                          'temperature': OpenAIDefaults.temperature_medium_with_explanation,
-                          'functions': [my_function_schema],
-                          'function_call': {"name": f"{function_call}"}},
-                         AnalysisOutputFormat.json)
+        # ensure the function definition will fit in the input buffer - excluding system buffer
+        # we check the function definition after params, since we need the chosen model to check
+        function_definition_token_length = num_tokens_from_string(json.dumps(function_definition), my_default_params['model'])[0]
+        potential_function_definition_token_buffer = self.calculate_input_token_buffer(self.get_default_max_tokens()) - self.calculate_system_message_token_buffer(self.get_default_max_tokens())
+        if function_definition_token_length > potential_function_definition_token_buffer:
+            print(f"Error: The function definition is too large to fit in the input buffer. Function definition length: {function_definition_token_length}, Input buffer length: {potential_function_definition_token_buffer}")
+            raise BadRequestError("Error: The function definition is too large to fit in the input buffer.")
 
     def get_chunkable_input(self) -> str:
         return 'code'
