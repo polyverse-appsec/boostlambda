@@ -12,6 +12,21 @@ base_request_body = {
 }
 
 
+class UIActions:
+    askForProductHelp = 'askForProductHelp'
+    startAnalysisOfProject = 'startAnalysisOfProject'
+    showProjectSummaryOrOverallStatus = 'showProjectSummaryOrOverallStatus'
+    showSecuritySummaryOrStatus = 'showSecuritySummaryOrStatus'
+    showComplianceSummaryOrStatus = 'showComplianceSummaryOrStatus'
+    enableSecurityAnalysis = 'enableSecurityAnalysis'
+    disableSecurityAnalysis = 'disableSecurityAnalysis'
+    enableComplianceAnalysis = 'enableComplianceAnalysis'
+    disableComplianceAnalysis = 'disableComplianceAnalysis'
+    enableDocumentationGeneration = 'enableDocumentationGeneration'
+    disableDocumentationGeneration = 'disableDocumentationGeneration'
+    unsupportedOperation = 'unsupportedOperation'
+
+
 def ui_driver_helper(userCommand, expected_uiAction):
     with Client(app) as client:
         request_body = base_request_body.copy()
@@ -31,24 +46,24 @@ def ui_driver_helper(userCommand, expected_uiAction):
 
 
 def test_ui_driver_help():
-    ui_driver_helper('How do I use the prodoct to scan my code?', 'askForProductHelp')
+    ui_driver_helper('How do I use the prodoct to scan my code?', UIActions.askForProductHelp)
 
 
 def test_ui_driver_run_analysis():
-    ui_driver_helper('Scan my project', 'startAnalysisOfProject')
+    ui_driver_helper('Scan my project', UIActions.startAnalysisOfProject)
 
 
 def test_ui_driver_security_summary():
-    ui_driver_helper('What is the security status of my project?', 'showSecuritySummaryOrStatus')
+    ui_driver_helper('What is the security status of my project?', UIActions.showSecuritySummaryOrStatus)
 
 
 def test_ui_driver_compliance_summary():
-    ui_driver_helper('What is the compliance status of my project?', 'showComplianceSummaryOrStatus')
+    ui_driver_helper('What is the compliance status of my project?', UIActions.showComplianceSummaryOrStatus)
 
 
 def test_ui_driver_enable_security_analysis():
-    ui_driver_helper('Turn on security analysis', 'enableSecurityAnalysis')
+    ui_driver_helper('Turn on security analysis', UIActions.enableSecurityAnalysis)
 
 
 def test_ui_driver_unknown_operation():
-    ui_driver_helper('Graph the source code changes over time on my project', 'unsupportedOperation')
+    ui_driver_helper('Graph the source code changes over time on my project', UIActions.unsupportedOperation)
