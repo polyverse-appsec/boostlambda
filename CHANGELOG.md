@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Added validation to GenericProcessor for required main prompt
+- Enable access to max_tokens on GenericProcessor
 
 ### Bug Fixes
 - Restore code explanation data in code conversion service input

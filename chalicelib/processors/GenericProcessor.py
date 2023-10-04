@@ -227,7 +227,7 @@ class GenericProcessor:
 
         system_messages = [message for message in this_messages if 'content' in message and message['role'] == 'system']
 
-        total_system_buffer = self.calculate_system_message_token_buffer(max_tokens_for_model(data.get('model')))
+        total_system_buffer = self.calculate_system_message_token_buffer(data.get('max_tokens', max_tokens_for_model(data.get('model'))))
 
         # if there are less than 5 system messages, we're going to use minimum quotas to
         #   ensure even large messages have some minimum quota
@@ -370,6 +370,9 @@ class GenericProcessor:
     def calculate_system_message_token_buffer(self, total_max) -> int:
         return math.floor(self.calculate_input_token_buffer(total_max) * 0.25)
 
+    def get_default_max_tokens(self) -> int:
+        return max_tokens_for_model(self.default_params.get('model'))
+
     def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max) -> int:
 
         # if the input is larger than our output buffer already, we'll just allow the entire output buffer to be used
@@ -430,7 +433,8 @@ class GenericProcessor:
     # also returns a list of prompts to process - where each prompt includes the prompt text, and the max output tokens for that prompt
     def build_prompts_from_input(self, data, params, prompt_format_args, function_name) -> Tuple[int, List[Tuple[List[dict[str, any]], int]], int]:
 
-        max_tokens = max_tokens_for_model(data.get('model'))
+        # allow the caller to override max_tokens, or just use default max for the chosen model
+        max_tokens = data.get('max_tokens') if 'max_tokens' in data else max_tokens_for_model(data.get('model'))
         # get the max input buffer for this function if we are tuning tokens
         if max_tokens != 0:
             input_token_buffer = self.calculate_input_token_buffer(max_tokens)
