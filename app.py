@@ -26,7 +26,7 @@ from chalicelib.processors.DraftBlueprintFunctionProcessor import DraftBlueprint
 from chalicelib.processors.QuickSummaryProcessor import QuickSummaryProcessor
 from chalicelib.processors.CustomScanFunctionProcessor import CustomScanFunctionProcessor
 from chalicelib.processors.ChatProcessor import ChatProcessor
-from chalicelib.processors.uiDriverFunctionProcessor import UIDriverFunctionProcessor
+from chalicelib.processors.UIDriver_FunctionProcessor import UIDriverFunctionProcessor
 
 import uuid
 import json

@@ -5,7 +5,6 @@ from chalicelib.usage import OpenAIDefaults
 
 import math
 
-
 ui_driver = {
     "name": "ui_driver",
     "description": "The API that will determine what UI operation to execute",
