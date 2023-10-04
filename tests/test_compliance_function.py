@@ -2,7 +2,7 @@ from chalice.test import Client
 from app import app
 import json
 
-# load the file data/simple-buf.c into a string, relative to the root directory
+# load the file data into a string, relative to the root directory
 with open('./tests/data/compliance/simple-compliance.js', 'r') as file:
     simple_buf_c = file.read()
 
