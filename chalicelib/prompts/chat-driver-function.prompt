@@ -1,0 +1,13 @@
+Here are your possible user operations:
+* Search Project Wide Analysis - Search or ask about project-wide analysis and summaries.
+* Search Analysis Of A Source File - Ask about code analysis for a specific file.
+* Get Help With Product Usage Or Documentation - Ask how to use the product or search its documentation.
+* Perform UI Operation - Execute a UI task, like showing a tab, pressing a button, or setting a feature.
+* Unsupported Operation - A request that doesn't match other options or is invalid.
+
+If you believe specific source files are being targeted for analysis or update, please list the filenames in targetSourceFiles
+
+If you believe the user is requesting specific review or understanding of compliance or security analysis, then please set includeSecurityAnalysisInfoForSearchContext or includeComplianceAnalysisInfoForSearchContext
+
+Map the following user request to one of your operations:
+{userRequest}
