@@ -10,6 +10,7 @@ from chalicelib.processors.SummaryProcessor import SummarizeProcessor
 from chalicelib.processors.ExplainProcessor import ExplainProcessor
 from chalicelib.processors.CustomProcessor import CustomProcessor
 from chalicelib.processors.GenerateProcessor import GenerateProcessor
+from chalicelib.processors.ConvertCodeFunctionProcessor import ConvertCodeFunctionProcessor
 from chalicelib.processors.TestGeneratorProcessor import TestGeneratorProcessor
 from chalicelib.processors.AnalyzeProcessor import AnalyzeProcessor
 from chalicelib.processors.ComplianceProcessor import ComplianceProcessor
@@ -71,6 +72,14 @@ generateProcessor = GenerateProcessor()
 @app.lambda_function(name='generate')
 def generate(event, _):
     return process_request(event, generateProcessor.convert_code, generateProcessor.api_version)
+
+
+convertCodeFunctionProcessor = ConvertCodeFunctionProcessor()
+
+
+@app.lambda_function(name='convert_code')
+def convert_code(event, context):
+    return process_request(event, convertCodeFunctionProcessor.convert_code, convertCodeFunctionProcessor.api_version)
 
 
 compareCodeProcessor = CompareCodeProcessor()
