@@ -7,6 +7,7 @@ Polyverse Boost Cloud Service
 
 ### New Features
 - Added new Function-based Code Conversion service
+- Added UI driver service to enable natural language queries to drive client UI
 
 ### Enhancements
 - Added validation to GenericProcessor for required main prompt

@@ -26,6 +26,7 @@ from chalicelib.processors.DraftBlueprintFunctionProcessor import DraftBlueprint
 from chalicelib.processors.QuickSummaryProcessor import QuickSummaryProcessor
 from chalicelib.processors.CustomScanFunctionProcessor import CustomScanFunctionProcessor
 from chalicelib.processors.ChatProcessor import ChatProcessor
+from chalicelib.processors.uiDriverFunctionProcessor import UIDriverFunctionProcessor
 
 import uuid
 import json
@@ -200,6 +201,14 @@ chatProcessor = ChatProcessor()
 @app.lambda_function(name='chat')
 def chatprocess(event, _):
     return process_request(event, chatProcessor.process_chat, chatProcessor.api_version)
+
+
+uiDriverFunctionProcessor = UIDriverFunctionProcessor()
+
+
+@app.lambda_function(name='ui_driver')
+def ui_driver(event, _):
+    return process_request(event, uiDriverFunctionProcessor.ui_driver, uiDriverFunctionProcessor.api_version)
 
 
 customProcessor = CustomProcessor()
