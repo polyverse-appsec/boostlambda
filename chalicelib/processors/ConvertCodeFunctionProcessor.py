@@ -2,7 +2,6 @@ from chalicelib.processors.FunctionGenericProcessor import FunctionGenericProces
 from chalicelib.version import API_VERSION
 from chalice import BadRequestError
 
-import json
 import math
 
 
@@ -88,12 +87,6 @@ class ConvertCodeFunctionProcessor(FunctionGenericProcessor):
                               "code": code,
                               "originalFilename": originalFilename,
                               "outputlanguage": outputlanguage}
-
-        if 'inputMetadata' in data:
-            inputMetadata = json.loads(data['inputMetadata'])
-            lineNumberBase = inputMetadata['lineNumberBase']
-            prompt_format_args['lineNumberBase'] = f"When identifying source numbers for issues," \
-                                                   f" treat the first line of the code as line number {lineNumberBase + 1}"
 
         return prompt_format_args
 
