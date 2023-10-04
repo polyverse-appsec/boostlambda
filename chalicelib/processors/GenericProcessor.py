@@ -105,6 +105,10 @@ class GenericProcessor:
                 new_prompt_filenames.insert(i + 4, context_userFocus)
                 break
 
+        # make sure we have a main prompt
+        if not any(prompt[0] == 'main' for prompt in new_prompt_filenames):
+            raise ValueError("Main prompt was not specified for analysis.")
+
         self.prompt_filenames = new_prompt_filenames
 
         self.default_params = default_params.copy()
@@ -620,7 +624,7 @@ class GenericProcessor:
         secondsInAMinute = 60
 
         # Lambda calls must be done in 15 mins or less
-        #   We'll give ourselves a little buffer in case other operations 
+        #   We'll give ourselves a little buffer in case other operations
         #   than OpenAI take 30-90 seconds (including stripe or GitHub calls)
         totalAnalysisTimeBuffer = int(13.50 * secondsInAMinute)  # 13 minutes 30 seconds
 
@@ -649,7 +653,7 @@ class GenericProcessor:
                 # we'll let the OpenAI call take at most the per-call max, or what's remaining
                 #       of the total calls buffer
                 allotedTimeBufferForThisOpenAPICall = min(
-                    openAICallTimeBufferRemaining, 
+                    openAICallTimeBufferRemaining,
                     MaxTimeoutSecondsForSingleOpenAICall)
 
                 print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{totalAnalysisTimeBuffer}, "

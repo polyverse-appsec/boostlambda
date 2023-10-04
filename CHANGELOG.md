@@ -3,13 +3,13 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.9.8: September 29th, 2023
+## Version 0.9.8: October 5th, 2023
 
 ### New Features
 - N/A
 
 ### Enhancements
-- N/A
+- Added validation to GenericProcessor for required main prompt
 
 ### Bug Fixes
 - Restore code explanation data in code conversion service input
