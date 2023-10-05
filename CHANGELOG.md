@@ -9,6 +9,8 @@ Polyverse Boost Cloud Service
 - Added new Function-based Code Conversion service
 - Added UI driver service to enable natural language queries to drive client UI
 - Added new Chat Targeting Service to determine what kind of natural language request is being made by user
+- Added internal email notification service
+- Send email notification to Polyverse team when a customer account is first created
 
 ### Enhancements
 - Added validation to GenericProcessor for required main prompt

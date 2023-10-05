@@ -3,13 +3,15 @@ import math
 import uuid
 import time
 import os
-from chalicelib.version import API_VERSION
 from chalice import UnauthorizedError
-from . import pvsecret
-from chalicelib.telemetry import capture_metric, InfoMetrics
 import traceback
 import random
 import datetime
+
+from chalicelib.version import API_VERSION
+from chalicelib.telemetry import capture_metric, InfoMetrics
+from . import pvsecret
+from chalicelib.alert import notify_new_customer
 
 customerportal_api_version = API_VERSION  # API version is global for now, not service specific
 print("customerportal_api_version: ", customerportal_api_version)
@@ -148,6 +150,7 @@ def check_create_customer(email, org, correlation_id=0):
                                 metadata={"org": org},
                                 )
         print(f"CREATE_CUSTOMER:SUCCEEDED:: email:{email}, org:{org}")
+        notify_new_customer(email, org)
         capture_metric(customer, email, correlation_id, "create_customer",
                        {"name": InfoMetrics.NEW_CUSTOMER, "value": 1, "unit": "None"})
 
