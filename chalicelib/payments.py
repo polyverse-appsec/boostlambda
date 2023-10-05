@@ -11,7 +11,7 @@ import datetime
 from chalicelib.version import API_VERSION
 from chalicelib.telemetry import capture_metric, InfoMetrics
 from . import pvsecret
-from chalicelib.alert import notify_new_customer
+from chalicelib.alert import notify_new_customer, notify_customer_first_usage
 
 customerportal_api_version = API_VERSION  # API version is global for now, not service specific
 print("customerportal_api_version: ", customerportal_api_version)
@@ -235,11 +235,16 @@ def update_usage(subscription_item, bytes):
     return subscription_item
 
 
-def update_usage_for_text(account, bytes_of_text):
+def update_usage_for_text(account, bytes_of_text, usage_type):
     # get the subscription item
     subscription_item = account['subscription_item']
+
     # update the usage
     update_usage(subscription_item, bytes_of_text)
+
+    # if we have 0.0 usage, and tracking usage, then notify of first usage
+    if 'usage_this_month' in account and account['usage_this_month'] == 0.0:
+        notify_customer_first_usage(account['email'], account['org'], usage_type)
 
 
 # Check if the customer has a non-zero balance and if they do NOT have a payment method

@@ -1037,7 +1037,7 @@ class GenericProcessor:
                 try:
                     if success:
                         # update the billing usage for this analysis (charge for input + output) as long as analysis is successful
-                        update_usage_for_text(account, user_input_size + output_size)
+                        update_usage_for_text(account, user_input_size + output_size, function_name)
                 except Exception:
                     success = False
                     exception_info = traceback.format_exc().replace('\n', ' ')

@@ -21,14 +21,14 @@ else:
 def notify_new_customer(email, org):
     send_email(
         subject=f"New Customer: {org}",
-        body=f"New Customer:\n  Email: {email}  \nOrg: {org}",
+        body=f"New Customer:\n  Email: {email}\n  Org: {org}",
         recipient_email=notify_recipients,
         sender_email=alert_sender_email)
 
 
-def notify_customer_first_usage(customer):
+def notify_customer_first_usage(email, org, usage_type):
     send_email(
-        subject=f"Customer First Usage: {customer['name']}",
-        body=f"Customer First Usage: {customer['name']}\n\n{customer}",
+        subject=f"Customer First Usage: {org}",
+        body=f"Customer First Usage:\n  Email: {email}\n  Org: {org}\n  Usage Type: {usage_type}",
         recipient_email=notify_recipients,
         sender_email=alert_sender_email)
