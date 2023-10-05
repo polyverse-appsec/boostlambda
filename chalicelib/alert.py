@@ -15,7 +15,9 @@ if 'AWS_CHALICE_CLI_MODE' not in os.environ and 'AWS_LAMBDA_FUNCTION_NAME' in os
     elif service_stage == ('staging', 'prod'):
         notify_recipients = production_email
 else:
-    notify_recipients = test_email
+    # when doing local debugging, don't send email (by default)
+    # otherwise, we'll get buried on test emails from test automation
+    notify_recipients = test_email if service_stage != 'local' else ""
 
 
 def notify_new_customer(email, org):
