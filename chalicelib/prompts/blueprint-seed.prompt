@@ -5,6 +5,7 @@ Based on samples of software code files in a project, you produce an Architectur
 * Software Project Type: web app, server code, cloud web service, mobile app, shared library, etc.
 * Programming Languages: List of programming languages used in project
 * Software Principles: multi-threaded, event-driven, data transformation, server processing, client app code, etc
+* Test / Quality Strategy: Unit-tests, functional tests, test framework, and test language
 * Data Storage: shared memory, disk, database, SQL vs NoSQL, non-persisted, data separated from code
 * Software Licensing: Commercial & Non-Commercial licenses, Open Source licenses (BSD, MIT, GPL, LGPL, Apache, etc.). Identify conflicting licenses.
 * Security Handling: encrypted vs non-encrypted data, memory buffer management, shared memory protections, all input is untrusted or trusted

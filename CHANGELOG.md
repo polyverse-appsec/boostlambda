@@ -14,6 +14,7 @@ Polyverse Boost Cloud Service
 - Send email notification to Polyverse Support team when customer performs first billable action
 
 ### Enhancements
+- Added Test / Quality analysis to the Blueprint service
 - Added validation to GenericProcessor for required main prompt
 - Enable access to max_tokens on GenericProcessor
 - Validate the function schema on construction to ensure it fits in token buffers
