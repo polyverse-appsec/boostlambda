@@ -304,7 +304,9 @@ class GenericProcessor:
 
         # otherwise, we'll need to break the chunk into smaller chunks
         # we're going to extract ONLY the bit of user-content (not the prompt wrapper) that we can try and break up
-        userContentTokenCount, userContentTokens = num_tokens_from_string(data[self.get_chunkable_input()], data.get('model'))
+        chunkableInput = prompt_format_args[self.get_chunkable_input()]
+        isChunkedList = isinstance(data[self.get_chunkable_input()], list)
+        userContentTokenCount, userContentTokens = num_tokens_from_string(chunkableInput, data.get('model'))
 
         # let's figure out how big the non-user content is... since we'll create user chunks that can accomodate the non-user content added back
         nonUserContentTokenCount = fullMessageContentTokensCount - userContentTokenCount
@@ -333,10 +335,27 @@ class GenericProcessor:
 
         this_messages_chunked = []
 
-        for i in range(0, userContentTokenCount, chunk_size):
+        i = 0
+        while i < userContentTokenCount:
+            # determine end index for this chunk
+            end_idx = i + chunk_size
+
+            # if we're using a list as input, then break on newlines
+            # if we're not at the end of the tokens, adjust end_idx based on the decoding result
+            if isChunkedList and end_idx < userContentTokenCount:
+                decoded_token = decode_string_from_input([userContentTokens[end_idx]], data.get('model'))
+                # move the boundary backward until we hit a token that decodes to a newline or the beginning of the chunk
+                while end_idx > i and '\n' not in decoded_token:
+                    end_idx -= 1
+                    decoded_token = decode_string_from_input([userContentTokens[end_idx]], data.get('model'))
+
+                # If the token has text followed by a newline, then we should include that token in the current chunk
+                # and start the next chunk after it.
+                if decoded_token.endswith('\n'):
+                    end_idx += 1
 
             # decode this smaller chunk of the original user content
-            user_chunk_tokens = userContentTokens[i:i + chunk_size]
+            user_chunk_tokens = userContentTokens[i:end_idx]
             user_chunk_text = decode_string_from_input(user_chunk_tokens, data.get('model'))
 
             # rebuild the prompt with the smaller user input chunk
@@ -353,13 +372,16 @@ class GenericProcessor:
                 if 'content' in message:
                     these_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
 
-            # get the new remaining max tokens we can accomodate with output
+            # get the new remaining max tokens we can accommodate with output
             max_tokens = max_tokens_for_model(data.get('model'))
             tuned_max_tokens = max_tokens - these_tokens_count
             tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens)
 
             # store the updated message to be processed
             this_messages_chunked.append((this_messages, tuned_output))
+
+            # Move the index to the next chunk starting point
+            i = end_idx
 
         return this_messages_chunked, truncation
 
@@ -473,7 +495,7 @@ class GenericProcessor:
                 if self.get_chunkable_input():
                     # If we are over the token limit, we're going to need to split it into chunks to process in parallel and then reassemble
                     # enough buffer to get a useful result - say 20% - 50% of the original input
-                    prompts_set, this_truncation = self.chunk_input_based_on_token_limit(data, prompt_format_args, input_token_buffer)
+                    prompts_set, unused_truncation = self.chunk_input_based_on_token_limit(data, prompt_format_args, input_token_buffer)
                     # we'll ignore this truncation since we're chunking it anyway
 
                 # otherwise, we'll just truncate the last user message

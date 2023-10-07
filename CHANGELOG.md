@@ -20,8 +20,10 @@ Polyverse Boost Cloud Service
 - Validate the function schema on construction to ensure it fits in token buffers
 - Improve function-based Security scan to focus on high-confidence issues
 - Improve Quick Blueprint handling of exclusion and prioritization lists
+- Ensure chunking of list inputs breaks on newlines (e.g. to avoid mangling lists of filenames)
 
 ### Bug Fixes
+- Fix issue in Generic Processor where list input was incorrectly handled
 - Restore code explanation data in code conversion service input
 - Enable Customer status lookup to handle manual invoice objects (with no metadata)
 
