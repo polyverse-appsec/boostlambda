@@ -4,9 +4,8 @@ Then do the following:
 
 1. Tell me which single file in the list most likely describes how to build and deploy the project code.
 2. Suggest one file to use as sample source code to represent the key elements of the software project.
-3. Provide a list of high-confidence files in the software project that do not likely contain any useful source code or project or build information to analyze.
-4. Prioritize all of the non-excluded files in the software project file list to analyze from most important file to least important file.
-5. Produce an Architectural Blueprint Summary using this format - replacing the text in each section with your best guess based on only the file list and the type of software architecture you believe this project has:
+3. Separate the entire file list into two sets: prioritized list of source files from most important to least important, and files that do not contain valuable or useful source code or build/project information.
+4. Produce an Architectural Blueprint Summary using this format - replacing the text in each section with your best guess based on only the file list and the type of software architecture you believe this project has:
 
     ## Architectural Blueprint Summary for: {projectName}
     * Software Project Type: web app, server code, cloud web service, mobile app, shared library, etc.
