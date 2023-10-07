@@ -5,7 +5,7 @@ import json
 from .test_version import client_version
 
 
-# load the file data/simple-buf.c into a string, relative to the root directory
+# load the data files into a string, relative to the root directory
 with open('./tests/data/chat/blueprint.json', 'r') as file:
     blueprint_json = file.read()
     blueprint = json.loads(blueprint_json).get('data')

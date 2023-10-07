@@ -2,7 +2,7 @@ from chalice.test import Client
 from app import app
 import json
 
-# load the file data/simple-buf.c into a string, relative to the root directory
+# load the data files into a string, relative to the root directory
 with open('./tests/data/customscan/missingawait.ts', 'r') as file:
     missingawait_ts = file.read()
 
