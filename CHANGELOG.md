@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.9.8: October 5th, 2023
+## Version 0.9.8: October 8th, 2023
 
 ### New Features
 - Added new Function-based Code Conversion service
@@ -23,6 +23,8 @@ Polyverse Boost Cloud Service
 - Ensure chunking of list inputs breaks on newlines (e.g. to avoid mangling lists of filenames)
 
 ### Bug Fixes
+- Fix bug in input buffer calculation that didn't account for function input size (for chunking and truncation)
+- Add variance to chunk length counting to accomodate for reduced tokenization efficiency
 - Fix issue in Generic Processor where list input was incorrectly handled
 - Restore code explanation data in code conversion service input
 - Enable Customer status lookup to handle manual invoice objects (with no metadata)

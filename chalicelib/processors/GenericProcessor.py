@@ -283,71 +283,90 @@ class GenericProcessor:
 
         return new_messages, total_truncated
 
-    def chunk_input_based_on_token_limit(self, data, prompt_format_args, input_token_buffer) -> Tuple[List[Tuple[List[dict[str, any]], int]], int]:
+    def chunk_input_based_on_token_limit(self,
+                                         data,
+                                         prompt_format_args,
+                                         input_token_buffer,
+                                         extra_non_message_content_size,
+                                         ) -> Tuple[List[Tuple[List[dict[str, any]], int]], int]:
 
         truncation = 0
         # get the ideal full prompt - then we'll figure out if we need to break it up further
         this_messages = self.generate_messages(data, prompt_format_args)
         this_messages, this_truncation = self.optimize_content(this_messages, data)
         truncation += this_truncation
-        fullMessageContentTokensCount = 0
+        full_message_content_tokens_count = 0
         for message in this_messages:
             if 'content' in message:
-                fullMessageContentTokensCount += num_tokens_from_string(message["content"], data.get('model'))[0]
+                full_message_content_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
 
         # if we can fit the chunk into one token buffer, we'll process and be done
         max_tokens = max_tokens_for_model(data.get('model'))
-        tuned_max_tokens = max_tokens - fullMessageContentTokensCount
-        tuned_output = self.calculate_output_token_buffer(fullMessageContentTokensCount, tuned_max_tokens, max_tokens)
-        if (fullMessageContentTokensCount < input_token_buffer):
+        tuned_max_tokens = max_tokens - full_message_content_tokens_count
+        tuned_output = self.calculate_output_token_buffer(full_message_content_tokens_count, tuned_max_tokens, max_tokens)
+        if (full_message_content_tokens_count < input_token_buffer):
             return [(this_messages, tuned_output)], truncation
 
         # otherwise, we'll need to break the chunk into smaller chunks
         # we're going to extract ONLY the bit of user-content (not the prompt wrapper) that we can try and break up
-        chunkableInput = prompt_format_args[self.get_chunkable_input()]
-        isChunkedList = isinstance(data[self.get_chunkable_input()], list)
-        userContentTokenCount, userContentTokens = num_tokens_from_string(chunkableInput, data.get('model'))
+        chunkable_input = prompt_format_args[self.get_chunkable_input()]
+        is_chunked_list = isinstance(data[self.get_chunkable_input()], list)
+        chunkable_user_content_token_count, chunkable_user_content_tokens = num_tokens_from_string(
+            chunkable_input, data.get('model'))
 
         # let's figure out how big the non-user content is... since we'll create user chunks that can accomodate the non-user content added back
-        nonUserContentTokenCount = fullMessageContentTokensCount - userContentTokenCount
+        non_user_content_token_count = full_message_content_tokens_count - chunkable_user_content_token_count
 
         # if the fixed non-user content (e.g. other parts of prompt messages) are beyond the buffer size, then
         # we won't be able to process the user content at all, so raise an error and give up
-        if nonUserContentTokenCount > input_token_buffer:
-            print(f"ChunkingInputFailed: InputBuffer size={input_token_buffer}, Fixed non-User content size={nonUserContentTokenCount}, User content size={userContentTokenCount} ")
+        if non_user_content_token_count > input_token_buffer:
+            print(
+                f"ChunkingInputFailed: InputBuffer size={input_token_buffer}, "
+                f"Fixed non-User content size={non_user_content_token_count}, "
+                f"User content size={chunkable_user_content_token_count} ")
             raise UnprocessableEntityError("Background context for analysis is too large to process. Please try again with less context.")
 
-        remainingBuffer = input_token_buffer - nonUserContentTokenCount
+        remaining_buffer = input_token_buffer - non_user_content_token_count - extra_non_message_content_size
 
-        # Subtract 100 from the total buffer size to account for possible calculation errors (in the prompt engineering)
-        safe_buffer = remainingBuffer - 100
+        # Since the chunking process requires re-encoding subsets of the larger input, each encoded chunk
+        #   may end up larger (e.g. if the chunk token boundaries change). We'll assume a 15% buffer around
+        #   the tokenization boundaries
+        token_boundary_deviation_variance = 0.15
+        safe_remaining_buffer = round(remaining_buffer * (1 - token_boundary_deviation_variance))
 
-        full_buffer_chunks = userContentTokenCount // safe_buffer  # How many full buffer chunks you can make
-        remainder = userContentTokenCount % safe_buffer  # What remains after consuming full buffers
+        full_buffer_chunks = chunkable_user_content_token_count // safe_remaining_buffer  # How many full buffer chunks you can make
+        remainder = chunkable_user_content_token_count % safe_remaining_buffer  # What remains after consuming full buffers
 
         # If the remainder is less than 20% of the full remaining buffer, switch to equal size chunks
-        if remainder < (safe_buffer * 0.2):
-            n_chunks = math.ceil(userContentTokenCount / safe_buffer)
-            chunk_size = math.ceil(userContentTokenCount / n_chunks)
+        if remainder < (safe_remaining_buffer * 0.2):
+            n_chunks = math.ceil(chunkable_user_content_token_count / (safe_remaining_buffer + 1))
+            chunk_size = math.ceil(chunkable_user_content_token_count / n_chunks)
         else:
             n_chunks = full_buffer_chunks + 1  # The full buffer chunks plus the remainder
-            chunk_size = safe_buffer  # Except for the last chunk, the chunks are the size of the full buffer
+            chunk_size = safe_remaining_buffer  # Except for the last chunk, the chunks are the size of the full buffer
 
         this_messages_chunked = []
 
         i = 0
-        while i < userContentTokenCount:
+        # process all the tokens in the user content to create the chunks
+        while i < len(chunkable_user_content_tokens):
             # determine end index for this chunk
             end_idx = i + chunk_size
 
+            # ensure if we are processing a remainder (partial chunk), we don't go over the end of the user content
+            if end_idx >= len(chunkable_user_content_tokens):
+                end_idx = len(chunkable_user_content_tokens)
+
             # if we're using a list as input, then break on newlines
             # if we're not at the end of the tokens, adjust end_idx based on the decoding result
-            if isChunkedList and end_idx < userContentTokenCount:
-                decoded_token = decode_string_from_input([userContentTokens[end_idx]], data.get('model'))
+            # note the last token may not be a newline
+            if is_chunked_list and end_idx != len(chunkable_user_content_tokens):
+                decoded_token = decode_string_from_input([chunkable_user_content_tokens[end_idx - 1]], data.get('model'))
+
                 # move the boundary backward until we hit a token that decodes to a newline or the beginning of the chunk
                 while end_idx > i and '\n' not in decoded_token:
                     end_idx -= 1
-                    decoded_token = decode_string_from_input([userContentTokens[end_idx]], data.get('model'))
+                    decoded_token = decode_string_from_input([chunkable_user_content_tokens[end_idx - 1]], data.get('model'))
 
                 # If the token has text followed by a newline, then we should include that token in the current chunk
                 # and start the next chunk after it.
@@ -355,8 +374,18 @@ class GenericProcessor:
                     end_idx += 1
 
             # decode this smaller chunk of the original user content
-            user_chunk_tokens = userContentTokens[i:end_idx]
+            user_chunk_tokens = chunkable_user_content_tokens[i:end_idx]
             user_chunk_text = decode_string_from_input(user_chunk_tokens, data.get('model'))
+
+            # we use the unbuffered count of the actual tokens (e.g. excluding the tokenization variance buffer)
+            these_tokens_count = len(num_tokens_from_string(user_chunk_text, data.get('model'))[1])
+            chunk_decoded_size_change = these_tokens_count - (end_idx - i)
+            # if the increase is larger than our boundary deviation, we're going to fail
+            if chunk_decoded_size_change / (end_idx - i) > token_boundary_deviation_variance:
+                print(f"ChunkingInputFailed: Chunk size={these_tokens_count}, "
+                      f"Re-decoded chunk size={end_idx - i}, "
+                      f"Chunk size change={chunk_decoded_size_change}")
+                raise UnprocessableEntityError("Chunking input failed due to unexpectedly large deviation in tokenization. Please try again with less input.")
 
             # rebuild the prompt with the smaller user input chunk
             data_copy = data.copy()
@@ -371,6 +400,17 @@ class GenericProcessor:
             for message in this_messages:
                 if 'content' in message:
                     these_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
+
+            if these_tokens_count > remaining_buffer:
+                message_regeneration_variance = (these_tokens_count - remaining_buffer) / these_tokens_count
+                print(f"ChunkingInputFailed: Exceeded Input Buffer size={input_token_buffer}, "
+                      f"Chunk size={these_tokens_count}, "
+                      f"Splitting Variance={message_regeneration_variance}, ")
+                raise UnprocessableEntityError("Input is too large to process. Please try again with less input.")
+
+            # need to add the function content size to the token count to ensure we
+            #   calculate the output buffer size correctly
+            these_tokens_count += extra_non_message_content_size
 
             # get the new remaining max tokens we can accommodate with output
             max_tokens = max_tokens_for_model(data.get('model'))
@@ -475,18 +515,24 @@ class GenericProcessor:
                 if 'content' in message:
                     these_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
 
-            # include the function-related content as part of the input buffer
+            # calculate the size of the function-related content for input buffer usage
+            function_content_size = 0
             for key in ['function_call', 'functions']:
                 if key in params:
                     # note that the function-related params are stored as dictionaries, unlike other user content
-                    these_tokens_count += num_tokens_from_string(json.dumps(params[key]), data.get('model'))[0]
+                    function_content_size += num_tokens_from_string(json.dumps(params[key]), data.get('model'))[0]
+
+            # reduce the input_token_buffer by the size of the function input content, since its fixed
+            #   content that we can't reduce (even with chunking or other optimization)
+            input_token_buffer -= function_content_size if input_token_buffer > 0 else 0
 
             if input_token_buffer == 0:
                 prompts_set = [(this_messages, 0)]
 
             elif these_tokens_count < input_token_buffer:
                 tuned_max_tokens = max_tokens - these_tokens_count
-                tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens)
+                tuned_output = self.calculate_output_token_buffer(
+                    these_tokens_count, tuned_max_tokens, max_tokens,)
                 prompts_set = [(this_messages, tuned_output)]
 
             else:  # this single input has blown the input buffer, so we'll need to chunk or truncate it
@@ -495,12 +541,16 @@ class GenericProcessor:
                 if self.get_chunkable_input():
                     # If we are over the token limit, we're going to need to split it into chunks to process in parallel and then reassemble
                     # enough buffer to get a useful result - say 20% - 50% of the original input
-                    prompts_set, unused_truncation = self.chunk_input_based_on_token_limit(data, prompt_format_args, input_token_buffer)
+                    prompts_set, unused_truncation = self.chunk_input_based_on_token_limit(
+                        data, prompt_format_args, input_token_buffer, function_content_size)
                     # we'll ignore this truncation since we're chunking it anyway
 
                 # otherwise, we'll just truncate the last user message
                 else:
                     this_messages, truncated_tokens_count = self.truncate_user_messages(this_messages, input_token_buffer, data)
+
+                    # emsure we include any function input content size before we calculate remaining output buffer
+                    truncated_tokens_count += function_content_size
 
                     tuned_max_tokens = max_tokens - truncated_tokens_count
                     tuned_output = self.calculate_output_token_buffer(truncated_tokens_count, tuned_max_tokens, max_tokens)
