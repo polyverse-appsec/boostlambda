@@ -719,23 +719,23 @@ class GenericProcessor:
         for attempt in range(max_retries + 1):
 
             try:
-                timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
+                timeBufferRemaining = round(totalAnalysisTimeBuffer - (time.time() - start_time), 2)
 
                 if timeBufferRemaining < 0:
                     raise Exception(f"Timeout exceeded for OpenAI call: {totalAnalysisTimeBuffer} seconds")
 
-                openAICallTimeBufferRemaining = MaxTimeoutSecondsForAllOpenAICalls - (time.time() - start_time)
+                openAICallTimeBufferRemaining = round(MaxTimeoutSecondsForAllOpenAICalls - (time.time() - start_time), 2)
 
                 # we'll let the OpenAI call take at most the per-call max, or what's remaining
                 #       of the total calls buffer
-                allotedTimeBufferForThisOpenAPICall = min(
+                allotedTimeBufferForThisOpenAPICall = round(min(
                     openAICallTimeBufferRemaining,
-                    MaxTimeoutSecondsForSingleOpenAICall)
+                    MaxTimeoutSecondsForSingleOpenAICall), 2)
 
-                print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{totalAnalysisTimeBuffer}, "
-                      f"allotedTimeBufferForThisOpenAPICall:{allotedTimeBufferForThisOpenAPICall}, "
-                      f"openAICallTimeBufferRemaining:{openAICallTimeBufferRemaining}, "
-                      f"timeBufferRemaining:{timeBufferRemaining}")
+                print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{totalAnalysisTimeBuffer} sec, "
+                      f"allotedTimeBufferForThisOpenAPICall:{allotedTimeBufferForThisOpenAPICall} secs, "
+                      f"openAICallTimeBufferRemaining:{openAICallTimeBufferRemaining} secs, "
+                      f"timeBufferRemaining:{timeBufferRemaining} secs")
 
                 response = self.makeOpenAICall(
                     account,
