@@ -289,7 +289,7 @@ class GenericProcessor:
                                          prompt_format_args,
                                          input_token_buffer,
                                          extra_non_message_content_size,
-                                         ) -> Tuple[List[Tuple[List[dict[str, any]], int]], int]:
+                                         ) -> Tuple[List[Tuple[List[dict[str, any]], int, int]], int]:
 
         truncation = 0
         # get the ideal full prompt - then we'll figure out if we need to break it up further
@@ -303,10 +303,13 @@ class GenericProcessor:
 
         # if we can fit the chunk into one token buffer, we'll process and be done
         max_tokens = max_tokens_for_model(data.get('model'))
-        tuned_max_tokens = max_tokens - full_message_content_tokens_count
+        tuned_max_tokens = max_tokens - full_message_content_tokens_count - extra_non_message_content_size
         tuned_output = self.calculate_output_token_buffer(full_message_content_tokens_count, tuned_max_tokens, max_tokens)
+        input_token_count = full_message_content_tokens_count + extra_non_message_content_size
+
+        # calling function already excluded the function content size from the input buffer, so we don't need to add it here
         if (full_message_content_tokens_count < input_token_buffer):
-            return [(this_messages, tuned_output)], truncation
+            return [(this_messages, tuned_output, input_token_count)], truncation
 
         # otherwise, we'll need to break the chunk into smaller chunks
         # we're going to extract ONLY the bit of user-content (not the prompt wrapper) that we can try and break up
@@ -419,7 +422,7 @@ class GenericProcessor:
             tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens)
 
             # store the updated message to be processed
-            this_messages_chunked.append((this_messages, tuned_output))
+            this_messages_chunked.append((this_messages, tuned_output, these_tokens_count))
 
             # Move the index to the next chunk starting point
             i = end_idx
@@ -494,7 +497,7 @@ class GenericProcessor:
 
     # returns true if truncation was done
     # also returns a list of prompts to process - where each prompt includes the prompt text, and the max output tokens for that prompt
-    def build_prompts_from_input(self, data, params, prompt_format_args, function_name) -> Tuple[int, List[Tuple[List[dict[str, any]], int]], int]:
+    def build_prompts_from_input(self, data, params, prompt_format_args, function_name) -> Tuple[List[Tuple[List[dict[str, any]], int]], int, int]:
 
         # allow the caller to override max_tokens, or just use default max for the chosen model
         max_tokens = data.get('max_tokens') if 'max_tokens' in data else max_tokens_for_model(data.get('model'))
@@ -518,23 +521,23 @@ class GenericProcessor:
         if 'chunks' not in prompt_format_args:
             this_messages = self.generate_messages(data, prompt_format_args)
             this_messages, _ = self.optimize_content(this_messages, data)
-            these_tokens_count = 0
+            input_tokens_count = 0
             for message in this_messages:
                 if 'content' in message:
-                    these_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
+                    input_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
 
             # reduce the input_token_buffer by the size of the function input content, since its fixed
             #   content that we can't reduce (even with chunking or other optimization)
             input_token_buffer -= function_content_size if input_token_buffer > 0 else 0
 
             if input_token_buffer == 0:
-                prompts_set = [(this_messages, 0)]
+                prompts_set = [(this_messages, int(0), input_tokens_count + function_content_size)]
 
-            elif these_tokens_count < input_token_buffer:
-                tuned_max_tokens = max_tokens - these_tokens_count
+            elif input_tokens_count < input_token_buffer:
+                tuned_max_tokens = max_tokens - input_tokens_count
                 tuned_output = self.calculate_output_token_buffer(
-                    these_tokens_count, tuned_max_tokens, max_tokens,)
-                prompts_set = [(this_messages, tuned_output)]
+                    input_tokens_count, tuned_max_tokens, max_tokens,)
+                prompts_set = [(this_messages, tuned_output, input_tokens_count + function_content_size)]
 
             else:  # this single input has blown the input buffer, so we'll need to chunk or truncate it
 
@@ -542,8 +545,8 @@ class GenericProcessor:
                 if self.get_chunkable_input():
                     # If we are over the token limit, we're going to need to split it into chunks to process in parallel and then reassemble
                     # enough buffer to get a useful result - say 20% - 50% of the original input
-                    prompts_set, unused_truncation = self.chunk_input_based_on_token_limit(
-                        data, prompt_format_args, input_token_buffer, function_content_size)
+                    prompts_set = self.chunk_input_based_on_token_limit(
+                        data, prompt_format_args, input_token_buffer, function_content_size)[0]
                     # we'll ignore this truncation since we're chunking it anyway
 
                 # otherwise, we'll just truncate the last user message
@@ -556,8 +559,10 @@ class GenericProcessor:
                     tuned_max_tokens = max_tokens - truncated_tokens_count
                     tuned_output = self.calculate_output_token_buffer(truncated_tokens_count, tuned_max_tokens, max_tokens)
 
+                    input_tokens_count = sum(len(message["content"]) for message in this_messages if 'content' in message)
+
                     truncated += truncated_tokens_count
-                    prompts_set = [(this_messages, tuned_output)]
+                    prompts_set = [(this_messages, tuned_output, input_tokens_count + function_content_size)]
 
         else:  # we have input chunks we need to break up, which themselves could be broken up
             cloned_prompt_format_args = prompt_format_args.copy()
@@ -578,13 +583,13 @@ class GenericProcessor:
                 cloned_prompt_format_args[self.get_chunkable_input()] = chunk_inputs[i]
 
                 # recursively call ourselves per chunk
-                each_chunk_prompt_set, _, _ = self.build_prompts_from_input(data, params, cloned_prompt_format_args, function_name)
+                each_chunk_prompt_set = self.build_prompts_from_input(data, params, cloned_prompt_format_args, function_name)[0]
 
                 # add the newly build prompt and max tokens into the list
                 prompts_set.extend(each_chunk_prompt_set)
 
         user_prompts_size = 0
-        for prompt, _ in prompts_set:
+        for prompt, _, _ in prompts_set:
             for message in prompt:
                 if 'content' in message and message["role"] == "user":
                     user_prompts_size += len(message["content"])
