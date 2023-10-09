@@ -25,6 +25,8 @@ Polyverse Boost Cloud Service
 - Ensure chunking of list inputs breaks on newlines (e.g. to avoid mangling lists of filenames)
 - Print all Metrics to Log (local console and AWS) and CloudWatch (AWS only)
 - Tweak Draft Blueprint prompt and function schema to ensure full file paths are returned
+- Always the any lost data to console log and AWS metrics (if under AWS) even if call succeeded
+- Detect successful OpenAI calls with incomplete response data and report to service caller and log
 
 ### Bug Fixes
 - Fix bug in input buffer calculation that didn't account for function input size (for chunking and truncation)
@@ -33,6 +35,8 @@ Polyverse Boost Cloud Service
 - Restore code explanation data in code conversion service input
 - Enable Customer status lookup to handle manual invoice objects (with no metadata)
 - Fix OpenAI response size metric reporting (was reporting input size)
+- Discard invalid JSON data from incomplete OpenAI function calls to avoid JSON parsing errors
+
 
 ## Version 0.9.7: September 29th, 2023
 

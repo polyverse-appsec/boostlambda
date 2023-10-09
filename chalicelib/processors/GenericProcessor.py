@@ -829,13 +829,13 @@ class GenericProcessor:
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
                   f"SUCCESS processing chunked prompt {i} in {mins_and_secs(end_time - start_time)}:"
-                  f"Finish:{result['finish'] if result['finish'] is not None else 'Incomplete'}")
+                  f"Finish:{'Incomplete' if (result['finish'] is None or result['finish'] == 'length' or result['finish'] =='content_filter') else 'Complete'}")
             return result
         except Exception as e:
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
                   f"Error processing chunked prompt {i} after {mins_and_secs(end_time - start_time)}:"
-                  f"Finish:{result['finish'] if result is not None and 'finish' in result and result['finish'] is not None else 'Incomplete'}::error:{str(e)}")
+                  f"Finish:{'Incomplete' if (result['finish'] is None or result['finish'] == 'length' or result['finish'] =='content_filter') else 'Complete'}::error:{str(e)}")
             raise
 
     def initialize_from_data(self, log, data, account, function_name, correlation_id, prompt_format_args, params) -> Tuple[dict, dict]:
@@ -998,6 +998,8 @@ class GenericProcessor:
         try:
             results = None
             result = None
+            incomplete_responses = []
+
             # if chunked, we're going to run all chunks in parallel and then concatenate the results at end
             if chunked:
                 log(f"Chunked user input - {len(prompt_set)} chunks")
@@ -1111,36 +1113,79 @@ class GenericProcessor:
                 singleIndex = 0
                 results = [self.runAnalysisForPrompt(singleIndex, prompt_set[singleIndex][0],
                                                      prompt_set[singleIndex][1], params, account, function_name, correlation_id)]
+
                 result = results[0]['response']
 
             def reassemble_function_results(results):
+                incomplete_responses = []
+
+                # from https://platform.openai.com/docs/guides/gpt/chat-completions-api
+                def did_complete(r):
+                    # Every response will include a finish_reason. The possible values for finish_reason are:
+
+                    # stop: API returned complete message, or a message terminated by one of the stop sequences provided via the stop parameter
+                    # length: Incomplete model output due to max_tokens parameter or token limit
+                    # function_call: The model decided to call a function
+                    # content_filter: Omitted content due to a flag from our content filters
+                    # null: API response still in progress or incomplete
+                    if 'finish' not in r:
+                        return False
+                    elif 'length' == r['finish']:
+                        return False
+                    elif 'stop' == r['finish']:
+                        return True
+                    elif 'function_call' == r['finish']:
+                        return True
+                    elif 'content_filter' == r['finish']:
+                        return False
+                    elif not r['finish']:
+                        return False
+                    else:  # anything unexpected and we'll assume its complete
+                        log(f"Unexpected finish reason {r['finish']}")
+                        return True
+
+                incomplete_responses = [0 if did_complete(r) else 1 for r in results]
+
                 if 'function_call' not in results[0]['message']:
-                    return False, None
+                    return False, None, incomplete_responses
 
                 items = []
-                # if we get here, we have a function call in the results array.  loop through each of the results and add the array of arguments to the bugs array
-                # result['results'][0]['message']['function_call']['arguments'] is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore
-                # any errors
-                for r in results:
-                    json_items = json.loads(r['message']['function_call']['arguments'])
-                    items.extend(json_items)
 
-                return True, items
+                for index, r in enumerate(results):
+                    if incomplete_responses[index] == 0:
+                        json_items = json.loads(r['message']['function_call']['arguments'])
+                        items.extend(json_items)
+                    else:
+                        incomplete_responses[index] = len(r['message']['function_call']['arguments'])
+                        log(f"Chunk {index} incomplete Function data - {incomplete_responses[index]} discarded")
 
-            isFunction, items = reassemble_function_results(results)
+                return True, items, incomplete_responses
+
+            isFunction, items, incomplete_responses = reassemble_function_results(results)
+            total_incompletions = sum(incomplete_responses)
+
             if isFunction:
                 # this isn't a very useful representation, but it allows us to correctly calculate cost of the function call
                 result = json.dumps(items)
 
             # otherwise, we need to update the result with the truncation warning to user
-            elif truncated:
-                truncation = markdown_emphasize(
-                    f"Truncated input, discarded ~{truncated} symbols or words\n\n")
-                result = f"{truncation}{results[0]['response']}"
+            else:
+                if truncated:
+                    truncation = markdown_emphasize(
+                        f"Truncated input, discarded ~{truncated} symbols or words\n\n")
 
-            # or if chunked, we're going to reassemble all the chunks
-            elif chunked:
-                result = "\n\n".join([r['response'] for r in results])  # by concatenating all results into a single string
+                    result = f"{truncation}{results[0]['response']}"
+
+                # or if chunked, we're going to reassemble all the chunks
+                elif chunked:
+                    result = "\n\n".join([r['response'] for r in results])  # by concatenating all results into a single string
+
+            if total_incompletions:
+                # wild guess on how much was lost... if less than 100 characters/tokens - we don't really know the extent
+                estimate_lost = f" - at least {total_incompletions}" if total_incompletions > 100 else ""
+                some_incompletions = markdown_emphasize(
+                    f"WARNING: Due to large amount of data to process, some of the analysis response was lost{estimate_lost}. Please submit a smaller amount of data if possible for a more complete response.\n\n")
+                result = f"{some_incompletions}{result}"
 
             success = True
 
@@ -1169,7 +1214,9 @@ class GenericProcessor:
                 # Get the cost of the outputs and prior inputs - so we have visibiity into our cost per user API
                 output_size = len(result) if result is not None else 0
 
-                boost_cost = get_boost_cost(user_input_size + output_size)
+                boost_cost_overall = get_boost_cost(user_input_size + output_size)
+                boost_cost = boost_cost_overall if success else 0
+                boost_lost_cost = total_incompletions + (boost_cost_overall if not success else 0)
 
                 openai_output_tokens, openai_output_cost = get_openai_usage_per_token(
                     sum([r['output_tokens'] for r in results]), False, data.get('model')) if results is not None else (0, 0)
@@ -1197,7 +1244,8 @@ class GenericProcessor:
                                {'name': CostMetrics.OPENAI_CUSTOMERINPUT_COST, 'value': round(openai_customerinput_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_COST, 'value': round(openai_cost, 5), 'unit': 'None'},
-                               {'name': CostMetrics.BOOST_COST if success else CostMetrics.LOST_BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.LOST_BOOST_COST, 'value': round(boost_lost_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_INPUT_TOKENS, 'value': openai_input_tokens, 'unit': 'Count'},
                                {'name': CostMetrics.OPENAI_CUSTOMERINPUT_TOKENS, 'value': openai_customerinput_tokens, 'unit': 'Count'},
                                {'name': CostMetrics.OPENAI_OUTPUT_TOKENS, 'value': openai_output_tokens, 'unit': 'Count'},
@@ -1212,6 +1260,7 @@ class GenericProcessor:
             "results": results,
             "output": result,
             "truncated": bool(truncated > 0),
+            "incompletions": total_incompletions,
             "chunked": chunked
         }
 
