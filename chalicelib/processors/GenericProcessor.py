@@ -1122,7 +1122,7 @@ class GenericProcessor:
 
                 capture_metric(customer, email, function_name, correlation_id,
                                {'name': CostMetrics.PROMPT_SIZE, 'value': prompts_size, 'unit': 'Count'},
-                               {'name': CostMetrics.RESPONSE_SIZE, 'value': user_input_size, 'unit': 'Count'},
+                               {'name': CostMetrics.RESPONSE_SIZE, 'value': output_size, 'unit': 'Count'},
                                {'name': CostMetrics.OPENAI_INPUT_COST, 'value': round(openai_input_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_CUSTOMERINPUT_COST, 'value': round(openai_customerinput_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
