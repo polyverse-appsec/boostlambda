@@ -29,6 +29,11 @@ from chalicelib.usage import (
     decode_string_from_input)
 from chalicelib.payments import update_usage_for_text
 from chalicelib.log import mins_and_secs
+from chalicelib.openai_throttler import (
+    max_timeout_seconds_for_all_openai_calls,
+    max_timeout_seconds_for_single_openai_call,
+    total_analysis_time_buffer,
+)
 
 key_ChunkedInputs = 'chunked_inputs'
 key_ChunkPrefix = 'chunk_prefix'
@@ -703,17 +708,6 @@ class GenericProcessor:
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
 
-        secondsInAMinute = 60
-
-        # Lambda calls must be done in 15 mins or less
-        #   We'll give ourselves a little buffer in case other operations
-        #   than OpenAI take 30-90 seconds (including stripe or GitHub calls)
-        totalAnalysisTimeBuffer = int(13.50 * secondsInAMinute)  # 13 minutes 30 seconds
-
-        MaxTimeoutSecondsForAllOpenAICalls = int(12 * secondsInAMinute)  # 12 minutes
-
-        MaxTimeoutSecondsForSingleOpenAICall = int(6 * secondsInAMinute)  # 6 minutes
-
         max_retries = 3
         start_time = time.time()
 
@@ -725,20 +719,20 @@ class GenericProcessor:
         for attempt in range(max_retries + 1):
 
             try:
-                timeBufferRemaining = round(totalAnalysisTimeBuffer - (time.time() - start_time), 2)
+                timeBufferRemaining = round(total_analysis_time_buffer - (time.time() - start_time), 2)
 
                 if timeBufferRemaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(totalAnalysisTimeBuffer)}")
+                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
 
-                openAICallTimeBufferRemaining = round(MaxTimeoutSecondsForAllOpenAICalls - (time.time() - start_time), 2)
+                openAICallTimeBufferRemaining = round(max_timeout_seconds_for_all_openai_calls - (time.time() - start_time), 2)
 
                 # we'll let the OpenAI call take at most the per-call max, or what's remaining
                 #       of the total calls buffer
                 allotedTimeBufferForThisOpenAPICall = round(min(
                     openAICallTimeBufferRemaining,
-                    MaxTimeoutSecondsForSingleOpenAICall), 2)
+                    max_timeout_seconds_for_single_openai_call), 2)
 
-                print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{mins_and_secs(totalAnalysisTimeBuffer)}, "
+                print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{mins_and_secs(total_analysis_time_buffer)}, "
                       f"allotedTimeBufferForThisOpenAPICall:{mins_and_secs(allotedTimeBufferForThisOpenAPICall)}, "
                       f"openAICallTimeBufferRemaining:{mins_and_secs(openAICallTimeBufferRemaining)}, "
                       f"timeBufferRemaining:{mins_and_secs(timeBufferRemaining)}")
@@ -794,19 +788,19 @@ class GenericProcessor:
                     account['customer'], account['email'], function_name, correlation_id,
                     {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
 
-                timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
+                timeBufferRemaining = total_analysis_time_buffer - (time.time() - start_time)
 
                 if timeBufferRemaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(totalAnalysisTimeBuffer)}")
+                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
 
                 time.sleep(randomSleep)
 
-            if error_type != "Timeout" and attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < totalAnalysisTimeBuffer:
+            if error_type != "Timeout" and attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < total_analysis_time_buffer:
 
-                timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
+                timeBufferRemaining = total_analysis_time_buffer - (time.time() - start_time)
 
                 if timeBufferRemaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(totalAnalysisTimeBuffer)}")
+                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
 
                 randomSleep = random.uniform(2, 5)
                 print(f"{function_name}:{account['email']}:{correlation_id}:Retrying in {mins_and_secs(randomSleep)} after {error_type}: {error_msg}")
@@ -1006,6 +1000,7 @@ class GenericProcessor:
                 tokensPerChunk = OpenAIDefaults.rate_limit_tokens_per_minute / totalChunks
 
                 def runAnalysisForPromptThrottled(prompt_iteration):
+
                     index, prompt = prompt_iteration
                     model_max_tokens = max_tokens_for_model(data.get('model'))
                     if OpenAIDefaults.boost_max_tokens_default == 0:
