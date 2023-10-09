@@ -997,9 +997,8 @@ class GenericProcessor:
             if chunked:
                 log(f"Chunked user input - {len(prompt_set)} chunks")
 
-                openAIRateLimitPerMinute = 40000
                 totalChunks = len(prompt_set)
-                tokensPerChunk = openAIRateLimitPerMinute / totalChunks
+                tokensPerChunk = OpenAIDefaults.rate_limit_tokens_per_minute / totalChunks
 
                 def runAnalysisForPromptThrottled(prompt_iteration):
                     index, prompt = prompt_iteration

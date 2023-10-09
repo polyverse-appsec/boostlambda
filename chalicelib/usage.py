@@ -11,6 +11,8 @@ class OpenAIDefaults:
 
     boost_max_tokens_default = boost_max_tokens_gpt_4  # 0 is disabled max, 32768 for gpt-4-32k, 4000 for gpt3.5 and 8192 for gpt4
 
+    rate_limit_tokens_per_minute = 40000  # 40k tokens per minute
+
     boost_tuned_max_tokens = boost_max_tokens_default  # could be 1000 based on OpenAI recommendation, no obvious response time difference
 
     # Models to choose from
