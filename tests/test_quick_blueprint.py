@@ -150,22 +150,26 @@ def generate_random_file_paths(num_folders, num_files_per_folder):
     extensions = ['cs', 'py', 'c', 'rb', 'html', 'css', 'cpp', 'java', 'pl']
     folder_names = generate_realistic_folder_names()
     file_bases = generate_realistic_file_bases()
-    file_paths = []
+    file_paths = set()
 
     for folder_idx in range(num_folders):
         folder_name = random.choice(folder_names)
         num_subfolders = random.randint(0, 5)
         subfolder_path = '/'.join(random.choice(folder_names) for _ in range(num_subfolders)) + '/' if num_subfolders != 0 else ''
         for file_idx in range(num_files_per_folder):
-            extension = random.choice(extensions)
-            file_base = random.choice(file_bases)
-            file_name = f'{file_base}.{extension}'
-            random_file_path = f'{subfolder_path}{folder_name}/{file_name}'
-            if random_file_path.startswith('/'):
-                print("random_file_path starts with /")
-            file_paths.append(random_file_path)
+            unique_path_found = False
+            while not unique_path_found:
+                extension = random.choice(extensions)
+                file_base = random.choice(file_bases)
+                file_name = f'{file_base}.{extension}'
+                random_file_path = f'{subfolder_path}{folder_name}/{file_name}'
+                if random_file_path not in file_paths:
+                    unique_path_found = True
+                    file_paths.add(random_file_path)
+                    if random_file_path.startswith('/'):
+                        print("random_file_path starts with /")
 
-    return file_paths
+    return list(file_paths)
 
 
 def generate_realistic_file_bases():
