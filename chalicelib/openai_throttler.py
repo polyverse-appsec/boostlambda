@@ -20,7 +20,8 @@ max_timeout_seconds_for_single_openai_call = int(6 * seconds_in_a_minute)  # 6 m
 
 
 class Throttler:
-    def __init__(self, rate_limit_tokens_per_minute):
+    def __init__(self, rate_limit_tokens_per_minute=OpenAIDefaults.rate_limit_tokens_per_minute):
+        rate_limit_tokens_per_minute = OpenAIDefaults.rate_limit_tokens_per_minute * 2
         self.rate = rate_limit_tokens_per_minute / seconds_in_a_minute
         self.bucket = rate_limit_tokens_per_minute
         self.lock = threading.Condition()
