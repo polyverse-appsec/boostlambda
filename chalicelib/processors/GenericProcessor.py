@@ -507,6 +507,13 @@ class GenericProcessor:
 
         truncated = 0
 
+        # calculate the size of the function-related content for input buffer usage
+        function_content_size = 0
+        for key in ['function_call', 'functions']:
+            if key in params:
+                # note that the function-related params are stored as dictionaries, unlike other user content
+                function_content_size += num_tokens_from_string(json.dumps(params[key]), data.get('model'))[0]
+
         # if single input, build the prompt to test length
         if 'chunks' not in prompt_format_args:
             this_messages = self.generate_messages(data, prompt_format_args)
@@ -515,13 +522,6 @@ class GenericProcessor:
             for message in this_messages:
                 if 'content' in message:
                     these_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
-
-            # calculate the size of the function-related content for input buffer usage
-            function_content_size = 0
-            for key in ['function_call', 'functions']:
-                if key in params:
-                    # note that the function-related params are stored as dictionaries, unlike other user content
-                    function_content_size += num_tokens_from_string(json.dumps(params[key]), data.get('model'))[0]
 
             # reduce the input_token_buffer by the size of the function input content, since its fixed
             #   content that we can't reduce (even with chunking or other optimization)
