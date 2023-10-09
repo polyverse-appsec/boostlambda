@@ -241,9 +241,9 @@ def test_quick_blueprint_random_large_project():
     helper_test_quick_blueprint_large_project(50, True)
 
 
-def helper_test_quick_blueprint_large_project(size, random):
+def helper_test_quick_blueprint_large_project(size, randomize):
     with Client(app) as client:
-        if random:
+        if randomize:
             num_folders = random.randint(10, size)
             num_files_per_folder = random.randint(10, size * 2)
         else:
@@ -384,7 +384,7 @@ def generate_likely_exclusion_list(file_paths, folder_names):
     extensions = ['txt', 'bin', 'jpg', 'png']
 
     # generate 20% extra files for exclusion
-    num_files_to_exclude = random.randint(1, len(file_paths) // 5)
+    num_files_to_exclude = random.randint(1, max(1, len(file_paths) // 5))
 
     exclusion_file_paths = []
     for _ in range(num_files_to_exclude):
