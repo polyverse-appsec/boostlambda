@@ -56,47 +56,51 @@ highResolutionCloudWatchMetric = 1
 # unit: Seconds, Microseconds, Milliseconds, Bytes, Kilobytes, Megabytes, Gigabytes, Terabytes, Bits, Kilobits, Megabits, Gigabits, Terabits, Percent, Count, Count/Second, None
 def capture_metric(customer, email, function_name: "capture_metric", correlation_id, *metrics):
     try:
-        if cloudwatch is not None:
-            lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', function_name)
-            metric_data = []
-            for metric in metrics:
-                metric_obj = {
-                    'MetricName': metric['name'],
-                    'Dimensions': [
-                        {
-                            'Name': 'Customer',
-                            'Value': customer['name']
-                        },
-                        {
-                            'Name': 'AccountID',
-                            'Value': customer['id']
-                        },
-                        {
-                            'Name': 'UserEmail',
-                            'Value': email
-                        },
-                        {
-                            'Name': 'LambdaFunctionName',
-                            'Value': lambda_function
-                        },
-                        {
-                            'Name': 'CorrelationID',
-                            'Value': correlation_id
-                        }
-                    ],
-                    'Unit': metric['unit'],
-                    'Value': metric['value'],
-                    'StorageResolution': regularResolutionCloudWatchMetric
-                }
-                metric_data.append(metric_obj)
-            cloudwatch.put_metric_data(Namespace='Boost/Lambda', MetricData=metric_data)
-        else:
-            for metric in metrics:
-                if isinstance(metric['value'], float) or isinstance(metric['value'], decimal.Decimal):
-                    formatted_value = f"{metric['value']:.5f}"
-                else:
-                    formatted_value = str(metric['value'])
-                print(f"METRIC::[{customer['name']}:{customer['id']}:{email}]{function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
+        # log all metrics no matter what
+        for metric in metrics:
+            if isinstance(metric['value'], float) or isinstance(metric['value'], decimal.Decimal):
+                formatted_value = f"{metric['value']:.5f}"
+            else:
+                formatted_value = str(metric['value'])
+            print(f"METRIC::[{customer['name']}:{customer['id']}:{email}]{function_name}({correlation_id}):{metric['name']}: {formatted_value} ({metric['unit']})")
+
+        # if we're not running in AWS Lambda, don't try to log to CloudWatch
+        if cloudwatch is None:
+            return
+
+        lambda_function = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', function_name)
+        metric_data = []
+        for metric in metrics:
+            metric_obj = {
+                'MetricName': metric['name'],
+                'Dimensions': [
+                    {
+                        'Name': 'Customer',
+                        'Value': customer['name']
+                    },
+                    {
+                        'Name': 'AccountID',
+                        'Value': customer['id']
+                    },
+                    {
+                        'Name': 'UserEmail',
+                        'Value': email
+                    },
+                    {
+                        'Name': 'LambdaFunctionName',
+                        'Value': lambda_function
+                    },
+                    {
+                        'Name': 'CorrelationID',
+                        'Value': correlation_id
+                    }
+                ],
+                'Unit': metric['unit'],
+                'Value': metric['value'],
+                'StorageResolution': regularResolutionCloudWatchMetric
+            }
+            metric_data.append(metric_obj)
+        cloudwatch.put_metric_data(Namespace='Boost/Lambda', MetricData=metric_data)
 
     # Never fail on metrics
     except Exception:

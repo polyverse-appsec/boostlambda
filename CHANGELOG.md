@@ -21,6 +21,7 @@ Polyverse Boost Cloud Service
 - Improve function-based Security scan to focus on high-confidence issues
 - Improve Quick Blueprint handling of exclusion and prioritization lists
 - Ensure chunking of list inputs breaks on newlines (e.g. to avoid mangling lists of filenames)
+- Print all Metrics to Log (local console and AWS) and CloudWatch (AWS only)
 
 ### Bug Fixes
 - Fix bug in input buffer calculation that didn't account for function input size (for chunking and truncation)
@@ -28,6 +29,7 @@ Polyverse Boost Cloud Service
 - Fix issue in Generic Processor where list input was incorrectly handled
 - Restore code explanation data in code conversion service input
 - Enable Customer status lookup to handle manual invoice objects (with no metadata)
+- Fix OpenAI response size metric reporting (was reporting input size)
 
 ## Version 0.9.7: September 29th, 2023
 
