@@ -3,7 +3,7 @@ from app import app
 import json
 import random
 
-from test_utils import warn
+from .test_utils import warn
 
 # load the data files into a string, relative to the root directory
 with open('./tests/data/quick-blueprint/package.json', 'r') as file:
@@ -206,10 +206,46 @@ def kendalls_tau(list1, list2):
     return (C - D) / (C + D) if (C + D) != 0 else 0
 
 
-def test_quick_blueprint_large_project():
+def test_quick_blueprint_fixed_tiny_project():
+    helper_test_quick_blueprint_large_project(1, False)
+
+
+def test_quick_blueprint_random_tiny_project():
+    helper_test_quick_blueprint_large_project(1, True)
+
+
+def test_quick_blueprint_fixed_small_project():
+    helper_test_quick_blueprint_large_project(10, False)
+
+
+def test_quick_blueprint_random_small_project():
+    helper_test_quick_blueprint_large_project(10, True)
+
+
+def test_quick_blueprint_fixed_medium_project():
+    helper_test_quick_blueprint_large_project(20, False)
+
+
+def test_quick_blueprint_random_medium_project():
+    helper_test_quick_blueprint_large_project(20, True)
+
+
+def test_quick_blueprint_fixed_large_project():
+    helper_test_quick_blueprint_large_project(50, False)
+
+
+def test_quick_blueprint_random_large_project():
+    helper_test_quick_blueprint_large_project(50, True)
+
+
+def helper_test_quick_blueprint_large_project(size, random):
     with Client(app) as client:
-        num_folders = random.randint(10, 10)
-        num_files_per_folder = random.randint(10, 10)
+        if random:
+            num_folders = random.randint(10, size)
+            num_files_per_folder = random.randint(10, size * 2)
+        else:
+            num_folders = size
+            num_files_per_folder = size * 2
 
         realProjectFiles = generate_random_file_paths(num_folders, num_files_per_folder)
         prioritizedListOfSourceFilesToAnalyze = generate_prioritized_file_list(realProjectFiles)
