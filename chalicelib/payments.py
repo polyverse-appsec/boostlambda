@@ -12,6 +12,7 @@ from chalicelib.version import API_VERSION
 from chalicelib.telemetry import capture_metric, InfoMetrics
 from . import pvsecret
 from chalicelib.alert import notify_new_customer, notify_customer_first_usage
+from chalicelib.log import mins_and_secs
 
 customerportal_api_version = API_VERSION  # API version is global for now, not service specific
 print("customerportal_api_version: ", customerportal_api_version)
@@ -51,7 +52,7 @@ def stripe_retry(func, *args, **kwargs):
             if retry_count < max_retries:
                 wait_time = random.randint(1, 3)  # Random wait between 1 to 3 seconds
                 time.sleep(wait_time)
-                print(f"Rate Limiting Error with Stripe call {func.__name__}: {str(e)}; attempt {retry_count + 1} of {max_retries + 1} after {wait_time} seconds")
+                print(f"Rate Limiting Error with Stripe call {func.__name__}: {str(e)}; attempt {retry_count + 1} of {max_retries + 1} after {mins_and_secs(wait_time)}")
                 retry_count += 1
             else:
                 print(f"Rate Limiting error: {str(e)} Max retries exceeded: {max_retries} retrieving Stripe call: {func.__name__}... giving up")
@@ -60,7 +61,7 @@ def stripe_retry(func, *args, **kwargs):
             if retry_count < max_retries:
                 wait_time = random.randint(3, 5)  # Random wait between 3 to 5 seconds
                 time.sleep(wait_time)
-                print(f"Connection error occurred with Stripe call {func.__name__}: {str(e)}; attempt {retry_count + 1} of {max_retries + 1} after {wait_time} seconds")
+                print(f"Connection error occurred with Stripe call {func.__name__}: {str(e)}; attempt {retry_count + 1} of {max_retries + 1} after {mins_and_secs(wait_time)}")
                 retry_count += 1
             else:
                 print(f"Connection error: {str(e)} Max retries exceeded: {max_retries} retrieving Stripe call: {func.__name__}... giving up")

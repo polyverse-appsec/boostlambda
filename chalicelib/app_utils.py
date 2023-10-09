@@ -6,6 +6,7 @@ import time
 import os
 
 from chalice import BadRequestError
+from chalicelib.log import mins_and_secs
 
 from chalicelib.telemetry import cloudwatch, xray_recorder
 from chalicelib.auth import \
@@ -66,10 +67,10 @@ def process_request(event, function, api_version):
                     validate_request_lambda(json_data, function.__name__, correlation_id, True)
                 finally:
                     end_time = time.monotonic()
-                    print(f'Execution time {correlation_id} validate_request FAILED: {end_time - start_time:.3f} seconds')
+                    print(f'Execution time {correlation_id} validate_request FAILED: {mins_and_secs(end_time - start_time)}')
             else:
                 end_time = time.monotonic()
-                print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+                print(f'Execution time {correlation_id} validate_request: {mins_and_secs(end_time - start_time)}')
 
         if email is None:
             raise BadRequestError("Error: Unable to determine email address for account")
@@ -82,7 +83,7 @@ def process_request(event, function, api_version):
             start_time = time.monotonic()
             result = function(json_data, account, function.__name__, correlation_id)
             end_time = time.monotonic()
-            print(f'Execution time {correlation_id} {function.__name__}: {end_time - start_time:.3f} seconds')
+            print(f'Execution time {correlation_id} {function.__name__}: {mins_and_secs(end_time - start_time)}')
 
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function.__name__}:{correlation_id}:{client_version}) SUCCEEDED')
 

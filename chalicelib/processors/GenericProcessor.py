@@ -28,6 +28,7 @@ from chalicelib.usage import (
     num_tokens_from_string,
     decode_string_from_input)
 from chalicelib.payments import update_usage_for_text
+from chalicelib.log import mins_and_secs
 
 key_ChunkedInputs = 'chunked_inputs'
 key_ChunkPrefix = 'chunk_prefix'
@@ -687,12 +688,12 @@ class GenericProcessor:
         try:
             response = openai.ChatCompletion.create(**params, timeout=timeBufferRemaining, request_timeout=timeBufferRemaining)
 
-            print(f"{function_name}:{account['email']}:{correlation_id}:SUCCESS:Finished OpenAI API call (Attempt {attempt + 1} in {time.time() - start_time:.3f} seconds)")
+            print(f"{function_name}:{account['email']}:{correlation_id}:SUCCESS:Finished OpenAI API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
 
             return response
 
         except Exception as e:
-            print(f"{function_name}:{account['email']}:{correlation_id}:ERROR({str(e)}):Finished OpenAI API call (Attempt {attempt + 1} in {time.time() - start_time:.3f} seconds)")
+            print(f"{function_name}:{account['email']}:{correlation_id}:ERROR({str(e)}):Finished OpenAI API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
             raise
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
@@ -722,7 +723,7 @@ class GenericProcessor:
                 timeBufferRemaining = round(totalAnalysisTimeBuffer - (time.time() - start_time), 2)
 
                 if timeBufferRemaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {totalAnalysisTimeBuffer} seconds")
+                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(totalAnalysisTimeBuffer)}")
 
                 openAICallTimeBufferRemaining = round(MaxTimeoutSecondsForAllOpenAICalls - (time.time() - start_time), 2)
 
@@ -732,10 +733,10 @@ class GenericProcessor:
                     openAICallTimeBufferRemaining,
                     MaxTimeoutSecondsForSingleOpenAICall), 2)
 
-                print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{totalAnalysisTimeBuffer} sec, "
-                      f"allotedTimeBufferForThisOpenAPICall:{allotedTimeBufferForThisOpenAPICall} secs, "
-                      f"openAICallTimeBufferRemaining:{openAICallTimeBufferRemaining} secs, "
-                      f"timeBufferRemaining:{timeBufferRemaining} secs")
+                print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{mins_and_secs(totalAnalysisTimeBuffer)}, "
+                      f"allotedTimeBufferForThisOpenAPICall:{mins_and_secs(allotedTimeBufferForThisOpenAPICall)}, "
+                      f"openAICallTimeBufferRemaining:{mins_and_secs(openAICallTimeBufferRemaining)}, "
+                      f"timeBufferRemaining:{mins_and_secs(timeBufferRemaining)}")
 
                 response = self.makeOpenAICall(
                     account,
@@ -781,7 +782,7 @@ class GenericProcessor:
                 else:
                     randomSleep = random.uniform(5, 15)
 
-                print(f"{function_name}:{correlation_id}:RateLimitError, sleeping for {randomSleep} seconds before retry")
+                print(f"{function_name}:{correlation_id}:RateLimitError, sleeping for {mins_and_secs(randomSleep)} before retry")
 
                 # if we hit the rate limit, send a cloudwatch alert and raise the error
                 capture_metric(
@@ -791,7 +792,7 @@ class GenericProcessor:
                 timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
 
                 if timeBufferRemaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {totalAnalysisTimeBuffer} seconds")
+                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(totalAnalysisTimeBuffer)}")
 
                 time.sleep(randomSleep)
 
@@ -800,10 +801,10 @@ class GenericProcessor:
                 timeBufferRemaining = totalAnalysisTimeBuffer - (time.time() - start_time)
 
                 if timeBufferRemaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {totalAnalysisTimeBuffer} seconds")
+                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(totalAnalysisTimeBuffer)}")
 
                 randomSleep = random.uniform(2, 5)
-                print(f"{function_name}:{account['email']}:{correlation_id}:Retrying in {randomSleep} seconds after {error_type}: {error_msg}")
+                print(f"{function_name}:{account['email']}:{correlation_id}:Retrying in {mins_and_secs(randomSleep)} after {error_type}: {error_msg}")
                 time.sleep(randomSleep)
             else:
                 print(f"{function_name}:{account['email']}:{correlation_id}:FAILED after {attempt} retries:Error: {error_type}: {error_msg}")
@@ -824,13 +825,13 @@ class GenericProcessor:
             result = self.runAnalysis(params, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
-                  f"SUCCESS processing chunked prompt {i} in {end_time - start_time:.3f} seconds:"
+                  f"SUCCESS processing chunked prompt {i} in {mins_and_secs(end_time - start_time)}:"
                   f"Finish:{result['finish'] if result['finish'] is not None else 'Incomplete'}")
             return result
         except Exception as e:
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
-                  f"Error processing chunked prompt {i} after {end_time - start_time:.3f} seconds:"
+                  f"Error processing chunked prompt {i} after {mins_and_secs(end_time - start_time)}:"
                   f"Finish:{result['finish'] if result is not None and 'finish' in result and result['finish'] is not None else 'Incomplete'}::error:{str(e)}")
             raise
 
@@ -1018,12 +1019,12 @@ class GenericProcessor:
                             model_max_tokens)
                         delay = calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk)
 
-                    log(f"Thread-{threading.current_thread().ident} Summary {index} delaying for {delay:.3f} secs")
+                    log(f"Thread-{threading.current_thread().ident} Summary {index} delaying for {mins_and_secs(delay)}")
 
                     time.sleep(delay)  # Delay based on the number of words in the prompt
 
                     if delay > 5:  # If delay is more than 5 seconds, log it
-                        log(f"Summary {index} delayed for {delay:.3f} secs", True)
+                        log(f"Summary {index} delayed for {mins_and_secs(delay)}", True)
 
                     return self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
 

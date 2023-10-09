@@ -4,6 +4,7 @@ from chalicelib.telemetry import cloudwatch, xray_recorder
 from chalicelib.payments import customer_portal_url, customerportal_api_version
 from chalicelib.app_utils import process_request, validate_request_lambda
 from chalicelib.auth import fetch_orgs, fetch_email_and_username, extract_client_version, userorganizations_api_version
+from chalicelib.log import mins_and_secs
 
 from chalicelib.processors.FlowDiagramProcessor import FlowDiagramProcessor
 from chalicelib.processors.SummaryProcessor import SummarizeProcessor
@@ -267,7 +268,7 @@ def customer_portal(event, context):
             start_time = time.monotonic()
             account = validate_request_lambda(json_data, function_name, correlation_id, False)
             end_time = time.monotonic()
-            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+            print(f'Execution time {correlation_id} validate_request: {mins_and_secs(end_time - start_time)}')
 
         if 'email' in account:
             email = account['email']
@@ -286,7 +287,7 @@ def customer_portal(event, context):
                 start_time = time.monotonic()
                 session = customer_portal_url(account)
                 end_time = time.monotonic()
-                print(f'Execution time {correlation_id} portal: {end_time - start_time:.3f} seconds')
+                print(f'Execution time {correlation_id} portal: {mins_and_secs(end_time - start_time)}')
 
         print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}:{client_version}) SUCCEEDED')
 
@@ -379,7 +380,7 @@ def user_organizations(event, context):
             orgs = fetch_orgs(json_data["session"])
             email, username = fetch_email_and_username(json_data["session"])
             end_time = time.monotonic()
-            print(f'Execution time {correlation_id} validate_request: {end_time - start_time:.3f} seconds')
+            print(f'Execution time {correlation_id} validate_request: {mins_and_secs(end_time - start_time)}')
 
         if orgs is None:
             organizations = "NONE FOUND"

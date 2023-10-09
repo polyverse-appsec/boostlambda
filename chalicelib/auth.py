@@ -5,6 +5,7 @@ from chalicelib.telemetry import cloudwatch, xray_recorder, capture_metric, Info
 import time
 from .payments import check_valid_subscriber, ExtendedAccountBillingError
 from chalicelib.version import API_VERSION
+from chalicelib.log import mins_and_secs
 from cachetools import TTLCache
 import random
 
@@ -36,7 +37,7 @@ def request_get_with_retry(url, headers, max_retries=1):
             if retry_count < max_retries:
                 wait_time = random.randint(3, 5)  # Random wait between 3 to 5 seconds
                 time.sleep(wait_time)
-                print(f"Connection error occurred retrieving {url}: {str(e)}; attempt {retry_count + 1} of {max_retries + 1} after {wait_time} seconds")
+                print(f"Connection error occurred retrieving {url}: {str(e)}; attempt {retry_count + 1} of {max_retries + 1} after {mins_and_secs(wait_time)}")
                 retry_count += 1
             else:
                 print(f"Connection error: {str(e)} Max retries exceeded: {max_retries} retrieving url: {url}... giving up")
@@ -202,7 +203,7 @@ def validate_github_session(access_token, organization, correlation_id, raiseOnE
         start_time = time.monotonic()
         email, username = fetch_email_and_username(access_token, raiseOnError)
         end_time = time.monotonic()
-        print(f'Execution time {correlation_id} fetch_email_and_username: {end_time - start_time:.3f} seconds')
+        print(f'Execution time {correlation_id} fetch_email_and_username: {mins_and_secs(end_time - start_time)}')
 
     if email is None:
         if raiseOnError:
@@ -222,7 +223,7 @@ def validate_github_session(access_token, organization, correlation_id, raiseOnE
         start_time = time.monotonic()
         orgs = fetch_orgs(access_token)
         end_time = time.monotonic()
-        print(f'Execution time {correlation_id} fetch_orgs: {end_time - start_time:.3f} seconds')
+        print(f'Execution time {correlation_id} fetch_orgs: {mins_and_secs(end_time - start_time)}')
 
     # make sure that organization is in the list of orgs, make sure orgs is an array then loop through
     if orgs is not None:
