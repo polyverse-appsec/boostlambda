@@ -15,6 +15,7 @@ with open('./tests/data/comparison/sync_urls_2.py', 'r') as file:
     sync_urls_2_py = file.read()
 
 from .test_version import client_version
+from . import test_utils  # noqa pylint: disable=unused-import
 
 
 def test_compare_code():

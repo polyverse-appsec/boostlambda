@@ -1,10 +1,12 @@
-from chalicelib.processors.CustomProcessor import CustomProcessor
-from chalicelib.app_utils import process_request
 from chalice.test import Client
 import json
 from chalice import Chalice
 
 from .test_version import client_version
+from . import test_utils  # noqa pylint: disable=unused-import
+
+from chalicelib.processors.CustomProcessor import CustomProcessor
+from chalicelib.app_utils import process_request
 
 app = Chalice(app_name='boost')
 

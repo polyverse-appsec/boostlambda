@@ -1,5 +1,7 @@
-from chalicelib.processors.CustomProcessor import CustomProcessor
 from chalice import Chalice
+from . import test_utils  # noqa pylint: disable=unused-import
+
+from chalicelib.processors.CustomProcessor import CustomProcessor
 
 
 app = Chalice(app_name='boost')

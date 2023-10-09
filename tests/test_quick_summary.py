@@ -18,6 +18,7 @@ except Exception as e:
     print(f"Error loading test data: {str(e)}")
 
 from .test_version import client_version
+from . import test_utils  # noqa pylint: disable=unused-import
 
 
 def test_quick_compliance():

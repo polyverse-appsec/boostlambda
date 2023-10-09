@@ -7,6 +7,7 @@ with open('./tests/data/customscan/missingawait.ts', 'r') as file:
     missingawait_ts = file.read()
 
 from .test_version import client_version
+from . import test_utils  # noqa pylint: disable=unused-import
 
 
 def test_customscan_function():

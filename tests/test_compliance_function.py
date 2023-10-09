@@ -7,6 +7,7 @@ with open('./tests/data/compliance/simple-compliance.js', 'r') as file:
     simple_buf_c = file.read()
 
 from .test_version import client_version
+from . import test_utils  # noqa pylint: disable=unused-import
 
 
 def test_compliance_function():

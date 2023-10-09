@@ -3,7 +3,7 @@ from app import app
 import json
 import random
 
-from .test_utils import warn
+from test_utils import warn
 
 # load the data files into a string, relative to the root directory
 with open('./tests/data/quick-blueprint/package.json', 'r') as file:

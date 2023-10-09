@@ -3,6 +3,7 @@ from app import app
 import json
 
 from .test_version import client_version
+from . import test_utils  # noqa pylint: disable=unused-import
 
 
 base_request_body = {

@@ -4,6 +4,8 @@ from chalice.test import Client
 import json
 from app import app
 
+from . import test_utils  # noqa pylint: disable=unused-import
+
 # Import the checkCreateCustomer function from the payments module in the chalicelib directory
 from chalicelib.payments import check_create_customer, check_create_subscription, check_create_subscription_item, update_usage, check_customer_account_status, check_valid_subscriber
 from chalicelib.usage import boost_cost_per_kb

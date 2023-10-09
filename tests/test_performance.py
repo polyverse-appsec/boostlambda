@@ -24,6 +24,7 @@ with open('./tests/data/performance/constant_lookup.py', 'r') as file:
     constant_lookup = file.read()
 
 from .test_version import client_version
+from . import test_utils  # noqa pylint: disable=unused-import
 
 
 def check_performance(code, issuesIdentified, use_function=False, issues=0):

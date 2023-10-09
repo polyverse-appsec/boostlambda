@@ -2,11 +2,12 @@ from chalice.test import Client
 from app import app
 import json
 
+from test_version import client_version
+from . import test_utils  # noqa pylint: disable=unused-import
+
 # load the data files into a string, relative to the root directory
 with open('./tests/data/simple-buf.c', 'r') as file:
     simple_buf_c = file.read()
-
-client_version = '0.9.5'
 
 
 def test_analyze_function():
