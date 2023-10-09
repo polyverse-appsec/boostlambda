@@ -18,27 +18,27 @@ build_draft_blueprint = {
             },
             "recommendedListOfFilesToExcludeFromAnalysis": {
                 "type": "array",
-                "description": "List of project folders and files to exclude from project analysis that do not likely contain any useful source, build or project information.",
+                "description": "List of project folders and file paths to exclude from project analysis that do not likely contain any useful source, build or project information.",
                 "items": {
                     "type": "string",
-                    "description": "Each folder or file that should be excluded from software project analysis."
+                    "description": "Each folder or file path that should be excluded from software project analysis."
                 }
             },
             "prioritizedListOfSourceFilesToAnalyze": {
                 "type": "array",
-                "description": "Prioritized list of all non-excluded files in the software project file list from most important file to least important file.",
+                "description": "Prioritized list of all non-excluded file paths in the software project file path list from most important to least important.",
                 "items": {
                     "type": "string",
-                    "description": "Each source, build or project file in the non-excluded software project file list from most important file to least important file."
+                    "description": "Each source, build or project file path in the non-excluded software project file path list from most important file to least important file."
                 }
             },
             "recommendedSampleSourceFile": {
                 "type": "string",
-                "description": "The sample source file that most represents the type of development principles being used"
+                "description": "The path to the sample source file that most represents the type of development principles being used"
             },
             "recommendedProjectDeploymentFile": {
                 "type": "string",
-                "description": "The project build or deployment file that describes how the project code is built and deployed"
+                "description": "The path to the project build or deployment file that describes how the project code is built and deployed"
             },
         }
     }
