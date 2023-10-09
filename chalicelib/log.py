@@ -3,6 +3,8 @@ def mins_and_secs(time):
         minutes = int(time // 60)
         seconds = time % 60
         return f"{minutes} mins {int(seconds)} secs"
+    elif time == 0:
+        return "0 secs"
     elif time < 3:
         return f"{time:.3f} secs"
     elif time < 5:
