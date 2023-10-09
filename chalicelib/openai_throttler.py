@@ -90,7 +90,9 @@ class Throttler:
 
     def get_wait_time(self, tokens_needed, first_wait, input_tokens):
         with self.lock:
-            if max_timeout_seconds_for_all_openai_calls > (time.time() - first_wait):
+            # if we're going to hit the max overall timeout for calls if we don't start this call, then just start it
+            #       and bypass throttler... can't be worse than indefinite hang or exceeding overall timeout
+            if (max_timeout_seconds_for_all_openai_calls - max_timeout_seconds_for_single_openai_call) < (time.time() - first_wait):
                 return -1
 
             if self.bucket >= tokens_needed:
