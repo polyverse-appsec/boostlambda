@@ -12,6 +12,7 @@ import json
 from typing import List, Tuple, Dict, Any
 import glob
 import re
+import datetime
 
 from chalice import UnprocessableEntityError
 
@@ -30,6 +31,7 @@ from chalicelib.usage import (
 from chalicelib.payments import update_usage_for_text
 from chalicelib.log import mins_and_secs
 from chalicelib.openai_throttler import (
+    Throttler,
     max_timeout_seconds_for_all_openai_calls,
     max_timeout_seconds_for_single_openai_call,
     total_analysis_time_buffer,
@@ -692,7 +694,9 @@ class GenericProcessor:
         return this_messages
 
     def makeOpenAICall(self, account, function_name, correlation_id, attempt, timeBufferRemaining, params) -> dict:
-        print(f"{function_name}:{account['email']}:{correlation_id}:Starting OpenAI API call (Attempt {attempt + 1})")
+
+        due_time = datetime.datetime.now() + datetime.timedelta(seconds=timeBufferRemaining)
+        print(f"{function_name}:{account['email']}:{correlation_id}:Starting OpenAI API call (Attempt {attempt + 1},Time Allotted {mins_and_secs(timeBufferRemaining)}, Due By {due_time})")
 
         start_time = time.time()
         try:
@@ -719,30 +723,30 @@ class GenericProcessor:
         for attempt in range(max_retries + 1):
 
             try:
-                timeBufferRemaining = round(total_analysis_time_buffer - (time.time() - start_time), 2)
+                time_buffer_remaining = round(total_analysis_time_buffer - (time.time() - start_time), 2)
 
-                if timeBufferRemaining < 0:
+                if time_buffer_remaining < 0:
                     raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
 
-                openAICallTimeBufferRemaining = round(max_timeout_seconds_for_all_openai_calls - (time.time() - start_time), 2)
+                openai_calltime_buffer_remaining = round(max_timeout_seconds_for_all_openai_calls - (time.time() - start_time), 2)
 
                 # we'll let the OpenAI call take at most the per-call max, or what's remaining
                 #       of the total calls buffer
-                allotedTimeBufferForThisOpenAPICall = round(min(
-                    openAICallTimeBufferRemaining,
+                allotted_time_buffer_for_this_openai_call = round(min(
+                    openai_calltime_buffer_remaining,
                     max_timeout_seconds_for_single_openai_call), 2)
 
-                print(f"OpenAI Timeout Settings for this call: totalAnalysisTimeBuffer:{mins_and_secs(total_analysis_time_buffer)}, "
-                      f"allotedTimeBufferForThisOpenAPICall:{mins_and_secs(allotedTimeBufferForThisOpenAPICall)}, "
-                      f"openAICallTimeBufferRemaining:{mins_and_secs(openAICallTimeBufferRemaining)}, "
-                      f"timeBufferRemaining:{mins_and_secs(timeBufferRemaining)}")
+                print(f"OpenAI Timeout Settings for this call: total_analysis_time_buffer:{mins_and_secs(total_analysis_time_buffer)}, "
+                      f"allotted_time_buffer_for_this_openai_call:{mins_and_secs(allotted_time_buffer_for_this_openai_call)}, "
+                      f"openai_calltime_buffer_remaining:{mins_and_secs(openai_calltime_buffer_remaining)}, "
+                      f"time_buffer_remaining:{mins_and_secs(time_buffer_remaining)}")
 
                 response = self.makeOpenAICall(
                     account,
                     function_name,
                     correlation_id,
                     attempt,
-                    allotedTimeBufferForThisOpenAPICall,
+                    allotted_time_buffer_for_this_openai_call,
                     params)
 
                 if attempt > 0:
@@ -818,7 +822,7 @@ class GenericProcessor:
         params['messages'] = this_messages
 
         start_time = time.monotonic()
-        print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Starting")
+        print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Starting processing chunked prompt {i}")
         result = None
         try:
             result = self.runAnalysis(params, account, function_name, correlation_id)
@@ -996,41 +1000,71 @@ class GenericProcessor:
             if chunked:
                 log(f"Chunked user input - {len(prompt_set)} chunks")
 
-                totalChunks = len(prompt_set)
-                tokensPerChunk = OpenAIDefaults.rate_limit_tokens_per_minute / totalChunks
+                throttler = Throttler()
+
+                # Sort prompt set based on total tokens (input tokens + output tokens)
+                sorted_prompt_set = sorted(prompt_set, key=lambda p: p[1] + p[2]) if OpenAIDefaults.boost_max_tokens_default != 0 else prompt_set
 
                 def runAnalysisForPromptThrottled(prompt_iteration):
 
                     index, prompt = prompt_iteration
-                    model_max_tokens = max_tokens_for_model(data.get('model'))
-                    if OpenAIDefaults.boost_max_tokens_default == 0:
-                        delay = 0  # if we have no defined max, then no delay and no throttling - since tuning is disabled
-                    else:
 
-                        def calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk) -> float:
-                            processingMinutes = estimatedTokensForThisPrompt / tokensPerChunk
-                            processingSeconds = processingMinutes * 60
-                            return processingSeconds
+                    output_tokens = prompt[1]
+                    input_tokens = prompt[2]
+                    try:
+                        if OpenAIDefaults.boost_max_tokens_default == 0:
+                            # if we have no defined max, then no delay and no throttling - since tuning is disabled
 
-                        # we use an estimate that input tokens will be doubled in output
-                        estimatedTokensForThisPrompt = min((model_max_tokens - prompt[1]) * (1 / self.calculate_input_token_buffer(
-                            model_max_tokens)),
-                            model_max_tokens)
-                        delay = calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk)
+                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing has no delay since tuning is disabled")
+                        else:
+                            total_tokens = output_tokens + input_tokens
 
-                    log(f"Thread-{threading.current_thread().ident} Summary {index} delaying for {mins_and_secs(delay)}")
+                            first_wait = time.time()
+                            while True:
+                                with throttler.lock:
+                                    delay = throttler.get_wait_time(total_tokens, first_wait, input_tokens)
 
-                    time.sleep(delay)  # Delay based on the number of words in the prompt
+                                    # if we need to delay, then wait for the specified delay or until notified
+                                    if delay > 0:
+                                        due_time = datetime.datetime.now() + datetime.timedelta(seconds=delay)
+                                        log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
+                                        started_waiting = time.time()
+                                        throttler.lock.wait(timeout=delay)  # Wait for the specified delay or until notified
 
-                    if delay > 5:  # If delay is more than 5 seconds, log it
-                        log(f"Summary {index} delayed for {mins_and_secs(delay)}", True)
+                                        ultimate_delay = time.time() - started_waiting
+                                        if ultimate_delay < delay:  # If started early
+                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing starting early with delay of {mins_and_secs(ultimate_delay)} instead of expected delay of {mins_and_secs(delay)}", True)
+                                        else:
+                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing delayed for {mins_and_secs(ultimate_delay)}", True)
 
-                    return self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
+                                    # bypassing rate limiting due to overall wait time exceeded or other throttling failure
+                                    elif delay < 0:
+                                        log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
+
+                                        break  # run the analysis immediately due to throttling failure or timeout
+
+                                    # no delay due to priority shortest of (input, output, total)
+                                    else:
+                                        log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing No Delay due to priority shortest of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens})", True)
+
+                                        break  # run analysis immediately as we've been unblocked by bucket availability
+
+                        analysisResult = self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
+
+                    # need to ensure we re-fill in case of an error
+                    finally:
+                        # only refill if we used the throttler and didn't bypass rate limiting
+                        if OpenAIDefaults.boost_max_tokens_default != 0 and delay >= 0:
+                            # After each prompt completion, refill the bucket based on elapsed time
+                            throttler.refill(output_tokens + input_tokens)
+
+                    return analysisResult
 
                 # launch all the parallel threads to run analysis with the unique chunked prompt for each
                 # Throttling the rate of file processing
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    results = list(executor.map(runAnalysisForPromptThrottled, enumerate(prompt_set)))
+                    results = list(executor.map(runAnalysisForPromptThrottled, enumerate(sorted_prompt_set)))
+
             # otherwise, run once
             else:
                 # if truncated user input, report it out, and update the OpenAI input with the truncated input

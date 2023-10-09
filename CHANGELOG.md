@@ -23,6 +23,7 @@ Polyverse Boost Cloud Service
 - Improve Quick Blueprint handling of exclusion and prioritization lists
 - Ensure chunking of list inputs breaks on newlines (e.g. to avoid mangling lists of filenames)
 - Print all Metrics to Log (local console and AWS) and CloudWatch (AWS only)
+- Tweak Draft Blueprint prompt and function schema to ensure full file paths are returned
 
 ### Bug Fixes
 - Fix bug in input buffer calculation that didn't account for function input size (for chunking and truncation)
