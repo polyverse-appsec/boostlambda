@@ -969,6 +969,8 @@ class GenericProcessor:
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
 
+        useNewThrottler = "useNewThrottler" in os.environ
+
         self.load_prompts()
 
         email = account['email']
@@ -1000,65 +1002,99 @@ class GenericProcessor:
             if chunked:
                 log(f"Chunked user input - {len(prompt_set)} chunks")
 
-                throttler = Throttler()
+                if useNewThrottler:
+                    throttler = Throttler()
 
-                # Sort prompt set based on total tokens (input tokens + output tokens)
-                sorted_prompt_set = sorted(prompt_set, key=lambda p: p[1] + p[2]) if OpenAIDefaults.boost_max_tokens_default != 0 else prompt_set
+                    # Sort prompt set based on total tokens (input tokens + output tokens)
+                    sorted_prompt_set = sorted(prompt_set, key=lambda p: p[1] + p[2]) if OpenAIDefaults.boost_max_tokens_default != 0 else prompt_set
 
-                def runAnalysisForPromptThrottled(prompt_iteration):
+                    def runAnalysisForPromptThrottled(prompt_iteration):
 
-                    index, prompt = prompt_iteration
+                        index, prompt = prompt_iteration
 
-                    output_tokens = prompt[1]
-                    input_tokens = prompt[2]
-                    try:
-                        if OpenAIDefaults.boost_max_tokens_default == 0:
-                            # if we have no defined max, then no delay and no throttling - since tuning is disabled
+                        output_tokens = prompt[1]
+                        input_tokens = prompt[2]
+                        try:
+                            if OpenAIDefaults.boost_max_tokens_default == 0:
+                                # if we have no defined max, then no delay and no throttling - since tuning is disabled
 
-                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing has no delay since tuning is disabled")
-                        else:
-                            total_tokens = output_tokens + input_tokens
+                                log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing has no delay since tuning is disabled")
+                            else:
+                                total_tokens = output_tokens + input_tokens
 
-                            first_wait = time.time()
-                            while True:
-                                with throttler.lock:
-                                    delay = throttler.get_wait_time(total_tokens, first_wait, input_tokens)
+                                first_wait = time.time()
+                                while True:
+                                    with throttler.lock:
+                                        delay = throttler.get_wait_time(total_tokens, first_wait, input_tokens)
 
-                                    # if we need to delay, then wait for the specified delay or until notified
-                                    if delay > 0:
-                                        due_time = datetime.datetime.now() + datetime.timedelta(seconds=delay)
-                                        log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
-                                        started_waiting = time.time()
-                                        throttler.lock.wait(timeout=delay)  # Wait for the specified delay or until notified
+                                        # if we need to delay, then wait for the specified delay or until notified
+                                        if delay > 0:
+                                            due_time = datetime.datetime.now() + datetime.timedelta(seconds=delay)
+                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
+                                            started_waiting = time.time()
+                                            throttler.lock.wait(timeout=delay)  # Wait for the specified delay or until notified
 
-                                        ultimate_delay = time.time() - started_waiting
-                                        if ultimate_delay < delay:  # If started early
-                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing starting early with delay of {mins_and_secs(ultimate_delay)} instead of expected delay of {mins_and_secs(delay)}", True)
+                                            ultimate_delay = time.time() - started_waiting
+                                            if ultimate_delay < delay:  # If started early
+                                                log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing starting early with delay of {mins_and_secs(ultimate_delay)} instead of expected delay of {mins_and_secs(delay)}", True)
+                                            else:
+                                                log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing delayed for {mins_and_secs(ultimate_delay)}", True)
+
+                                        # bypassing rate limiting due to overall wait time exceeded or other throttling failure
+                                        elif delay < 0:
+                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
+
+                                            break  # run the analysis immediately due to throttling failure or timeout
+
+                                        # no delay due to priority shortest of (input, output, total)
                                         else:
-                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing delayed for {mins_and_secs(ultimate_delay)}", True)
+                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing No Delay due to priority shortest of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens})", True)
 
-                                    # bypassing rate limiting due to overall wait time exceeded or other throttling failure
-                                    elif delay < 0:
-                                        log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
+                                            break  # run analysis immediately as we've been unblocked by bucket availability
 
-                                        break  # run the analysis immediately due to throttling failure or timeout
+                            analysisResult = self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
 
-                                    # no delay due to priority shortest of (input, output, total)
-                                    else:
-                                        log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing No Delay due to priority shortest of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens})", True)
+                        # need to ensure we re-fill in case of an error
+                        finally:
+                            # only refill if we used the throttler and didn't bypass rate limiting
+                            if OpenAIDefaults.boost_max_tokens_default != 0 and delay >= 0:
+                                # After each prompt completion, refill the bucket based on elapsed time
+                                throttler.refill(output_tokens + input_tokens)
 
-                                        break  # run analysis immediately as we've been unblocked by bucket availability
+                        return analysisResult
+                else:
+                    sorted_prompt_set = prompt_set
 
-                        analysisResult = self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
+                    totalChunks = len(prompt_set)
+                    tokensPerChunk = OpenAIDefaults.rate_limit_tokens_per_minute / totalChunks
 
-                    # need to ensure we re-fill in case of an error
-                    finally:
-                        # only refill if we used the throttler and didn't bypass rate limiting
-                        if OpenAIDefaults.boost_max_tokens_default != 0 and delay >= 0:
-                            # After each prompt completion, refill the bucket based on elapsed time
-                            throttler.refill(output_tokens + input_tokens)
+                    def runAnalysisForPromptThrottled(prompt_iteration):
 
-                    return analysisResult
+                        index, prompt = prompt_iteration
+                        model_max_tokens = max_tokens_for_model(data.get('model'))
+                        if OpenAIDefaults.boost_max_tokens_default == 0:
+                            delay = 0  # if we have no defined max, then no delay and no throttling - since tuning is disabled
+                        else:
+
+                            def calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk) -> float:
+                                processingMinutes = estimatedTokensForThisPrompt / tokensPerChunk
+                                processingSeconds = processingMinutes * 60
+                                return processingSeconds
+
+                            # we use an estimate that input tokens will be doubled in output
+                            estimatedTokensForThisPrompt = min((model_max_tokens - prompt[1]) * (1 / self.calculate_input_token_buffer(
+                                model_max_tokens)),
+                                model_max_tokens)
+                            delay = calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk)
+
+                        log(f"Thread-{threading.current_thread().ident} Summary {index} delaying for {mins_and_secs(delay)}")
+
+                        time.sleep(delay)  # Delay based on the number of words in the prompt
+
+                        if delay > 5:  # If delay is more than 5 seconds, log it
+                            log(f"Summary {index} delayed for {mins_and_secs(delay)}", True)
+
+                        return self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
 
                 # launch all the parallel threads to run analysis with the unique chunked prompt for each
                 # Throttling the rate of file processing

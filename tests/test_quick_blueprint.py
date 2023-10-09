@@ -2,6 +2,7 @@ from chalice.test import Client
 from app import app
 import json
 import random
+import os
 
 from .test_utils import warn
 
@@ -21,6 +22,8 @@ with open('./tests/data/quick-blueprint/sample.ts', 'r') as file:
 from .test_version import client_version
 
 use_simulated_service_responses = False
+
+os.environ["useNewThrottler"] = "True"
 
 
 def test_quick_blueprint():
