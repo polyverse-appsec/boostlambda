@@ -12,6 +12,7 @@ Polyverse Boost Cloud Service
 - Added internal email notification service
 - Send email notification to Polyverse Support team when a customer account is first created
 - Send email notification to Polyverse Support team when customer performs first billable action
+- Added OpenAI call Throttler (based on Token bucket algorithm, OpenAI rate limits, and processing time heuristics)
 
 ### Enhancements
 - Added Test / Quality analysis to the Blueprint service
