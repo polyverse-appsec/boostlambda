@@ -1,5 +1,6 @@
 import tiktoken
 import os
+import json
 from typing import Tuple, List
 
 
@@ -217,3 +218,23 @@ def get_openai_usage_per_token(num_tokens: int, input: bool, model=OpenAIDefault
 
 def get_boost_cost(payloadLength):
     return (payloadLength / 1024) * boost_cost_per_kb
+
+
+# This doesn't appear to be highly accurate way to measure function token usage
+# it tends to overestimate the cost of functions - by at least 25-50%
+def tokens_from_function(params, model) -> int:
+    use_aggressive_function_token_measure = True
+
+    function_content_size = 0
+    for key in (['functions'] if use_aggressive_function_token_measure else ['functions', 'function_call']):
+        if key in params:
+            if not use_aggressive_function_token_measure:
+                function_content_size += num_tokens_from_string(json.dumps(params[key]), model)[0]
+            else:
+                for function in params[key]:
+                    # note that the function-related params are stored as dictionaries, unlike other user content
+                    for func_param in function['parameters']:
+                        function_content_size += num_tokens_from_string(json.dumps(function['parameters'][func_param]), model)[0]
+                    function_content_size += num_tokens_from_string(json.dumps(function['name']), model)[0]
+
+    return function_content_size

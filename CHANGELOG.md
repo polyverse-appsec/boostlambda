@@ -28,6 +28,7 @@ Polyverse Boost Cloud Service
 - Always the any lost data to console log and AWS metrics (if under AWS) even if call succeeded
 - Detect successful OpenAI calls with incomplete response data and report to service caller and log
 - Logging of all Token Buffer sizes reported for all calls - including buffer length, input tokens, output tokens and function calls
+- Improved accuracy of function token calculation to allow for more user input and output
 
 ### Bug Fixes
 - Balance input and output buffer size for large file lists in DraftBlueprintProcessor - better success rate

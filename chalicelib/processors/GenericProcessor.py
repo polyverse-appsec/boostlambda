@@ -27,7 +27,8 @@ from chalicelib.usage import (
     get_boost_cost,
     OpenAIDefaults,
     num_tokens_from_string,
-    decode_string_from_input)
+    decode_string_from_input,
+    tokens_from_function)
 from chalicelib.payments import update_usage_for_text
 from chalicelib.log import mins_and_secs
 from chalicelib.openai_throttler import (
@@ -531,11 +532,7 @@ class GenericProcessor:
         truncated = 0
 
         # calculate the size of the function-related content for input buffer usage
-        function_content_size = 0
-        for key in ['function_call', 'functions']:
-            if key in params:
-                # note that the function-related params are stored as dictionaries, unlike other user content
-                function_content_size += num_tokens_from_string(json.dumps(params[key]), data.get('model'))[0]
+        function_content_size = tokens_from_function(params, data.get('model'))
 
         model_max_tokens = max_tokens_for_model(data.get('model'))
 
