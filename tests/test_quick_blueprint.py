@@ -214,7 +214,7 @@ def test_quick_blueprint_fixed_tiny_project():
 
 
 def test_quick_blueprint_random_tiny_project():
-    helper_test_quick_blueprint_large_project(1, True)
+    helper_test_quick_blueprint_large_project(1, True, 1)
 
 
 def test_quick_blueprint_fixed_small_project():
@@ -222,7 +222,7 @@ def test_quick_blueprint_fixed_small_project():
 
 
 def test_quick_blueprint_random_small_project():
-    helper_test_quick_blueprint_large_project(10, True)
+    helper_test_quick_blueprint_large_project(10, True, 5)
 
 
 def test_quick_blueprint_fixed_medium_project():
@@ -230,7 +230,7 @@ def test_quick_blueprint_fixed_medium_project():
 
 
 def test_quick_blueprint_random_medium_project():
-    helper_test_quick_blueprint_large_project(20, True)
+    helper_test_quick_blueprint_large_project(20, True, 4)
 
 
 def test_quick_blueprint_fixed_large_project():
@@ -238,14 +238,14 @@ def test_quick_blueprint_fixed_large_project():
 
 
 def test_quick_blueprint_random_large_project():
-    helper_test_quick_blueprint_large_project(50, True)
+    helper_test_quick_blueprint_large_project(50, True, 2)
 
 
-def helper_test_quick_blueprint_large_project(size, randomize):
+def helper_test_quick_blueprint_large_project(size, randomize, scalar=2):
     with Client(app) as client:
         if randomize:
-            num_folders = random.randint(10, size)
-            num_files_per_folder = random.randint(10, size * 2)
+            num_folders = random.randint(size, size * scalar)
+            num_files_per_folder = random.randint(size, size * scalar)
         else:
             num_folders = size
             num_files_per_folder = size * 2
@@ -409,5 +409,5 @@ def generate_realistic_folder_names():
 
 
 def generate_prioritized_file_list(file_paths):
-    num_files_to_prioritize = random.randint(1, len(file_paths) // 2)
+    num_files_to_prioritize = random.randint(1, max(1, len(file_paths) // 2))
     return random.sample(file_paths, num_files_to_prioritize)
