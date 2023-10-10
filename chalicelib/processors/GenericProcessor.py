@@ -316,7 +316,14 @@ class GenericProcessor:
 
         # calling function already excluded the function content size from the input buffer, so we don't need to add it here
         if (full_message_content_tokens_count < input_token_buffer):
-            return [(this_messages, tuned_output, input_token_count)], truncation
+
+            if input_token_count + tuned_output > max_tokens:
+                print(f"Overall Analysis Buffer of {max_tokens} tokens exceeded for Single Chunk Processing: Input={input_token_count}, Output={tuned_output}, Function={extra_non_message_content_size}")
+                raise UnprocessableEntityError("Input is too large to process. Please try again with less input.")
+            else:
+                print(f"Overall Analysis Buffer of {max_tokens} used for Single Chunk Processing Chunk Processing: Input={input_token_count}, Output={tuned_output}, Function={extra_non_message_content_size}")
+
+            return [(this_messages, tuned_output, input_token_count, extra_non_message_content_size)], truncation
 
         # otherwise, we'll need to break the chunk into smaller chunks
         # we're going to extract ONLY the bit of user-content (not the prompt wrapper) that we can try and break up
@@ -428,8 +435,14 @@ class GenericProcessor:
             tuned_max_tokens = max_tokens - these_tokens_count
             tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens)
 
+            if input_token_count + tuned_output > max_tokens:
+                print(f"Overall Analysis Buffer of {max_tokens} tokens exceeded for Chunk {len(this_messages_chunked)} Processing: Input={these_tokens_count}, Output={tuned_output}, Function={extra_non_message_content_size}")
+                raise UnprocessableEntityError("Input is too large to process. Please try again with less input.")
+            else:
+                print(f"Overall Analysis Buffer of {max_tokens} used for Chunk {len(this_messages_chunked)} Processing: Input={these_tokens_count}, Output={tuned_output}, Function={extra_non_message_content_size}")
+
             # store the updated message to be processed
-            this_messages_chunked.append((this_messages, tuned_output, these_tokens_count))
+            this_messages_chunked.append((this_messages, tuned_output, these_tokens_count, extra_non_message_content_size))
 
             # Move the index to the next chunk starting point
             i = end_idx
@@ -524,6 +537,8 @@ class GenericProcessor:
                 # note that the function-related params are stored as dictionaries, unlike other user content
                 function_content_size += num_tokens_from_string(json.dumps(params[key]), data.get('model'))[0]
 
+        model_max_tokens = max_tokens_for_model(data.get('model'))
+
         # if single input, build the prompt to test length
         if 'chunks' not in prompt_format_args:
             this_messages = self.generate_messages(data, prompt_format_args)
@@ -538,13 +553,23 @@ class GenericProcessor:
             input_token_buffer -= function_content_size if input_token_buffer > 0 else 0
 
             if input_token_buffer == 0:
-                prompts_set = [(this_messages, int(0), input_tokens_count + function_content_size)]
+                tuned_input = input_tokens_count + function_content_size
+
+                prompts_set = [(this_messages, int(0), tuned_input, function_content_size)]
 
             elif input_tokens_count < input_token_buffer:
                 tuned_max_tokens = max_tokens - input_tokens_count
                 tuned_output = self.calculate_output_token_buffer(
-                    input_tokens_count, tuned_max_tokens, max_tokens,)
-                prompts_set = [(this_messages, tuned_output, input_tokens_count + function_content_size)]
+                    input_tokens_count, tuned_max_tokens, max_tokens)
+                tuned_input = input_tokens_count + function_content_size
+
+                if tuned_input + tuned_output > model_max_tokens:
+                    print(f"Overall Analysis Buffer of {model_max_tokens} tokens exceeded for Single-Input: Input={tuned_input}, Output={tuned_output}, Function={function_content_size}")
+                    raise UnprocessableEntityError("Input is too large to process. Please try again with less input.")
+                else:
+                    print(f"Overall Analysis Buffer of {model_max_tokens} used for Single-Input: Input={tuned_input}, Output={tuned_output}, Function={function_content_size}")
+
+                prompts_set = [(this_messages, tuned_output, tuned_input, function_content_size)]
 
             else:  # this single input has blown the input buffer, so we'll need to chunk or truncate it
 
@@ -569,7 +594,15 @@ class GenericProcessor:
                     input_tokens_count = sum(len(message["content"]) for message in this_messages if 'content' in message)
 
                     truncated += truncated_tokens_count
-                    prompts_set = [(this_messages, tuned_output, input_tokens_count + function_content_size)]
+                    tuned_input = input_tokens_count + function_content_size
+
+                    if tuned_input + tuned_output > model_max_tokens:
+                        print(f"Overall Analysis Buffer of {model_max_tokens} tokens exceeded for Single-Input Truncated Processing: Input={tuned_input}, Output={tuned_output}, Function={function_content_size}")
+                        raise UnprocessableEntityError("Input is too large to process. Please try again with less input.")
+                    else:
+                        print(f"Overall Analysis Buffer of {model_max_tokens} used for Single-Input Truncated Processing: Input={tuned_input}, Output={tuned_output}, Function={function_content_size}")
+
+                    prompts_set = [(this_messages, tuned_output, tuned_input, function_content_size)]
 
         else:  # we have input chunks we need to break up, which themselves could be broken up
             cloned_prompt_format_args = prompt_format_args.copy()
@@ -596,7 +629,7 @@ class GenericProcessor:
                 prompts_set.extend(each_chunk_prompt_set)
 
         user_prompts_size = 0
-        for prompt, _, _ in prompts_set:
+        for prompt, *_ in prompts_set:
             for message in prompt:
                 if 'content' in message and message["role"] == "user":
                     user_prompts_size += len(message["content"])
@@ -1014,8 +1047,13 @@ class GenericProcessor:
 
                         index, prompt = prompt_iteration
 
+                        messages = prompt[0]
                         output_tokens = prompt[1]
                         input_tokens = prompt[2]
+                        function_tokens = prompt[3]
+
+                        log(f"Thread-{threading.current_thread().ident} Chunk {index} (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens})")
+
                         try:
                             if OpenAIDefaults.boost_max_tokens_default == 0:
                                 # if we have no defined max, then no delay and no throttling - since tuning is disabled
@@ -1032,7 +1070,7 @@ class GenericProcessor:
                                         # if we need to delay, then wait for the specified delay or until notified
                                         if delay > 0:
                                             due_time = datetime.datetime.now() + datetime.timedelta(seconds=delay)
-                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
+                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
                                             started_waiting = time.time()
                                             throttler.lock.wait(timeout=delay)  # Wait for the specified delay or until notified
 
@@ -1044,17 +1082,17 @@ class GenericProcessor:
 
                                         # bypassing rate limiting due to overall wait time exceeded or other throttling failure
                                         elif delay < 0:
-                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
+                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
 
                                             break  # run the analysis immediately due to throttling failure or timeout
 
                                         # no delay due to priority shortest of (input, output, total)
                                         else:
-                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing No Delay due to priority shortest of (input={input_tokens},output={output_tokens},total={input_tokens+output_tokens})", True)
+                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing No Delay due to priority shortest of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens})", True)
 
                                             break  # run analysis immediately as we've been unblocked by bucket availability
 
-                            analysisResult = self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
+                            analysisResult = self.runAnalysisForPrompt(index, messages, output_tokens, params, account, function_name, correlation_id)
 
                         # need to ensure we re-fill in case of an error
                         finally:
