@@ -43,7 +43,7 @@ def extract_values(obj, key):
 def split_leading_number_from_description(description):
 
     if 'Polyverse Boost' not in description and 'Tier' not in description:
-        return 0, description
+        return 0, description[:15]
 
     # Split the string by ' × '
     parts = description.split(' × ')
@@ -209,6 +209,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
         lastCustomerEmail = ''
         lastOrg = ''
         for org, customer, email, created, status, cc, plan, usageInMb, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid in customers_list:
+            customer = customer.split('@')[0]
             newOrg = org != lastOrg
             org = org if org != lastOrg else '"'
             created = created if newOrg else '"'
