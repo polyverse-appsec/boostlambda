@@ -29,6 +29,7 @@ Polyverse Boost Cloud Service
 - Detect successful OpenAI calls with incomplete response data and report to service caller and log
 
 ### Bug Fixes
+- Balance input and output buffer size for large file lists in DraftBlueprintProcessor - better success rate
 - Fix bug in input buffer calculation that didn't account for function input size (for chunking and truncation)
 - Add variance to chunk length counting to accomodate for reduced tokenization efficiency
 - Fix issue in Generic Processor where list input was incorrectly handled

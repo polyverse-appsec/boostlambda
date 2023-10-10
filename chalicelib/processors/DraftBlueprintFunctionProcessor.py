@@ -53,9 +53,12 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
                          'build_draft_blueprint',
                          build_draft_blueprint)
 
+    def get_chunkable_input(self) -> str:
+        return "filelist"
+
     def calculate_input_token_buffer(self, total_max) -> int:
         # we'll leave 90% of the buffer for the input, and the last 10% for the generated blueprint
-        return math.floor(total_max * 0.9)
+        return math.floor(total_max * 0.70)
 
     def get_function_definition(self):
         return build_draft_blueprint
@@ -109,9 +112,6 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
             "status": success,
             "details": arguments
         }
-
-    def get_chunkable_input(self) -> str:
-        return "filelist"
 
     def collect_inputs_for_processing(self, data):
         # Extract the fileList from the json data
