@@ -312,7 +312,7 @@ class GenericProcessor:
         # if we can fit the chunk into one token buffer, we'll process and be done
         max_tokens = max_tokens_for_model(data.get('model'))
         tuned_max_tokens = max_tokens - full_message_content_tokens_count - extra_non_message_content_size
-        tuned_output = self.calculate_output_token_buffer(full_message_content_tokens_count, tuned_max_tokens, max_tokens)
+        tuned_output = self.calculate_output_token_buffer(full_message_content_tokens_count, tuned_max_tokens, max_tokens, False)
         input_token_count = full_message_content_tokens_count + extra_non_message_content_size
 
         # calling function already excluded the function content size from the input buffer, so we don't need to add it here
@@ -434,7 +434,7 @@ class GenericProcessor:
             # get the new remaining max tokens we can accommodate with output
             max_tokens = max_tokens_for_model(data.get('model'))
             tuned_max_tokens = max_tokens - these_tokens_count
-            tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens)
+            tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens, False)
 
             if input_token_count + tuned_output > max_tokens:
                 print(f"Overall Analysis Buffer of {max_tokens} tokens exceeded for Chunk {len(this_messages_chunked)} Processing: Input={these_tokens_count}, Output={tuned_output}, Function={extra_non_message_content_size}")
@@ -460,10 +460,14 @@ class GenericProcessor:
     def get_default_max_tokens(self) -> int:
         return max_tokens_for_model(self.default_params.get('model'))
 
-    def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max) -> int:
+    def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max, enforce_max=True) -> int:
 
         # if the input is larger than our output buffer already, we'll just allow the entire output buffer to be used
         if input_buffer_size > output_buffer_size:
+            if enforce_max and input_buffer_size + output_buffer_size > total_max:
+                print(f"Unable to calculate output token capacity - Overall Capacity ({total_max}) Exceeded (Default Size): Input={input_buffer_size}, Output={output_buffer_size}")
+                raise UnprocessableEntityError("Input is too large to process. Please try again with less input.")
+
             return output_buffer_size
 
         # otherwise, we'll calculate the remaining buffer size
@@ -476,7 +480,12 @@ class GenericProcessor:
         # the lesser of the remainingBuffer or 2x the input_buffer (for very tiny inputs)
         buffer_size = int(min(remainingBuffer, math.floor(input_buffer_size * 2)))
 
-        return max(buffer_size, minimum_buffer)
+        desired_output_size = max(buffer_size, minimum_buffer)
+        if enforce_max and input_buffer_size + desired_output_size > total_max:
+            print(f"Unable to calculate output token capacity - Overall Capacity ({total_max}) Exceeded (Optimized Size): Input={input_buffer_size}, Output={desired_output_size}")
+            raise UnprocessableEntityError("Input is too large to process. Please try again with less input.")
+
+        return desired_output_size
 
     def truncate_user_messages(self, messages: List[dict[str, any]], input_token_buffer, data):
         truncated_token_count = 0
@@ -557,7 +566,7 @@ class GenericProcessor:
             elif input_tokens_count < input_token_buffer:
                 tuned_max_tokens = max_tokens - input_tokens_count
                 tuned_output = self.calculate_output_token_buffer(
-                    input_tokens_count, tuned_max_tokens, max_tokens)
+                    input_tokens_count + function_content_size, tuned_max_tokens, max_tokens, False)
                 tuned_input = input_tokens_count + function_content_size
 
                 if tuned_input + tuned_output > model_max_tokens:
@@ -586,7 +595,7 @@ class GenericProcessor:
                     truncated_tokens_count += function_content_size
 
                     tuned_max_tokens = max_tokens - truncated_tokens_count
-                    tuned_output = self.calculate_output_token_buffer(truncated_tokens_count, tuned_max_tokens, max_tokens)
+                    tuned_output = self.calculate_output_token_buffer(truncated_tokens_count, tuned_max_tokens, max_tokens, False)
 
                     input_tokens_count = sum(len(message["content"]) for message in this_messages if 'content' in message)
 
