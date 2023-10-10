@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.9.8: October 8th, 2023
+## Version 0.9.8: October 10th, 2023
 
 ### New Features
 - Added new Function-based Code Conversion service
