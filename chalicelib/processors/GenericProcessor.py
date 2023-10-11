@@ -790,6 +790,9 @@ class GenericProcessor:
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
 
+        def log(message):
+            print(f"Thread-{threading.current_thread().ident}-{function_name}:RunAnalysis:{message}")
+
         max_retries = 3
         start_time = time.time()
 
@@ -801,12 +804,15 @@ class GenericProcessor:
         for attempt in range(max_retries + 1):
 
             try:
-                time_buffer_remaining = round(total_analysis_time_buffer - (time.time() - start_time), 2)
+                now = time.time()
+                time_buffer_remaining = round(total_analysis_time_buffer - (now - start_time), 2)
 
                 if time_buffer_remaining < 0:
                     raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
 
-                openai_calltime_buffer_remaining = round(max_timeout_seconds_for_all_openai_calls - (time.time() - start_time), 2)
+                openai_calltime_buffer_remaining = round(max_timeout_seconds_for_all_openai_calls - (now - start_time), 2)
+                if openai_calltime_buffer_remaining < 0:
+                    raise Exception(f"Timeout exceeded for total OpenAI calls: {mins_and_secs(max_timeout_seconds_for_all_openai_calls)}")
 
                 # we'll let the OpenAI call take at most the per-call max, or what's remaining
                 #       of the total calls buffer
@@ -814,10 +820,11 @@ class GenericProcessor:
                     openai_calltime_buffer_remaining,
                     max_timeout_seconds_for_single_openai_call), 2)
 
-                print(f"Thread-{threading.current_thread().ident}-{function_name}:OpenAI Time Settings:total_analysis_time_buffer:{mins_and_secs(total_analysis_time_buffer)}, "
-                      f"allotted_time_buffer_for_this_openai_call:{mins_and_secs(allotted_time_buffer_for_this_openai_call)}, "
-                      f"openai_calltime_buffer_remaining:{mins_and_secs(openai_calltime_buffer_remaining)}, "
-                      f"time_buffer_remaining:{mins_and_secs(time_buffer_remaining)}")
+                log(f"Time Settings: "
+                    f"TotalAnalysisTimeBuffer:{mins_and_secs(total_analysis_time_buffer)}, "
+                    f"OverallTimeRemaining:{mins_and_secs(time_buffer_remaining)}, "
+                    f"AllottedOpenAICallTime:{mins_and_secs(allotted_time_buffer_for_this_openai_call)}, "
+                    f"OpenAICallTimeRemaining:{mins_and_secs(openai_calltime_buffer_remaining)}")
 
                 response = self.makeOpenAICall(
                     account,
@@ -828,7 +835,7 @@ class GenericProcessor:
                     params)
 
                 if attempt > 0:
-                    print(f"{function_name}:{account['email']}:{correlation_id}:Succeeded after {attempt} retries")
+                    log(f"Succeeded after {attempt} retries")
 
                 return dict(
                     message=response.choices[0].message,
@@ -863,7 +870,7 @@ class GenericProcessor:
                 else:
                     randomSleep = random.uniform(5, 15)
 
-                print(f"{function_name}:{correlation_id}:RateLimitError, sleeping for {mins_and_secs(randomSleep)} before retry")
+                log(f"RateLimitError, sleeping for {mins_and_secs(randomSleep)} before retry")
 
                 # if we hit the rate limit, send a cloudwatch alert and raise the error
                 capture_metric(
@@ -877,7 +884,7 @@ class GenericProcessor:
 
                 time.sleep(randomSleep)
 
-            if error_type != "Timeout" and attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < total_analysis_time_buffer:
+            if attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < total_analysis_time_buffer:
 
                 timeBufferRemaining = total_analysis_time_buffer - (time.time() - start_time)
 
@@ -885,13 +892,14 @@ class GenericProcessor:
                     raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
 
                 randomSleep = random.uniform(2, 5)
-                print(f"{function_name}:{account['email']}:{correlation_id}:Retrying in {mins_and_secs(randomSleep)} after {error_type}: {error_msg}")
+                log(f"OpenAPIRetrying in {mins_and_secs(randomSleep)} after {error_type}: {error_msg}")
                 time.sleep(randomSleep)
             else:
-                print(f"{function_name}:{account['email']}:{correlation_id}:FAILED after {attempt} retries:Error: {error_type}: {error_msg}")
+                log(f"FAILED after {attempt} retries:Error: {error_type}: {error_msg}")
                 raise error
 
-    def runAnalysisForPrompt(self, i, this_messages, max_output_tokens, params_template, account, function_name, correlation_id) -> dict:
+    def runAnalysisForPrompt(self, i, this_messages, max_output_tokens,
+                             params_template, account, function_name, correlation_id) -> dict:
         params = params_template.copy()  # Create a copy of the template to avoid side effects
 
         if max_output_tokens != 0:
@@ -899,22 +907,36 @@ class GenericProcessor:
 
         params['messages'] = this_messages
 
+        def log(message):
+            print(f"Thread-{threading.current_thread().ident}-{function_name}:runAnalysisForPrompt:Chunk {i}:{message}")
+
         start_time = time.monotonic()
-        print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Starting processing Chunk {i}")
+
+        log("Starting processing")
+
         result = None
+        error = ""
         try:
             result = self.runAnalysis(params, account, function_name, correlation_id)
-            end_time = time.monotonic()
-            print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
-                  f"SUCCESS processing Chunk {i} in {mins_and_secs(end_time - start_time)}:"
-                  f"Finish:{'Incomplete' if (result['finish'] is None or result['finish'] == 'length' or result['finish'] =='content_filter') else 'Complete'}")
-            return result
+
         except Exception as e:
-            end_time = time.monotonic()
-            print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
-                  f"Error processing Chunk {i} after {mins_and_secs(end_time - start_time)}:"
-                  f"Finish:{'Incomplete' if (result is None or result['finish'] is None or result['finish'] == 'length' or result['finish'] =='content_filter') else 'Complete'}::error:{str(e)}")
+            error = f"::error:{str(e)}"
             raise
+
+        finally:
+            end_time = time.monotonic()
+
+            finish = 'Incomplete' if (result is None or result['finish'] is None or result['finish'] == 'length'
+                                      or result['finish'] == 'content_filter') else 'Complete'
+
+            if result is None:
+                log(f"Error processing after {mins_and_secs(end_time - start_time)}:"
+                    f"Finish:{finish}{error}")
+            else:
+                log(f"SUCCESS processing in {mins_and_secs(end_time - start_time)}:"
+                    f"Finish:{finish}{error}")
+
+        return result
 
     def initialize_from_data(self, log, data, account, function_name, correlation_id, prompt_format_args, params) -> Tuple[dict, dict]:
 
