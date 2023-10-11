@@ -56,9 +56,26 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
     def get_chunkable_input(self) -> str:
         return "filelist"
 
+    # we're going to reduce the overall content capacity to 80% of the default
+    #       to improve reliability in generating draft blueprints and avoid overly long processing
+    def get_default_max_tokens(self, data=None) -> int:
+        return int(super().get_default_max_tokens(data) * 0.9)
+
     def calculate_input_token_buffer(self, total_max) -> int:
-        # we'll leave 90% of the buffer for the input, and the last 10% for the generated blueprint
-        return math.floor(total_max * 0.70)
+        # since the result of the blueprint includes the source filelist, we'll need to roughly balance
+        #       the input and output buffers (e.g. the same rough filelist exists in the source and result)
+        return math.floor(total_max * 0.50)
+
+    def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max, enforce_max=True) -> int:
+
+        # we want the output buffer to be at least 20% of the max tokens
+        # but no more than 50% of the max tokens, and ideally, the same as
+        # the input buffer
+        output_buffer_size = max(0.2 * total_max,
+                                 min(input_buffer_size,
+                                     math.floor(total_max * 0.5)))
+
+        return output_buffer_size
 
     def get_function_definition(self):
         return build_draft_blueprint
