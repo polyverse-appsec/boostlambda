@@ -80,55 +80,8 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
     def get_function_definition(self):
         return build_draft_blueprint
 
-    # default is capturing bugs in the function output
     def process_function_output(self, result, log):
-
-        arguments = {}
-        # if we get here, we have a function call in the results array.  loop through each of the results and add the array of arguments to the bugs array
-        # result['results'][0]['message']['function_call']['arguments'] is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore
-        # any errors
-        for r in result['results']:
-            try:
-                json_arguments = json.loads(r['message']['function_call']['arguments'])
-                arguments["draftBlueprint"] = json_arguments["draftBlueprint"]
-                arguments["recommendedSampleSourceFile"] = json_arguments["recommendedSampleSourceFile"] if "recommendedSampleSourceFile" in json_arguments else ""
-                arguments["recommendedProjectDeploymentFile"] = json_arguments["recommendedProjectDeploymentFile"] if "recommendedProjectDeploymentFile" in json_arguments else ""
-                arguments["recommendedListOfFilesToExcludeFromAnalysis"] = json_arguments["recommendedListOfFilesToExcludeFromAnalysis"] if "recommendedListOfFilesToExcludeFromAnalysis" in json_arguments else []
-                arguments["prioritizedListOfSourceFilesToAnalyze"] = json_arguments["prioritizedListOfSourceFilesToAnalyze"] if "prioritizedListOfSourceFilesToAnalyze" in json_arguments else []
-
-            except Exception as e:
-                log(f"Error parsing function call arguments: {e}")
-                pass
-
-        success = 1
-        if len(result['results']) == 0:
-            log("No results returned from function call")
-            success = 0
-
-        if "draftBlueprint" not in arguments:
-            log("draftBlueprint was not generated")
-            success = 0
-
-        if "recommendedListOfFilesToExcludeFromAnalysis" not in arguments:
-            log("recommendedListOfFilesToExcludeFromAnalysis was not generated")
-            success = 0
-
-        if "prioritizedListOfSourceFilesToAnalyze" not in arguments:
-            log("prioritizedListOfSourceFilesToAnalyze was not generated")
-            success = 0
-
-        if "recommendedSampleSourceFile" not in arguments:
-            log("sample source file not identified")
-            success = 0
-
-        if "recommendedProjectDeploymentFile" not in arguments:
-            log("Project File not identified")
-            success = 0
-
-        return {
-            "status": success,
-            "details": arguments
-        }
+        return super().process_function_output(result, log)
 
     def collect_inputs_for_processing(self, data):
         # Extract the fileList from the json data
