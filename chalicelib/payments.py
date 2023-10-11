@@ -223,13 +223,12 @@ def check_create_subscription_item(subscription, email):
 
 def update_usage(subscription_item, bytes):
     # calculate the usage by dividing the bytes by 1024 and rounding up
-
     usage = math.ceil(bytes / 1024)
     idempotency_key = str(uuid.uuid4())
 
     # update the usage
     stripe_retry(stripe.SubscriptionItem.create_usage_record,
-                 id=subscription_item.id,
+                 subscription_item.id,
                  quantity=usage,
                  idempotency_key=idempotency_key
                  )
