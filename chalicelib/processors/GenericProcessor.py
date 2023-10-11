@@ -874,7 +874,7 @@ class GenericProcessor:
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
                   f"Error processing chunked prompt {i} after {mins_and_secs(end_time - start_time)}:"
-                  f"Finish:{'Incomplete' if (result['finish'] is None or result['finish'] == 'length' or result['finish'] =='content_filter') else 'Complete'}::error:{str(e)}")
+                  f"Finish:{'Incomplete' if (result is None or result['finish'] is None or result['finish'] == 'length' or result['finish'] =='content_filter') else 'Complete'}::error:{str(e)}")
             raise
 
     def initialize_from_data(self, log, data, account, function_name, correlation_id, prompt_format_args, params) -> Tuple[dict, dict]:
