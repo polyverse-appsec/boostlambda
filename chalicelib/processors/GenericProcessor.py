@@ -895,19 +895,19 @@ class GenericProcessor:
         params['messages'] = this_messages
 
         start_time = time.monotonic()
-        print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Starting processing chunked prompt {i}")
+        print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:Starting processing Chunk {i}")
         result = None
         try:
             result = self.runAnalysis(params, account, function_name, correlation_id)
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
-                  f"SUCCESS processing chunked prompt {i} in {mins_and_secs(end_time - start_time)}:"
+                  f"SUCCESS processing Chunk {i} in {mins_and_secs(end_time - start_time)}:"
                   f"Finish:{'Incomplete' if (result['finish'] is None or result['finish'] == 'length' or result['finish'] =='content_filter') else 'Complete'}")
             return result
         except Exception as e:
             end_time = time.monotonic()
             print(f"{function_name}:{account['email']}:{correlation_id}:Thread-{threading.current_thread().ident}:"
-                  f"Error processing chunked prompt {i} after {mins_and_secs(end_time - start_time)}:"
+                  f"Error processing Chunk {i} after {mins_and_secs(end_time - start_time)}:"
                   f"Finish:{'Incomplete' if (result is None or result['finish'] is None or result['finish'] == 'length' or result['finish'] =='content_filter') else 'Complete'}::error:{str(e)}")
             raise
 
@@ -1093,13 +1093,13 @@ class GenericProcessor:
                         input_tokens = prompt[2]
                         function_tokens = prompt[3]
 
-                        log(f"Thread-{threading.current_thread().ident} Chunk {index} (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens})")
+                        log(f"Chunk {index} (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens})")
 
                         try:
                             if OpenAIDefaults.boost_max_tokens_default == 0:
                                 # if we have no defined max, then no delay and no throttling - since tuning is disabled
 
-                                log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing has no delay since tuning is disabled")
+                                log(f"Chunk {index} Processing has no delay since tuning is disabled")
                             else:
                                 total_tokens = output_tokens + input_tokens
 
@@ -1111,25 +1111,25 @@ class GenericProcessor:
                                         # if we need to delay, then wait for the specified delay or until notified
                                         if delay > 0:
                                             due_time = datetime.datetime.now() + datetime.timedelta(seconds=delay)
-                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
+                                            log(f"Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
                                             started_waiting = time.time()
                                             throttler.lock.wait(timeout=delay)  # Wait for the specified delay or until notified
 
                                             ultimate_delay = time.time() - started_waiting
                                             if ultimate_delay < delay:  # If started early
-                                                log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing starting early with delay of {mins_and_secs(ultimate_delay)} instead of expected delay of {mins_and_secs(delay)}", True)
+                                                log(f"Chunk {index} Processing starting early with delay of {mins_and_secs(ultimate_delay)} instead of expected delay of {mins_and_secs(delay)}", True)
                                             else:
-                                                log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing delayed for {mins_and_secs(ultimate_delay)}", True)
+                                                log(f"Chunk {index} Processing delayed for {mins_and_secs(ultimate_delay)}", True)
 
                                         # bypassing rate limiting due to overall wait time exceeded or other throttling failure
                                         elif delay < 0:
-                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
+                                            log(f"Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
 
                                             break  # run the analysis immediately due to throttling failure or timeout
 
                                         # no delay due to priority shortest of (input, output, total)
                                         else:
-                                            log(f"Thread-{threading.current_thread().ident} Chunk {index} Processing No Delay due to priority shortest of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens})", True)
+                                            log(f"Chunk {index} Processing No Delay due to priority shortest of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens})", True)
 
                                             break  # run analysis immediately as we've been unblocked by bucket availability
 
@@ -1168,12 +1168,12 @@ class GenericProcessor:
                                 model_max_tokens)
                             delay = calculateProcessingTime(estimatedTokensForThisPrompt, tokensPerChunk)
 
-                        log(f"Thread-{threading.current_thread().ident} Summary {index} delaying for {mins_and_secs(delay)}")
+                        log(f"Chunk {index} delaying for {mins_and_secs(delay)}")
 
                         time.sleep(delay)  # Delay based on the number of words in the prompt
 
                         if delay > 5:  # If delay is more than 5 seconds, log it
-                            log(f"Summary {index} delayed for {mins_and_secs(delay)}", True)
+                            log(f"Chunk {index} delayed for {mins_and_secs(delay)}", True)
 
                         return self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
 
@@ -1240,7 +1240,7 @@ class GenericProcessor:
                         reassembled_results.append(r)
                     else:
                         incomplete_responses[index] = len(r['message']['function_call']['arguments'])
-                        log(f"Chunk {index} incomplete Function data - {incomplete_responses[index]} discarded")
+                        log(f"Chunk {index} incomplete Function data - discarded {incomplete_responses[index]} discarded JSON bytes")
 
                         # if the function result is incomplete, its likely malformed JSON, so let's just throw
                         #       it away
