@@ -304,10 +304,9 @@ class GenericProcessor:
         this_messages = self.generate_messages(data, prompt_format_args)
         this_messages, this_truncation = self.optimize_content(this_messages, data)
         truncation += this_truncation
-        full_message_content_tokens_count = 0
-        for message in this_messages:
-            if 'content' in message:
-                full_message_content_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
+
+        full_message_content_tokens_count = sum(
+            num_tokens_from_string(message["content"], data.get('model'))[0] for message in this_messages)
 
         # if we can fit the chunk into one token buffer, we'll process and be done
         max_tokens = max_tokens_for_model(data.get('model'))
