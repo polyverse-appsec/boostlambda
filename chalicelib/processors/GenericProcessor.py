@@ -769,18 +769,19 @@ class GenericProcessor:
     def makeOpenAICall(self, account, function_name, correlation_id, attempt, timeBufferRemaining, params) -> dict:
 
         due_time = datetime.datetime.now() + datetime.timedelta(seconds=timeBufferRemaining)
-        print(f"{function_name}:{account['email']}:{correlation_id}:Starting OpenAI API call (Attempt {attempt + 1},Time Allotted {mins_and_secs(timeBufferRemaining)}, Due By {due_time})")
+
+        print(f"Thread-{threading.current_thread().ident}-{function_name}:Starting OpenAI API call attempt {attempt + 1},Time Allotted {mins_and_secs(timeBufferRemaining)}, Due By {due_time})")
 
         start_time = time.time()
         try:
             response = openai.ChatCompletion.create(**params, timeout=timeBufferRemaining, request_timeout=timeBufferRemaining)
 
-            print(f"{function_name}:{account['email']}:{correlation_id}:SUCCESS:Finished OpenAI API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
+            print(f"Thread-{threading.current_thread().ident}-{function_name}:SUCCESS:Finished OpenAI API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
 
             return response
 
         except Exception as e:
-            print(f"{function_name}:{account['email']}:{correlation_id}:ERROR({str(e)}):Finished OpenAI API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
+            print(f"Thread-{threading.current_thread().ident}-{function_name}:ERROR({str(e)}):Finished OpenAI API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
             raise
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
@@ -809,7 +810,7 @@ class GenericProcessor:
                     openai_calltime_buffer_remaining,
                     max_timeout_seconds_for_single_openai_call), 2)
 
-                print(f"OpenAI Timeout Settings for this call: total_analysis_time_buffer:{mins_and_secs(total_analysis_time_buffer)}, "
+                print(f"Thread-{threading.current_thread().ident}-{function_name}:OpenAI Time Settings:total_analysis_time_buffer:{mins_and_secs(total_analysis_time_buffer)}, "
                       f"allotted_time_buffer_for_this_openai_call:{mins_and_secs(allotted_time_buffer_for_this_openai_call)}, "
                       f"openai_calltime_buffer_remaining:{mins_and_secs(openai_calltime_buffer_remaining)}, "
                       f"time_buffer_remaining:{mins_and_secs(time_buffer_remaining)}")
@@ -1245,8 +1246,10 @@ class GenericProcessor:
                         # if the function result is incomplete, its likely malformed JSON, so let's just throw
                         #       it away
 
+                total_incompletions = sum(incomplete_responses)
+
                 # if we have incomplete responses, then return the reassembled results
-                return True, items, incomplete_responses, reassembled_results if len(incomplete_responses) > 0 else None
+                return True, items, incomplete_responses, reassembled_results if total_incompletions > 0 else None
 
             isFunction, items, incomplete_responses, reassembled_results = reassemble_function_results(results)
 
