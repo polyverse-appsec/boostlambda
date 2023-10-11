@@ -1038,6 +1038,7 @@ class GenericProcessor:
             results = None
             result = None
             incomplete_responses = []
+            total_incompletions = 0
 
             # if chunked, we're going to run all chunks in parallel and then concatenate the results at end
             if chunked:
