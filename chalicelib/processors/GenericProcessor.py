@@ -301,7 +301,7 @@ class GenericProcessor:
                 system_truncated_token_count += truncated
                 new_messages.append(this_messages[idx])
             elif message_type == 'assistant_user':
-                was_truncated, truncated = truncate_system_message(this_messages[idx], total_system_buffer, total_system_tokens)
+                was_truncated, truncated = truncate_system_message(this_messages[idx], idx, total_system_buffer, total_system_tokens)
                 truncated_training_messages_count += was_truncated
                 total_truncated_token_count += truncated
                 training_truncated_token_count += truncated
