@@ -16,6 +16,7 @@ Polyverse Boost Cloud Service
 - Enable OpenAI call throttler to be enabled dynamically at runtime via environment variable "useNewThrottler"
 
 ### Enhancements
+- Enable Compliance, Security and Performance scans of large code blocks (using chunking) to report all bugs found (not just last chunk)
 - Enable smart merging of results from multiple chunked function calls (e.g. arrays are merged instead of overwritten) - customizable per processor
 - Enable large input processing with chunking and large prompt training data
 - Added Test / Quality analysis to the Blueprint service

@@ -71,33 +71,14 @@ class BugFunctionGenericProcessor(FunctionGenericProcessor):
 
     # default is capturing bugs in the function output
     def process_function_output(self, result, log):
+        response = super().process_function_output(result, log)
 
-        bugs = []
-        # if we get here, we have a function call in the results array.  loop through each of the results and
-        # add the array of arguments to the bugs array result['results'][0]['message']['function_call']['arguments']
-        # is a JSON formatted string. parse it into a JSON object.  it may be corrupt, so ignore any errors
-        for r in result['results']:
-            try:
-                json_bugs = json.loads(r['message']['function_call']['arguments'])
-                bugs.extend(json_bugs["bugs"])
-            except Exception as e:
-                log(f"Error parsing function call arguments: {e}")
-                pass
+        # bug processor collects only bugs, so flatten the details to bugs
+        response["details"] = response["details"]["bugs"] if "bugs" in response["details"] else []
 
-        if json_bugs["bugs"] is None or len(json_bugs["bugs"]) == 0:
+        response["status"] = "bugsfound" if len(response['details']) > 0 else "nobugsfound"
 
-            log("No bugs found with OpenAI reporting functional output")
-
-        if len(bugs) > 0:
-            return {
-                "status": "bugsfound",
-                "details": bugs
-            }
-        else:
-            return {
-                "status": "nobugsfound",
-                "details": []
-            }
+        return response
 
     def collect_inputs_for_processing(self, data):
         prompt_format_args = super().collect_inputs_for_processing(data)

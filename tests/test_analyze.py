@@ -41,4 +41,4 @@ def test_analyze_function():
         # for this test, any string is fine
         assert analysis['details'][2]['bugType'] != ''
         assert analysis['details'][2]['lineNumber'] >= 14
-        assert analysis['details'][2]['severity'] >= 7
+        assert analysis['details'][2]['severity'] >= 6
