@@ -3,7 +3,7 @@ Based on the above info, including:
  - Project build or package description
  - Draft Blueprint Summary
  
-Use the following sample code from a software project to create the Architectural Blueprint Summary of the overall project.
+Update the Architectural Blueprint Summary using the above info and the following sample code from this software project.
 And for any Architectural Problems Identified, please provide online resource links to explain the tradeoffs, risks and concerns.
 
 Use the following specific architectural guidelines for this development project when performing your architectural analysis - including for consistency with or conflicts between the architecture you see in the code and way the architecture principle is defined in the guidelines:
