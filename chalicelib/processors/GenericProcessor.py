@@ -1231,7 +1231,7 @@ class GenericProcessor:
                 incomplete_responses = [0 if did_complete(r) else 1 for r in results]
 
                 if 'function_call' not in results[0]['message']:
-                    return False, None, incomplete_responses, None
+                    return False, None, sum(incomplete_responses), None
 
                 items = []
                 reassembled_results = []
