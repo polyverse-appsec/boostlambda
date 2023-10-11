@@ -415,13 +415,11 @@ class GenericProcessor:
             this_messages, this_truncation = self.optimize_content(this_messages, data_copy)
             truncation += this_truncation
 
-            these_tokens_count = 0
-            for message in this_messages:
-                if 'content' in message:
-                    these_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
+            these_tokens_count = sum(
+                num_tokens_from_string(message["content"], data.get('model'))[0] for message in this_messages)
 
-            if these_tokens_count > remaining_buffer:
-                message_regeneration_variance = (these_tokens_count - remaining_buffer) / these_tokens_count
+            if these_tokens_count > input_token_buffer:
+                message_regeneration_variance = (these_tokens_count - input_token_buffer) / input_token_buffer
                 print(f"ChunkingInputFailed: Exceeded Input Buffer size={input_token_buffer}, "
                       f"Chunk size={these_tokens_count}, "
                       f"Splitting Variance={message_regeneration_variance}, ")
