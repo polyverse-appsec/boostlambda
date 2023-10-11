@@ -1132,33 +1132,33 @@ class GenericProcessor:
 
                                 first_wait = time.time()
                                 while True:
-                                    with throttler.lock:
-                                        delay = throttler.get_wait_time(total_tokens, first_wait, input_tokens)
+                                    delay = throttler.get_wait_time(total_tokens, first_wait, input_tokens)
 
-                                        # if we need to delay, then wait for the specified delay or until notified
-                                        if delay > 0:
-                                            due_time = datetime.datetime.now() + datetime.timedelta(seconds=delay)
-                                            log(f"Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
-                                            started_waiting = time.time()
-                                            throttler.lock.wait(timeout=delay)  # Wait for the specified delay or until notified
+                                    # if we need to delay, then wait for the specified delay or until notified
+                                    if delay > 0:
+                                        due_time = datetime.datetime.now() + datetime.timedelta(seconds=delay)
+                                        log(f"Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} until {due_time}")
+                                        started_waiting = time.time()
+                                        with throttler.lock:
+                                            throttler.lock.wait(timeout=float(delay))  # Wait for the specified delay or until notified
 
-                                            ultimate_delay = time.time() - started_waiting
-                                            if ultimate_delay < delay:  # If started early
-                                                log(f"Chunk {index} Processing starting early with delay of {mins_and_secs(ultimate_delay)} instead of expected delay of {mins_and_secs(delay)}", True)
-                                            else:
-                                                log(f"Chunk {index} Processing delayed for {mins_and_secs(ultimate_delay)}", True)
-
-                                        # bypassing rate limiting due to overall wait time exceeded or other throttling failure
-                                        elif delay < 0:
-                                            log(f"Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
-
-                                            break  # run the analysis immediately due to throttling failure or timeout
-
-                                        # no delay due to priority shortest of (input, output, total)
+                                        ultimate_delay = time.time() - started_waiting
+                                        if ultimate_delay < delay:  # If started early
+                                            log(f"Chunk {index} Processing starting early with delay of {mins_and_secs(ultimate_delay)} instead of expected delay of {mins_and_secs(delay)}", True)
                                         else:
-                                            log(f"Chunk {index} Processing No Delay due to priority shortest of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens})", True)
+                                            log(f"Chunk {index} Processing delayed for {mins_and_secs(ultimate_delay)}", True)
 
-                                            break  # run analysis immediately as we've been unblocked by bucket availability
+                                    # bypassing rate limiting due to overall wait time exceeded or other throttling failure
+                                    elif delay < 0:
+                                        log(f"Chunk {index} Processing of (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens}) delaying for {mins_and_secs(delay)} due to throttling", True)
+
+                                        break  # run the analysis immediately due to throttling failure or timeout
+
+                                    # no delay due to priority (input, output, total)
+                                    else:
+                                        log(f"Chunk {index} Processing with No Delay (input={input_tokens},output={output_tokens},function={function_tokens},total={input_tokens+output_tokens})", True)
+
+                                        break  # run analysis immediately as we've been unblocked by bucket availability
 
                             analysisResult = self.runAnalysisForPrompt(index, messages, output_tokens, params, account, function_name, correlation_id)
 
