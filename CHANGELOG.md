@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 0.9.8: October 10th, 2023
+## Version 0.9.8: October 11th, 2023
 
 ### New Features
 - Added new Function-based Code Conversion service
@@ -16,6 +16,7 @@ Polyverse Boost Cloud Service
 - Enable OpenAI call throttler to be enabled dynamically at runtime via environment variable "useNewThrottler"
 
 ### Enhancements
+- Enable large input processing with chunking and large prompt training data
 - Added Test / Quality analysis to the Blueprint service
 - Added validation to GenericProcessor for required main prompt
 - Enable access to max_tokens on GenericProcessor
@@ -39,7 +40,6 @@ Polyverse Boost Cloud Service
 - Enable Customer status lookup to handle manual invoice objects (with no metadata)
 - Fix OpenAI response size metric reporting (was reporting input size)
 - Discard invalid JSON data from incomplete OpenAI function calls to avoid JSON parsing errors
-
 
 ## Version 0.9.7: September 29th, 2023
 

@@ -215,7 +215,7 @@ class GenericProcessor:
             self.prompt_files_timestamps[file_path] = os.path.getmtime(file_path)
 
     def optimize_content(self, this_messages: List[Dict[str, Any]], data) -> Tuple[List[Dict[str, Any]], int]:
-        def truncate_system_message(sys_message, total_system_buffer, total_system_tokens):
+        def truncate_system_message(sys_message, index, total_system_buffer, total_system_tokens):
             sys_token_count, sys_tokens = num_tokens_from_string(sys_message['content'], data.get('model'))
             proportion = sys_token_count / total_system_tokens
             min_quota = max(min_token_quota, int(total_system_buffer * min_quota_percent))
@@ -226,15 +226,20 @@ class GenericProcessor:
                 truncated = sys_token_count - retained_tokens
                 discard_percent = retained_tokens / sys_token_count
                 print(f"{self.__class__.__name__}:Truncation:"
-                      f"System message quota: {proportion * 100:.1f}% of {total_system_buffer} tokens,"
+                      f"System message {index} quota: {proportion * 100:.1f}% of {total_system_buffer} tokens,"
                       f" max per quota {max_quota}, discarded {truncated} of {sys_token_count}: {discard_percent * 100:.1f}% retained")
                 return True, truncated
             return False, 0
 
-        total_system_tokens = sum(num_tokens_from_string(message['content'], data.get('model'))[0]
-                                  for message in this_messages if 'content' in message and message['role'] == 'system')
+        # collect all system and training messages excluding the first and last messages
+        system_messages = [message for message in this_messages if 'content' in message and message != this_messages[0] and message != this_messages[-1]]
+        training_messages = [message for message in system_messages if message['role'] != 'system']
 
-        system_messages = [message for message in this_messages if 'content' in message and message['role'] == 'system']
+        # count total token length in all non-empty messages excluding the first and last messages
+        total_system_tokens = sum(num_tokens_from_string(message['content'], data.get('model'))[0]
+                                  for message in this_messages)
+        total_training_tokens = sum(num_tokens_from_string(message['content'], data.get('model'))[0]
+                                    for message in this_messages if message['role'] != 'system')
 
         total_system_buffer = self.calculate_system_message_token_buffer(data.get('max_tokens', max_tokens_for_model(data.get('model'))))
 
@@ -251,46 +256,75 @@ class GenericProcessor:
             min_token_quota = 0
 
         new_messages = []
-        in_sequence_system_messages = []
-        non_system_messages_between = 0
-        truncated_system_messages = 0
-        total_truncated = 0
+        truncated_system_messages_count = 0
+        truncated_training_messages_count = 0
+        system_truncated_token_count = 0
+        training_truncated_token_count = 0
+        total_truncated_token_count = 0
 
-        for message in this_messages:
-            if 'content' not in message or message['content'] == '':
-                continue
+        """Compute combined length of assistant and user messages."""
+        def combined_length(assistant_msg, user_msg):
+            return len(assistant_msg.get('content', '')) + len(user_msg.get('content', ''))
 
-            if message in [this_messages[0], this_messages[-1]] or message['role'] != 'system':
-                if in_sequence_system_messages:
-                    in_sequence_system_messages.sort(key=lambda x: len(x.get('content', '')))
+        message_sequences = []  # To store sequences of messages and their types
 
-                    for sys_message in in_sequence_system_messages:
-                        was_truncated, truncated = truncate_system_message(sys_message, total_system_buffer, total_system_tokens)
-                        truncated_system_messages += was_truncated
-                        total_truncated += truncated
-                        new_messages.append(sys_message)
+        # get the sorting sequence for all messages except the first and last
+        index = 1
+        while index < len(this_messages) - 1:
+            message = this_messages[index]
+            # If it's a system message and not the first or last message
+            if message['role'] == 'system':
+                message_sequences.append((index, 'system', len(message.get('content', ''))))
+                index += 1
+            # If it's an assistant message followed by a user message
+            elif message['role'] == 'assistant' and index + 1 < len(this_messages) and this_messages[index + 1]['role'] == 'user':
+                length = combined_length(message, this_messages[index + 1])
+                message_sequences.append((index, 'assistant_user', length))
+                index += 2
 
-                    in_sequence_system_messages = []
-                    non_system_messages_between = 0
+        # Sort sequences based on their lengths
+        sorted_sequences = sorted(message_sequences, key=lambda x: x[2])
 
-                new_messages.append(message)
-                if message['role'] != 'system':
-                    non_system_messages_between += 1
+        # Add the first message
+        new_messages.append(this_messages[0])
 
-            else:
-                in_sequence_system_messages.append(message)
+        # Add all other system messages based on optimized length and order
+        for idx, message_type, _ in sorted_sequences:
+            if message_type == 'system':
+                was_truncated, truncated = truncate_system_message(this_messages[idx], idx, total_system_buffer, total_system_tokens)
+                truncated_system_messages_count += was_truncated
+                total_truncated_token_count += truncated
+                system_truncated_token_count += truncated
+                new_messages.append(this_messages[idx])
+            elif message_type == 'assistant_user':
+                was_truncated, truncated = truncate_system_message(this_messages[idx], total_system_buffer, total_system_tokens)
+                truncated_training_messages_count += was_truncated
+                total_truncated_token_count += truncated
+                training_truncated_token_count += truncated
+                new_messages.append(this_messages[idx])
+                new_messages.append(this_messages[idx + 1])
 
-        if truncated_system_messages > 0:
-            print(f"{self.__class__.__name__}:Truncation:"
-                  f"Truncated {truncated_system_messages} out of {len(system_messages)} system messages"
+        # add the last message
+        new_messages.append(this_messages[-1])
+
+        if truncated_system_messages_count > 0:
+            print(f"{self.__class__.__name__}:Content-Optimization:"
+                  f"Truncated {truncated_system_messages_count}/{len(system_messages)} system messages, "
+                  f" {round(system_truncated_token_count/total_system_tokens * 100, 1)}% ({system_truncated_token_count}/{total_system_tokens}) tokens, "
+                  f" to meet total system token quota: {total_system_buffer}")
+
+        if truncated_training_messages_count > 0:
+            print(f"{self.__class__.__name__}:Content-Optimization:"
+                  f"Truncated {truncated_training_messages_count}/{len(training_messages)} training messages, "
+                  f" {round(training_truncated_token_count/total_training_tokens * 100, 1)}% ({training_truncated_token_count}/{total_training_tokens}) tokens, "
                   f" to meet total system token quota: {total_system_buffer}")
 
         discarded_messages = len(this_messages) - len(new_messages)
         if discarded_messages > 0:
-            print(f"{self.__class__.__name__}:Truncation:"
+            print(f"{self.__class__.__name__}:Content-Optimization:"
                   f"Discarded {discarded_messages} messages with no content")
 
-        return new_messages, total_truncated
+        return new_messages, total_truncated_token_count
 
     def chunk_input_based_on_token_limit(self,
                                          data,
