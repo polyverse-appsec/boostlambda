@@ -54,6 +54,20 @@ class FunctionGenericProcessor(GenericProcessor):
     def get_function_definition(self):
         raise NotImplementedError("Function Definition not implemented")
 
+    # default is a pure replacement of the property in processing sequence (last one wins)
+    def merge_functional_result(self, arguments, prop, json_arguments):
+        if prop not in json_arguments:
+            return
+
+        # If the value in json_arguments[prop] is a string or number
+        if isinstance(json_arguments[prop], list):
+            if prop not in arguments or arguments[prop] is None:
+                arguments[prop] = json_arguments[prop]
+            else:
+                arguments[prop].extend(json_arguments[prop])
+        else:
+            arguments[prop] = json_arguments[prop]
+
     def process_function_output(self, result, log):
 
         # Given the derived class structure, you can extract the required properties
@@ -61,7 +75,7 @@ class FunctionGenericProcessor(GenericProcessor):
 
         arguments = {}
 
-        # Loop through each of the results and add the array of arguments to the bugs array
+        # Loop through each of the results and add the array of arguments to the properties array
         for r in result['results']:
             # Validate that the necessary properties exist in r
             if not r or "message" not in r or "function_call" not in r["message"] or "arguments" not in r["message"]["function_call"]:
@@ -74,7 +88,7 @@ class FunctionGenericProcessor(GenericProcessor):
                 # Iterate through the required properties to check if they exist in the arguments
                 for prop in required_properties:
                     if prop in json_arguments:
-                        arguments[prop] = json_arguments[prop]
+                        self.merge_functional_result(arguments, prop, json_arguments)
                     else:
                         default_value = [] if required_properties[prop]["type"] == "array" else ""
                         arguments[prop] = default_value
