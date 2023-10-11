@@ -1226,21 +1226,34 @@ class GenericProcessor:
                 incomplete_responses = [0 if did_complete(r) else 1 for r in results]
 
                 if 'function_call' not in results[0]['message']:
-                    return False, None, incomplete_responses
+                    return False, None, incomplete_responses, None
 
                 items = []
+                reassembled_results = []
 
                 for index, r in enumerate(results):
                     if incomplete_responses[index] == 0:
                         json_items = json.loads(r['message']['function_call']['arguments'])
                         items.extend(json_items)
+
+                        # keep the result since its complete
+                        reassembled_results.append(r)
                     else:
                         incomplete_responses[index] = len(r['message']['function_call']['arguments'])
                         log(f"Chunk {index} incomplete Function data - {incomplete_responses[index]} discarded")
 
-                return True, items, incomplete_responses
+                        # if the function result is incomplete, its likely malformed JSON, so let's just throw
+                        #       it away
 
-            isFunction, items, incomplete_responses = reassemble_function_results(results)
+                # if we have incomplete responses, then return the reassembled results
+                return True, items, incomplete_responses, reassembled_results if len(incomplete_responses) > 0 else None
+
+            isFunction, items, incomplete_responses, reassembled_results = reassemble_function_results(results)
+
+            if reassembled_results is not None:
+                print(f"Due to some incomplete Function results, {len(results) - len(reassembled_results)} results were discarded")
+                results = reassembled_results
+
             total_incompletions = sum(incomplete_responses)
 
             if isFunction:
