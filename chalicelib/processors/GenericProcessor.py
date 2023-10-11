@@ -276,11 +276,15 @@ class GenericProcessor:
             if message['role'] == 'system':
                 message_sequences.append((index, 'system', len(message.get('content', ''))))
                 index += 1
-            # If it's an assistant message followed by a user message
-            elif message['role'] == 'assistant' and index + 1 < len(this_messages) and this_messages[index + 1]['role'] == 'user':
+            # If it's a user (training) prompt followed by an assistant (training) response
+            elif message['role'] == 'user' and index + 1 < len(this_messages) and this_messages[index + 1]['role'] == 'assistant':
                 length = combined_length(message, this_messages[index + 1])
                 message_sequences.append((index, 'assistant_user', length))
                 index += 2
+            else:
+                print(f"Unexpected message type in system message sequence: {message['role']}")
+                message_sequences.append((index, 'system', len(message.get('content', ''))))
+                index += 1
 
         # Sort sequences based on their lengths
         sorted_sequences = sorted(message_sequences, key=lambda x: x[2])
@@ -1072,7 +1076,7 @@ class GenericProcessor:
         try:
             results = None
             result = None
-            incomplete_responses = []
+
             total_incompletions = 0
 
             # if chunked, we're going to run all chunks in parallel and then concatenate the results at end
@@ -1248,16 +1252,17 @@ class GenericProcessor:
 
                 total_incompletions = sum(incomplete_responses)
 
-                # if we have incomplete responses, then return the reassembled results
-                return True, items, incomplete_responses, reassembled_results if total_incompletions > 0 else None
+                if total_incompletions == 0:
+                    return True, None, 0, None
+                else:
+                    # if we have incomplete responses, then return the reassembled results
+                    return True, items, total_incompletions, reassembled_results
 
-            isFunction, items, incomplete_responses, reassembled_results = reassemble_function_results(results)
+            isFunction, items, total_incompletions, reassembled_results = reassemble_function_results(results)
 
             if reassembled_results is not None:
                 print(f"Due to some incomplete Function results, {len(results) - len(reassembled_results)} results were discarded")
                 results = reassembled_results
-
-            total_incompletions = sum(incomplete_responses)
 
             if isFunction:
                 # this isn't a very useful representation, but it allows us to correctly calculate cost of the function call
