@@ -113,7 +113,7 @@ class ChatDriverFunctionProcessor(FunctionGenericProcessor):
         extra_tokens = num_tokens_from_string(filelist)[0] if filelist is not None else 0
 
         # set a very small token max since we're only translating a short user request into a subsequent user request
-        data['max_tokens'] = self.get_default_max_tokens() + extra_tokens
+        data['max_tokens'] = self.get_default_max_tokens(data) + extra_tokens
 
         default_format_args = {'userRequest': userRequest}
         if filelist is not None:

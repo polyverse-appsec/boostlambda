@@ -68,8 +68,8 @@ class UIDriverFunctionProcessor(FunctionGenericProcessor):
                          {'model': OpenAIDefaults.boost_model_gpt35_cheap_chat,
                           'temperature': OpenAIDefaults.temperature_terse_and_accurate})
 
-    def get_default_max_tokens(self):
-        return 1000
+    def get_default_max_tokens(self, data=None):
+        return min(1000, super().get_default_max_tokens(data))
 
     def calculate_input_token_buffer(self, total_max) -> int:
         # our user input is tiny, but with the max tokens reduced significantly
@@ -94,7 +94,7 @@ class UIDriverFunctionProcessor(FunctionGenericProcessor):
             raise BadRequestError("Error: please provide the user command request")
 
         # set a small token max since we're only translating a short user request into a UI command
-        data['max_tokens'] = self.get_default_max_tokens()
+        data['max_tokens'] = self.get_default_max_tokens(data)
 
         return {'userCommand': userCommand}
 

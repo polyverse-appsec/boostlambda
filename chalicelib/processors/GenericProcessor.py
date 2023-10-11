@@ -241,7 +241,7 @@ class GenericProcessor:
         total_training_tokens = sum(num_tokens_from_string(message['content'], data.get('model'))[0]
                                     for message in this_messages if message['role'] != 'system')
 
-        total_system_buffer = self.calculate_system_message_token_buffer(data.get('max_tokens', max_tokens_for_model(data.get('model'))))
+        total_system_buffer = self.calculate_system_message_token_buffer(data.get('max_tokens', self.get_default_max_tokens(data)))
 
         # if there are less than 5 system messages, we're going to use minimum quotas to
         #   ensure even large messages have some minimum quota
@@ -343,7 +343,7 @@ class GenericProcessor:
             num_tokens_from_string(message["content"], data.get('model'))[0] for message in this_messages)
 
         # if we can fit the chunk into one token buffer, we'll process and be done
-        max_tokens = max_tokens_for_model(data.get('model'))
+        max_tokens = self.get_default_max_tokens(data)
         tuned_max_tokens = max_tokens - full_message_content_tokens_count - extra_non_message_content_size
         tuned_output = self.calculate_output_token_buffer(full_message_content_tokens_count, tuned_max_tokens, max_tokens, False)
         input_token_count = full_message_content_tokens_count + extra_non_message_content_size
@@ -463,7 +463,7 @@ class GenericProcessor:
             these_tokens_count += extra_non_message_content_size
 
             # get the new remaining max tokens we can accommodate with output
-            max_tokens = max_tokens_for_model(data.get('model'))
+            max_tokens = self.get_default_max_tokens(data)
             tuned_max_tokens = max_tokens - these_tokens_count
             tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens, False)
 
@@ -488,8 +488,11 @@ class GenericProcessor:
     def calculate_system_message_token_buffer(self, total_max) -> int:
         return math.floor(self.calculate_input_token_buffer(total_max) * 0.25)
 
-    def get_default_max_tokens(self) -> int:
-        return max_tokens_for_model(self.default_params.get('model'))
+    def get_default_max_tokens(self, data=None) -> int:
+        if data is None:
+            return max_tokens_for_model(self.default_params.get('model'))
+        else:
+            return max_tokens_for_model(data.get('model'))
 
     def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max, enforce_max=True) -> int:
 
@@ -561,7 +564,7 @@ class GenericProcessor:
     def build_prompts_from_input(self, data, params, prompt_format_args, function_name) -> Tuple[List[Tuple[List[dict[str, any]], int]], int, int]:
 
         # allow the caller to override max_tokens, or just use default max for the chosen model
-        max_tokens = data.get('max_tokens') if 'max_tokens' in data else max_tokens_for_model(data.get('model'))
+        max_tokens = data.get('max_tokens') if 'max_tokens' in data else self.get_default_max_tokens(data)
         # get the max input buffer for this function if we are tuning tokens
         if max_tokens != 0:
             input_token_buffer = self.calculate_input_token_buffer(max_tokens)
@@ -574,7 +577,7 @@ class GenericProcessor:
         # calculate the size of the function-related content for input buffer usage
         function_content_size = tokens_from_function(params, data.get('model'))
 
-        model_max_tokens = max_tokens_for_model(data.get('model'))
+        model_max_tokens = self.get_default_max_tokens(data)
 
         # if single input, build the prompt to test length
         if 'chunks' not in prompt_format_args:
@@ -1149,7 +1152,7 @@ class GenericProcessor:
                     def runAnalysisForPromptThrottled(prompt_iteration):
 
                         index, prompt = prompt_iteration
-                        model_max_tokens = max_tokens_for_model(data.get('model'))
+                        model_max_tokens = self.get_default_max_tokens(data)
                         if OpenAIDefaults.boost_max_tokens_default == 0:
                             delay = 0  # if we have no defined max, then no delay and no throttling - since tuning is disabled
                         else:
