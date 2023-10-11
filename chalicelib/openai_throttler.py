@@ -21,7 +21,7 @@ max_timeout_seconds_for_single_openai_call = int(6 * seconds_in_a_minute)  # 6 m
 
 class Throttler:
     def __init__(self, rate_limit_tokens_per_minute=OpenAIDefaults.rate_limit_tokens_per_minute):
-        rate_limit_tokens_per_minute = OpenAIDefaults.rate_limit_tokens_per_minute * 2
+        rate_limit_tokens_per_minute = OpenAIDefaults.rate_limit_tokens_per_minute
         self.rate = rate_limit_tokens_per_minute / seconds_in_a_minute
         self.bucket = rate_limit_tokens_per_minute
         self.lock = threading.Condition()
@@ -47,7 +47,7 @@ class Throttler:
         output_weight = 0.7
 
         # Calculate weighted token count
-        weighted_tokens = input_tokens * input_weight + output_tokens * output_weight
+        weighted_tokens = int((input_tokens * input_weight) + (output_tokens * output_weight))
 
         # Proportional time estimates based on the given ranges:
         token_ranges = [500, 3000, 5000, 8000]
@@ -56,10 +56,10 @@ class Throttler:
         for i, upper_limit in enumerate(token_ranges):
             if weighted_tokens <= upper_limit:
                 proportion = weighted_tokens / upper_limit
-                return proportion * time_estimates[i]
+                return proportion * float(time_estimates[i])
 
         # If the weighted_tokens exceeds the highest defined range, return the maximum estimated time.
-        return time_estimates[-1]
+        return float(time_estimates[-1])
 
     def get_proportional_processing_time_estimate(self, tokens):
         # Define data points for tokens and their respective processing times
@@ -91,14 +91,19 @@ class Throttler:
 
     def get_wait_time(self, tokens_needed, first_wait, input_tokens):
         with self.lock:
+            if (tokens_needed != round(tokens_needed, 0)):
+                print(f"Thread-{threading.get_ident()}:Throttler: {tokens_needed} tokens needed, {self.bucket} tokens available, waiting {first_wait} seconds")
+
             # if we're going to hit the max overall timeout for calls if we don't start this call, then just start it
             #       and bypass throttler... can't be worse than indefinite hang or exceeding overall timeout
             if (max_timeout_seconds_for_all_openai_calls - max_timeout_seconds_for_single_openai_call) < (time.time() - first_wait):
-                return -1
+                print(f"Thread-{threading.get_ident()}:Throttler: {tokens_needed} tokens needed, {self.bucket} tokens available, but max overall timeout for calls is too close, so bypassing throttler")
+                return float(-1)
 
             if self.bucket >= tokens_needed:
+                print(f"Thread-{threading.get_ident()}:Throttler: {tokens_needed} tokens needed, {self.bucket} tokens available, no wait needed")
                 self.bucket -= tokens_needed
-                return 0
+                return float(0.0)
 
             tokens_short = tokens_needed - self.bucket
 
@@ -109,6 +114,9 @@ class Throttler:
 
     def refill(self, tokens_needed):
         with self.lock:
+            if (tokens_needed != round(tokens_needed, 0)):
+                print(f"Thread-{threading.get_ident()}:Throttler: Refilling bucket (was:{self.bucket}) with {tokens_needed} tokens")
+            print(f"Thread-{threading.get_ident()}:Throttler: Refilling bucket (was:{self.bucket}) with {tokens_needed} tokens")
             self.bucket += tokens_needed
             self.bucket = min(self.bucket, OpenAIDefaults.rate_limit_tokens_per_minute)
 
