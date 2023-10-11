@@ -71,9 +71,9 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
         # we want the output buffer to be at least 20% of the max tokens
         # but no more than 50% of the max tokens, and ideally, the same as
         # the input buffer
-        output_buffer_size = max(0.2 * total_max,
+        output_buffer_size = int(max(0.2 * total_max,
                                  min(input_buffer_size,
-                                     math.floor(total_max * 0.5)))
+                                     math.floor(total_max * 0.5))))
 
         return output_buffer_size
 
