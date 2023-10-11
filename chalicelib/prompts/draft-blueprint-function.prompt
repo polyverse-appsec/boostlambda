@@ -5,7 +5,7 @@ Then do the following:
 1. Tell me which file path in the list most likely describes how to build and deploy the project code.
 2. Suggest one file path to use as sample source code to represent the key elements of the software project.
 3. Separate the entire file path list into two sets: prioritized list of source file paths from most important to least important, and file paths that do not contain valuable or useful source code or build/project information.
-4. Produce an Architectural Blueprint Summary using this format - replacing the text in each section with your best guess based on only the file list and the type of software architecture you believe this project has:
+4. Produce an Architectural Blueprint Summary using this format - replacing the text in each section with your best guess based on only the file path list and the type of software architecture you believe this project has:
 
     ## Architectural Blueprint Summary for: {projectName}
     * Software Project Type: web app, server code, cloud web service, mobile app, shared library, etc.
