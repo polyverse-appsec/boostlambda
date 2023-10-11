@@ -433,7 +433,7 @@ class GenericProcessor:
             tuned_max_tokens = max_tokens - these_tokens_count
             tuned_output = self.calculate_output_token_buffer(these_tokens_count, tuned_max_tokens, max_tokens, False)
 
-            if input_token_count + tuned_output > max_tokens:
+            if these_tokens_count + tuned_output > max_tokens:
                 print(f"Overall Analysis Buffer of {max_tokens} tokens exceeded for Chunk {len(this_messages_chunked)} Processing: Input={these_tokens_count}, Output={tuned_output}, Function={extra_non_message_content_size}")
                 raise UnprocessableEntityError("Input is too large to process. Please try again with less input.")
             else:
