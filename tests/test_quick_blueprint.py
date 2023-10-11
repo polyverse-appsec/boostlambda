@@ -13,12 +13,6 @@ with open('./tests/data/quick-blueprint/package.json', 'r') as file:
 with open('./tests/data/quick-blueprint/sample.ts', 'r') as file:
     sample_code_ts = file.read()
 
-with open('./tests/data/quick-blueprint/package.json', 'r') as file:
-    package_json = file.read()
-
-with open('./tests/data/quick-blueprint/sample.ts', 'r') as file:
-    sample_code_ts = file.read()
-
 from .test_version import client_version
 
 use_simulated_service_responses = False
