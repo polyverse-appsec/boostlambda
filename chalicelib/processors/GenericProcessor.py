@@ -1079,7 +1079,8 @@ class GenericProcessor:
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
 
-        useNewThrottler = "useNewThrottler" in os.environ
+        # enable new throttler by default unless disabled in environment variable
+        useNewThrottler = False if "useNewThrottler" in os.environ and os.environ["useNewThrottler"] == "False" else True
 
         self.load_prompts()
 
