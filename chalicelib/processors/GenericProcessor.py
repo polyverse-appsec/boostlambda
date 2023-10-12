@@ -586,11 +586,10 @@ class GenericProcessor:
         # if single input, build the prompt to test length
         if 'chunks' not in prompt_format_args:
             this_messages = self.generate_messages(data, prompt_format_args)
-            this_messages, _ = self.optimize_content(this_messages, data)
-            input_tokens_count = 0
-            for message in this_messages:
-                if 'content' in message:
-                    input_tokens_count += num_tokens_from_string(message["content"], data.get('model'))[0]
+            this_messages = self.optimize_content(this_messages, data)[0]
+
+            input_tokens_count = sum(num_tokens_from_string(
+                message["content"], data.get('model'))[0] for message in this_messages if 'content' in message)
 
             # reduce the input_token_buffer by the size of the function input content, since its fixed
             #   content that we can't reduce (even with chunking or other optimization)
@@ -602,7 +601,7 @@ class GenericProcessor:
                 prompts_set = [(this_messages, int(0), tuned_input, function_content_size)]
 
             elif input_tokens_count < input_token_buffer:
-                tuned_max_tokens = max_tokens - input_tokens_count
+                tuned_max_tokens = max_tokens - input_tokens_count - function_content_size
                 tuned_output = self.calculate_output_token_buffer(
                     input_tokens_count + function_content_size, tuned_max_tokens, max_tokens, False)
                 tuned_input = input_tokens_count + function_content_size

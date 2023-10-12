@@ -37,6 +37,7 @@ Polyverse Boost Cloud Service
 - Improved accuracy of function token calculation to allow for more user input and output
 
 ### Bug Fixes
+- Fix max-tokens overflow issue when processing a large single chunk of function-based analysis
 - Fix potential issue causing Boost usage reporting to fail - incorrect parameter for Stripe usage reporting API
 - Balance input and output buffer size for large file lists in DraftBlueprintProcessor - better success rate
 - Fix bug in input buffer calculation that didn't account for function input size (for chunking and truncation)
