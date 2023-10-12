@@ -33,9 +33,9 @@ from chalicelib.payments import update_usage_for_text
 from chalicelib.log import mins_and_secs
 from chalicelib.openai_throttler import (
     Throttler,
-    max_timeout_seconds_for_all_openai_calls,
-    max_timeout_seconds_for_single_openai_call,
-    total_analysis_time_buffer,
+    max_timeout_seconds_for_all_openai_calls_default,
+    max_timeout_seconds_for_single_openai_call_default,
+    total_analysis_time_buffer_default,
 )
 
 key_ChunkedInputs = 'chunked_inputs'
@@ -804,24 +804,26 @@ class GenericProcessor:
         for attempt in range(max_retries + 1):
 
             try:
+                singlecall_timeout, allcalls_timeout, service_timeout = self.get_call_timeout_settings(None)
+
                 now = time.time()
-                time_buffer_remaining = round(total_analysis_time_buffer - (now - start_time), 2)
+                time_buffer_remaining = round(service_timeout - (now - start_time), 2)
 
                 if time_buffer_remaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
+                    raise TimeoutError(f"Timeout exceeded for all Service calls: {mins_and_secs(service_timeout)}")
 
-                openai_calltime_buffer_remaining = round(max_timeout_seconds_for_all_openai_calls - (now - start_time), 2)
+                openai_calltime_buffer_remaining = round(allcalls_timeout - (now - start_time), 2)
                 if openai_calltime_buffer_remaining < 0:
-                    raise Exception(f"Timeout exceeded for total OpenAI calls: {mins_and_secs(max_timeout_seconds_for_all_openai_calls)}")
+                    raise TimeoutError(f"Timeout exceeded for total OpenAI calls: {mins_and_secs(allcalls_timeout)}")
 
                 # we'll let the OpenAI call take at most the per-call max, or what's remaining
                 #       of the total calls buffer
                 allotted_time_buffer_for_this_openai_call = round(min(
                     openai_calltime_buffer_remaining,
-                    max_timeout_seconds_for_single_openai_call), 2)
+                    singlecall_timeout), 2)
 
                 log(f"Time Settings: "
-                    f"TotalAnalysisTimeBuffer:{mins_and_secs(total_analysis_time_buffer)}, "
+                    f"TotalAnalysisTimeBuffer:{mins_and_secs(service_timeout)}, "
                     f"OverallTimeRemaining:{mins_and_secs(time_buffer_remaining)}, "
                     f"AllottedOpenAICallTime:{mins_and_secs(allotted_time_buffer_for_this_openai_call)}, "
                     f"OpenAICallTimeRemaining:{mins_and_secs(openai_calltime_buffer_remaining)}")
@@ -844,7 +846,7 @@ class GenericProcessor:
                     input_tokens=response.usage.prompt_tokens,
                     output_tokens=response.usage.completion_tokens)
 
-            except (openai.error.Timeout, requests.exceptions.Timeout) as e:
+            except (openai.error.Timeout, requests.exceptions.Timeout, TimeoutError) as e:
                 error = e
                 error_msg = str(e)
                 error_type = "Timeout"
@@ -877,28 +879,31 @@ class GenericProcessor:
                     account['customer'], account['email'], function_name, correlation_id,
                     {"name": InfoMetrics.OPENAI_RATE_LIMIT, "value": 1, "unit": "None"})
 
-                timeBufferRemaining = total_analysis_time_buffer - (time.time() - start_time)
+                timeBufferRemaining = service_timeout - (time.time() - start_time)
 
                 if timeBufferRemaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
+                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(service_timeout)}")
 
                 time.sleep(randomSleep)
 
-            if attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < total_analysis_time_buffer:
+            if attempt < max_retries and (time.time() - start_time + random.uniform(2, 5)) < service_timeout:
 
-                timeBufferRemaining = total_analysis_time_buffer - (time.time() - start_time)
+                timeBufferRemaining = service_timeout - (time.time() - start_time)
 
                 if timeBufferRemaining < 0:
-                    raise Exception(f"Timeout exceeded for OpenAI call: {mins_and_secs(total_analysis_time_buffer)}")
+                    raise TimeoutError(f"Timeout exceeded for OpenAI call: {mins_and_secs(service_timeout)}")
 
                 randomSleep = random.uniform(2, 5)
-                log(f"OpenAPIRetrying in {mins_and_secs(randomSleep)} after {error_type}: {error_msg}")
+                log(f"OpenAPI:Retrying in {mins_and_secs(randomSleep)} after {error_type}: {error_msg}")
                 time.sleep(randomSleep)
             else:
                 log(f"FAILED after {attempt} retries:Error: {error_type}: {error_msg}")
                 raise error
 
-    def runAnalysisForPrompt(self, i, this_messages, max_output_tokens,
+    def handleFinalCallError(self, e, input_tokens, log):
+        return None
+
+    def runAnalysisForPrompt(self, i, this_messages, max_output_tokens, input_tokens,
                              params_template, account, function_name, correlation_id) -> dict:
         params = params_template.copy()  # Create a copy of the template to avoid side effects
 
@@ -920,9 +925,12 @@ class GenericProcessor:
             result = self.runAnalysis(params, account, function_name, correlation_id)
 
         except Exception as e:
-            error = f"::error:{str(e)}"
-            raise
-
+            result = self.handleFinalCallError(e, input_tokens, log)
+            if result is None:
+                error = f"::error:{str(e)}"
+                raise
+            else:
+                pass
         finally:
             end_time = time.monotonic()
 
@@ -1067,6 +1075,9 @@ class GenericProcessor:
             else:
                 print(f"Unsupported context type {context['type']} - discarding data for {context['name']}")
 
+    def get_call_timeout_settings(self, data) -> Tuple[float, float, float]:
+        return max_timeout_seconds_for_single_openai_call_default, max_timeout_seconds_for_all_openai_calls_default, total_analysis_time_buffer_default
+
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
 
         useNewThrottler = "useNewThrottler" in os.environ
@@ -1106,7 +1117,12 @@ class GenericProcessor:
                 log(f"Chunked user input - {len(prompt_set)} chunks")
 
                 if useNewThrottler:
-                    throttler = Throttler()
+                    single_ai_call_timeout, all_ai_calls_timeout, whole_service_call_timeout = self.get_call_timeout_settings(data)
+
+                    throttler = Throttler(None,
+                                          single_ai_call_timeout,
+                                          all_ai_calls_timeout,
+                                          whole_service_call_timeout)
 
                     # Sort prompt set based on total tokens (input tokens + output tokens)
                     sorted_prompt_set = sorted(prompt_set, key=lambda p: p[1] + p[2]) if OpenAIDefaults.boost_max_tokens_default != 0 else prompt_set
@@ -1160,7 +1176,7 @@ class GenericProcessor:
 
                                         break  # run analysis immediately as we've been unblocked by bucket availability
 
-                            analysisResult = self.runAnalysisForPrompt(index, messages, output_tokens, params, account, function_name, correlation_id)
+                            analysisResult = self.runAnalysisForPrompt(index, messages, output_tokens, input_tokens, params, account, function_name, correlation_id)
 
                         # need to ensure we re-fill in case of an error
                         finally:
@@ -1202,7 +1218,7 @@ class GenericProcessor:
                         if delay > 5:  # If delay is more than 5 seconds, log it
                             log(f"Chunk {index} delayed for {mins_and_secs(delay)}", True)
 
-                        return self.runAnalysisForPrompt(index, prompt[0], prompt[1], params, account, function_name, correlation_id)
+                        return self.runAnalysisForPrompt(index, prompt[0], prompt[1], prompt[2], params, account, function_name, correlation_id)
 
                 # launch all the parallel threads to run analysis with the unique chunked prompt for each
                 # Throttling the rate of file processing
@@ -1217,8 +1233,8 @@ class GenericProcessor:
 
                 # run the analysis with single input
                 singleIndex = 0
-                results = [self.runAnalysisForPrompt(singleIndex, prompt_set[singleIndex][0],
-                                                     prompt_set[singleIndex][1], params, account, function_name, correlation_id)]
+                results = [self.runAnalysisForPrompt(singleIndex, prompt_set[singleIndex][0], prompt_set[singleIndex][1],
+                                                     prompt_set[singleIndex][2], params, account, function_name, correlation_id)]
 
                 result = results[0]['response']
 
@@ -1252,8 +1268,15 @@ class GenericProcessor:
 
                 incomplete_responses = [0 if did_complete(r) else 1 for r in results]
 
+                # calculate only the count of incompletions, not the total length of the incomplete responses
+                total_incompletions = sum(incomplete_responses)
+
                 if 'function_call' not in results[0]['message']:
                     return False, None, sum(incomplete_responses), None
+
+                # if every call failed, then just throw an error, as we have no useful results
+                if len(results) == total_incompletions:
+                    raise TimeoutError(f"{function_name} failed with incomplete or empty results - retry your call")
 
                 items = []
                 reassembled_results = []
@@ -1261,17 +1284,21 @@ class GenericProcessor:
                 for index, r in enumerate(results):
                     if incomplete_responses[index] == 0:
                         json_items = json.loads(r['message']['function_call']['arguments'])
-                        items.extend(json_items)
+                        for key, value in json_items.items():
+                            items.append({key: value})
 
                         # keep the result since its complete
                         reassembled_results.append(r)
                     else:
-                        incomplete_responses[index] = len(r['message']['function_call']['arguments'])
+                        if 'function_call' in r['message'] and r['message']['function_call'] is not None:
+                            incomplete_responses[index] = len(r['message']['function_call']['arguments']) if 'arguments' in r['message']['function_call'] else incomplete_responses[index]
+
                         log(f"Chunk {index} incomplete Function data - discarded {incomplete_responses[index]} discarded JSON bytes")
 
                         # if the function result is incomplete, its likely malformed JSON, so let's just throw
                         #       it away
 
+                # re-calculate the total incompletions based on the data lengths of the incomplete function results
                 total_incompletions = sum(incomplete_responses)
 
                 if total_incompletions == 0:

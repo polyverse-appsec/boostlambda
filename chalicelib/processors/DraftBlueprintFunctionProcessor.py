@@ -1,10 +1,14 @@
-from chalicelib.processors.FunctionGenericProcessor import FunctionGenericProcessor
-from chalicelib.version import API_VERSION
+from typing import Tuple
 from chalice import BadRequestError
 
 import json
 import math
 
+from chalicelib.processors.FunctionGenericProcessor import FunctionGenericProcessor
+from chalicelib.openai_throttler import (
+    seconds_in_a_minute,
+)
+from chalicelib.version import API_VERSION
 
 build_draft_blueprint = {
     "name": "build_draft_blueprint",
@@ -76,6 +80,10 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
                                      math.floor(total_max * 0.5))))
 
         return output_buffer_size
+
+    def get_call_timeout_settings(self, data) -> Tuple[float, float, float]:
+        settings = super().get_call_timeout_settings(data)  # noqa
+        return 1.0 * seconds_in_a_minute, 3 * seconds_in_a_minute, 6 * seconds_in_a_minute
 
     def get_function_definition(self):
         return build_draft_blueprint

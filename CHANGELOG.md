@@ -14,8 +14,10 @@ Polyverse Boost Cloud Service
 - Send email notification to Polyverse Support team when customer performs first billable action
 - Added OpenAI call Throttler (based on Token bucket algorithm, OpenAI rate limits, and processing time heuristics)
 - Enable OpenAI call throttler to be enabled dynamically at runtime via environment variable "useNewThrottler"
+- Enable per-Processor customization of OpenAI call timeout and overall service timeout (e.g. end to end service call)
 
 ### Enhancements
+- Enable Function-based Processors to return partial results if any results are received (instead of failing the entire call on a partial timeout)
 - Upgraded 3rd Party Packages: OpenAI, TikToken (token management), Stripe, AWS SDK, etc.
 - Enable Compliance, Security and Performance scans of large code blocks (using chunking) to report all bugs found (not just last chunk)
 - Enable smart merging of results from multiple chunked function calls (e.g. arrays are merged instead of overwritten) - customizable per processor

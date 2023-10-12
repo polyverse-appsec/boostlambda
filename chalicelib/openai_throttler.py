@@ -5,27 +5,34 @@ import random
 from chalicelib.usage import OpenAIDefaults
 
 # lambda AWS call must complete in 15 minutes, so our OpenAI call must complete in 12 mins
-max_openai_wait_time_in_mins_before_lambda_timeout = 12
+max_openai_wait_time_in_mins_before_lambda_timeout_default = 12
 
 seconds_in_a_minute = 60
 
 # Lambda calls must be done in 15 mins or less
 #   We'll give ourselves a little buffer in case other operations
 #   than OpenAI take 30-90 seconds (including stripe or GitHub calls)
-total_analysis_time_buffer = int(13.50 * seconds_in_a_minute)  # 13 minutes 30 seconds
+total_analysis_time_buffer_default = int(13.50 * seconds_in_a_minute)  # 13 minutes 30 seconds
 
-max_timeout_seconds_for_all_openai_calls = int(max_openai_wait_time_in_mins_before_lambda_timeout * seconds_in_a_minute)  # 12 minutes
+max_timeout_seconds_for_all_openai_calls_default = int(max_openai_wait_time_in_mins_before_lambda_timeout_default * seconds_in_a_minute)  # 12 minutes
 
-max_timeout_seconds_for_single_openai_call = int(6 * seconds_in_a_minute)  # 6 minutes
+max_timeout_seconds_for_single_openai_call_default = int(6 * seconds_in_a_minute)  # 6 minutes
 
 
 class Throttler:
-    def __init__(self, rate_limit_tokens_per_minute=OpenAIDefaults.rate_limit_tokens_per_minute):
-        rate_limit_tokens_per_minute = OpenAIDefaults.rate_limit_tokens_per_minute
-        self.rate = rate_limit_tokens_per_minute / seconds_in_a_minute
-        self.bucket = rate_limit_tokens_per_minute
+    def __init__(self,
+                 rate_limit_tokens_per_minute=OpenAIDefaults.rate_limit_tokens_per_minute,
+                 max_timeout_seconds_for_single_openai_call=max_timeout_seconds_for_single_openai_call_default,
+                 max_timeout_seconds_for_all_openai_calls=max_timeout_seconds_for_all_openai_calls_default,
+                 max_openai_wait_time_in_mins_before_lambda_timeout=max_openai_wait_time_in_mins_before_lambda_timeout_default):
+
+        self.rate_limit_tokens_per_minute = rate_limit_tokens_per_minute if rate_limit_tokens_per_minute is not None else OpenAIDefaults.rate_limit_tokens_per_minute
+        self.rate = self.rate_limit_tokens_per_minute / seconds_in_a_minute
+        self.bucket = self.rate_limit_tokens_per_minute
         self.lock = threading.Condition()
         self.max_wait_time = max_openai_wait_time_in_mins_before_lambda_timeout * seconds_in_a_minute
+        self.max_timeout_seconds_for_single_openai_call = max_timeout_seconds_for_single_openai_call
+        self.max_timeout_seconds_for_all_openai_calls = max_timeout_seconds_for_all_openai_calls
 
     def get_simple_processing_time_estimate(self, tokens):
         # Estimate the processing time based on the token count
@@ -93,7 +100,7 @@ class Throttler:
         with self.lock:
             # if we're going to hit the max overall timeout for calls if we don't start this call, then just start it
             #       and bypass throttler... can't be worse than indefinite hang or exceeding overall timeout
-            if (max_timeout_seconds_for_all_openai_calls - max_timeout_seconds_for_single_openai_call) < (time.time() - first_wait):
+            if (self.max_timeout_seconds_for_all_openai_calls - self.max_timeout_seconds_for_single_openai_call) < (time.time() - first_wait):
                 print(f"Thread-{threading.get_ident()}:Throttler: {tokens_needed} tokens needed, {self.bucket} tokens available, but max overall timeout for calls is too close, so bypassing throttler")
                 return float(-1)
 

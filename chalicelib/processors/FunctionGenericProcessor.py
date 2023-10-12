@@ -135,3 +135,18 @@ class FunctionGenericProcessor(GenericProcessor):
             print(f"{function_name}:{account['email']}:{correlation_id}:{message}")
 
         return self.process_function_output(result, log)
+
+    def handleFinalCallError(self, e, input_tokens, log):
+        # if we timed out trying to make the calls, return them as "incomplete" - so we can gracefully handle it
+        if not isinstance(e, (TimeoutError)):
+            return None
+
+        log(f"OpenAI call timed out retrying, giving up - and treating an incomplete successful call: {str(e)}")
+
+        return dict(
+            message={'function_call': None},  # we only set this flag so callers know we're a function-based call
+            response=None,
+            error=e,
+            finish=None,
+            input_tokens=input_tokens,
+            output_tokens=0)
