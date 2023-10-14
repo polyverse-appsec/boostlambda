@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 secret_json = None
 
 
-def get_secrets():
+def get_secrets(stage='prod'):
     global secret_json
     if secret_json is not None:
         return secret_json
@@ -37,7 +37,7 @@ def get_secrets():
 
     secret_json = json.loads(awssecret)
     # Use the get() method to retrieve the value of CHALICE_STAGE, with a default value of 'dev'
-    chalice_stage = os.environ.get('CHALICE_STAGE', 'dev')
+    chalice_stage = os.environ.get('CHALICE_STAGE', stage)
 
     # Use the retrieved value in the conditional statement
     if chalice_stage == 'prod':
