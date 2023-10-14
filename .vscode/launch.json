@@ -63,6 +63,18 @@
           "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "justMyCode": true
+    },
+    {
+        "name": "Refresh Product Docs",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/client/generate_product_docs.py",
+        "args": [
+            "../vs-boost/raw_instructions.md"
+          ],
+          "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "justMyCode": true
     }
     ]
 }
