@@ -1,0 +1,35 @@
+# Inquire about Boost: Visual Studio Code Extension by Polyverse
+
+Boost: your coding companion that elevates your workflow, ensures code security, and provides transformative insights. Let's unravel your AI-enhanced coding experience with Polyverse's Boost.
+
+## Essential Details Before You Start
+
+- Regarding **GitHub.com Account**: Boost utilizes your GitHub account to establish a connection to your coding realm. We prioritize your privacy; your email will neither be shared nor used for unsolicited marketing communications.
+
+- Concerning **Git for Authentication**: It's important to have Git installed as it's optimal for both Visual Studio Code and Boost. 
+
+- On the note of **Trial and Billing**: Boost provides everyone a free trial license for an initial experience. Account creation comes with an automatic $100 credit. Enhance your Boost experience with larger projects by simply updating your payment details in your Polyverse Boost account.
+
+### Getting Started with Boost
+
+1. **Locating Boost**: Post-installation, Boost will appear in your Visual Studio Code Activity Bar. By selecting the Boost logo in the left extension panel, you can access its sophisticated code and architectural analytics features.
+
+2. **Boost Authorization**: During your inaugural use of Boost, there will be a request to authorize Boost to access your GitHub credentials. This eliminates the need for implementing passwords directly. Click 'Allow' to proceed.
+
+3. **Launching a Project Analysis**: Kick-off the analysis of your project by selecting "Run Selected Analyses" from the Boost Activity Bar on the left.
+
+By default, a selection of the top 5 AI-chosen files on any project can be analyzed, including aspects such as security, data compliance, documentation, and bug analysis.
+
+To analyze all files in your project, choose "Analyze All Files".
+
+The built-in Sara AI will update you on usage, costs, and your account status.
+
+Boost can assist in diagnosing code issues and modernizing old code. Experiment and uncover novel ways to leverage its features!
+
+For any issues or inquiries, visit our [Polyverse Boost page](https://polyverse.com/pages/boost-visual-studio). Our team is ready to assist.
+
+Enjoy coding with the aid of Boost!
+
+## Learn About Polyverse
+
+Polyverse, founded by Alex Gounares in 2015, envisions bringing advanced cybersecurity tools to industry leaders and governmental change-makers. With Boost, we provide innovative solutions to enhance your coding journey.
