@@ -1333,7 +1333,7 @@ class GenericProcessor:
                 # wild guess on how much was lost... if less than 100 characters/tokens - we don't really know the extent
                 estimate_lost = f" - at least {total_incompletions}" if total_incompletions > 100 else ""
                 some_incompletions = markdown_emphasize(
-                    f"WARNING: Due to large amount of data to process, some of the analysis response was lost{estimate_lost}. Please submit a smaller amount of data if possible for a more complete response.\n\n")
+                    f"WARNING: While processing a large input, some of the analysis response may have been lost{estimate_lost} due to network or service timeouts. Please retry your analysis request or try analyzing a smaller piece of data.\n\n")
                 result = f"{some_incompletions}{result}"
 
             success = True
