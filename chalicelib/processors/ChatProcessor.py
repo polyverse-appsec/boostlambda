@@ -19,6 +19,13 @@ class ChatProcessor(GenericProcessor):
                 AnalysisOutputFormat.rankedList,
                 AnalysisOutputFormat.numberedList])
 
+        self.get_product_documentation()
+
+    def get_product_documentation(self):
+        if not hasattr(self, 'product_documentation') or self.product_documentation is None:
+            self.product_documentation = self.load_prompt('product-usage-system.prompt')
+        return self.product_documentation
+
     def get_chunkable_input(self) -> str:
         return 'code'
 
@@ -45,6 +52,28 @@ class ChatProcessor(GenericProcessor):
         prompt_format_args = {
             self.get_chunkable_input(): formatted_code, 'query': query
         } if code is not None else {'query': query}
+
+        if 'context' in data:
+            for index, contextData in enumerate(data['context']):
+                if contextData['name'] == 'productDocumentation':
+                    data['context'].pop(index)
+        else:
+            data['context'] = []
+
+        data['context'].append({
+            'type': 'related',
+            'data': f'Boost Product Documentation is:\n\n{self.get_product_documentation()}',
+            'name': 'productDocumentation'
+        })
+
+#        self.insert_context(data, prompt_format_args,
+#                            {
+#                                analysisContext.push({
+#                                    type: analysis.AnalysisContextType.related,
+#                                    data: `Boost Product Documentation is:\n\n${productDocumentation}`,
+#                                    name: "productDocumentation",
+#                                });
+#                            })
 
         result = self.process_input(data, account, function_name, correlation_id,
                                     prompt_format_args)

@@ -132,8 +132,14 @@ class GenericProcessor:
         print(f"{self.__class__.__name__}_api_version: ", self.api_version)
 
         # early load the prompts to catch issues as soon as possible
+        self.promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
+
         self.prompts = None
         self.load_prompts()
+
+    def load_prompt(self, prompt_filename) -> str:
+        with open(os.path.join(self.promptdir, prompt_filename), 'r') as f:
+            return f.read()
 
     def load_prompts(self):
 
@@ -143,19 +149,17 @@ class GenericProcessor:
             return
 
         # otherwise load the prompts
-        promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
         prompts = []
 
         # load prompts specified in 'prompt_filenames'
         for prompt_filename in self.prompt_filenames:
-            with open(os.path.join(promptdir, prompt_filename[1]), 'r') as f:
-                prompts.append([prompt_filename, f.read()])
+            prompts.append([prompt_filename, self.load_prompt(prompt_filename[1])])
 
         # load numbered prompts
         for prompt_key in self.numbered_prompt_keys if self.numbered_prompt_keys is not None else []:
             # if the definition is a prompt & response pairing, load both files and process in order
             if prompt_key[0] == 'response':
-                for file in sorted(glob.glob(os.path.join(promptdir, f"{prompt_key[1]}-user-*.prompt"))):
+                for file in sorted(glob.glob(os.path.join(self.promptdir, f"{prompt_key[1]}-user-*.prompt"))):
                     # Get the filename from the full path
                     response_user_prompt_filename = os.path.basename(file)
 
@@ -174,7 +178,7 @@ class GenericProcessor:
                     else:
                         raise FileNotFoundError(f"Assistant file {assistant_file} not found for {file}")
             else:
-                file_list = sorted(glob.glob(os.path.join(promptdir, f"{prompt_key[1]}-{prompt_key[0]}-*.prompt")))
+                file_list = sorted(glob.glob(os.path.join(self.promptdir, f"{prompt_key[1]}-{prompt_key[0]}-*.prompt")))
 
                 for file in file_list:
                     dynamic_filename = os.path.basename(file)

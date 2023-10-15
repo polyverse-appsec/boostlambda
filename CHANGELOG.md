@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 0.9.9: October 15th, 2023
+
+### New Features
+- Product documentation for Boost injected into cloud service for Chat - to enable real-time documentation updates without client upgrades
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- N/A
+
 ## Version 0.9.8: October 11th, 2023
 
 ### New Features
