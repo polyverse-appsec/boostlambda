@@ -1,33 +1,59 @@
-# Polyverse Boost: Visual Studio Code Extension 
+# Boost: Polyverse's Visual Studio Code Extension
+=======================================
 
-Boost is a powerful Visual Studio Code Extension. Its purpose is to enhance your coding workflow, bolster code security, and provide transformative AI-driven insights. 
+Experience an evolved coding journey with AI-powered insights from Polyverse Boost, a superlative Visual Studio Code extension. Boost is designed to enhance your workflow, ensure code security, and provide transformative insights. Explore the future of AI-enabled coding through Boost!
 
-Before getting started with Boost, ensure you have:
-1. A GitHub.com account – This is used to seamlessly connect Boost with your coding world. Your privacy is important to us – we never share your email or use it for marketing purposes. 
-2. Git installed – Git is useful for authentication and is compatible with both Visual Studio Code and Boost.
+## Getting Started 🚀
 
-Boost also offers a free trial for new users. This includes $100 credit and automatic account creation.
+### Pre-requisites
 
-After successful installation, discover Boost in your Visual Studio Code Activity bar. Click on the Boost logo in the left extension panel and start using its powerful code and architectural analytics. 
+- 📌 **Hold a [GitHub.com](https://GitHub.com) account**: This links Boost with your coding workspace. Rest assured, your privacy is maintained — your email will not be misused.
 
-When you run Boost for the first time, it will ask for permission to access your GitHub identity. This allows your coding activities to proceed without the need for managing passwords directly. 
+- 📌 **Authentication using Git**: Ensure Git is installed as it's integral for Boost and Visual Studio Code.
 
-To initiate analysis on your project, look for the "Run Selected Analyses" option in the Boost Activity Bar. By default, the top 5 AI-selected files in any project will be analyzed. You can also choose "Analyze all Files" to cover the entire project.
+- 📌 **Trial and Billing**: A free trial license is available for Boost.
 
-Frequently Asked Questions:
+### Configuration of Boost
 
-Q: How do I initiate analysis, and where is status reported during analysis?
-A: Simply click on the Boost icon in the left extension panel and select "Run Selected Analyses". The real-time analysis status is reported in the "Dashboard" tab in the Boost Activity Bar.
+1. **Locating Boost**: You should now be able to see Boost on your Visual Studio Code Activity Bar. Simply click on the Boost logo in the left extension panel and utilize its comprehensive code and architectural analytics.
+   
+2. **Authorization**: The first time you run Boost, it will request permission to access your GitHub identity, eliminating the necessity to manage passwords mindfully.
 
-Q: What if my analysis stops after I restarted Visual Studio Code or installed an extension?
-A: Not to worry! All analysis progress is saved. Click "Run Selected Analysis" again to proceed from where you left off.
+3. **Utilizing Boost**: To initiate analysis on your project, use the Boost Activity Bar on the left to "Run Selected Analyses".
 
-For more information, queries, or further assistance, visit [Polyverse Boost page](https://polyverse.com/pages/boost-visual-studio).
+You can also select "Analyze All Files" to examine all project files.
 
-Customizing File Analysis
+Boost offers a host of features, from code analysis to code revitalization. Explore and improve your coding efficiency!
 
-By default, Boost analyzes key source files but you can customize this by either specifying files for analysis or setting exclusions.
+### Boost FAQ
 
-To select specific files, add them to a '.boostOnly' file in your project root folder. On the other hand, to exclude certain files from analysis, add them to a '.boostIgnore' file, similar to '.gitignore'. 
+**Q: How do I initiate an analysis? Or where is status updated when analysis is active?**
 
-Boost is designed to streamline your coding processes while maintaining top-notch security. Enjoy an elevated coding experience!
+A: Initiate an analysis by selecting "Run Selected Analyses" through the Boost icon in the left panel. Current analysis status will be displayed in the "Dashboard" tab of the Boost "Activity Bar".
+
+**Q: My analysis stopped after restarting Visual Studio Code, after the installation, upgrade or uninstallation of an extension. Why?**
+
+A: Your analysis progress hasn't been lost – it simply paused because Boost analysis is linked to the Visual Studio Code workspace. Functions are halted when you restart Visual Studio Code or make alterations to extensions. You can resume the process by hitting "Run Selected Analysis" again.
+
+**Looking for more information or troubleshooting?**
+Visit our [Polyverse Boost page](https://polyverse.com/pages/boost-visual-studio) for additional resources.
+
+**Boost your coding experience!**
+
+## About Polyverse
+
+Founded in 2015 by tech wizard Alex Gounares, Polyverse aims to provide top-tier cybersecurity tools for industry leaders and government innovators. Boost is our latest offering, putting revolutionary solutions at your fingertips.
+
+# Tailoring the File List for Analysis
+
+Sara, the AI assistant, will initially prioritize all source files to identify the most interesting files for analysis. To customize the source file list, either select specific files for analysis or exclude certain files.
+
+## Selecting Files for Analysis
+If you have identified specific files for analysis, list their names and/or folders in a .boostOnly file in your project root folder. The file should be formatted with relative patterns or globs, one per line.
+
+## Creating a Custom Exclusion List
+Create a .boostIgnore file to specify files to ignore or exclude. The file's format should mirror that of .gitignore, utilizing relative or glob patterns.
+
+Sara can generate a .boostIgnore file excluding files she deems uninteresting. Feel free to modify this file.
+
+Keep in mind that Sara can take anywhere from a few minutes to several hours to analyze files based on the project size. If you want to discontinue the analysis, simply close the Source Project Folder in Visual Studio Code or exit Visual Studio Code entirely. Sara will pause the analysis and retain the progress made.
