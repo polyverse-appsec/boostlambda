@@ -36,7 +36,7 @@ def get_input_content(paths):
 
     for path in paths:
         if os.path.isfile(path):
-            relPath = os.path.relpath(script_dir, path)
+            relPath = os.path.relpath(path, script_dir)
             print(f"Importing doc file: {relPath}")
             with open(path, 'r') as f:
                 content += f.read() + "\n\n"
