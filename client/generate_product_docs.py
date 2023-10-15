@@ -31,12 +31,20 @@ def call_openai_api(prompt, model="gpt-4-0613"):
     return response.choices[0].message['content']
 
 
-def generate_terse_prompt(markdown_files):
-    # Concatenate markdown files' content
+def get_input_content(paths):
     content = ""
-    for file in markdown_files:
-        with open(file, 'r') as f:
-            content += f.read() + "\n\n"
+
+    for path in paths:
+        if os.path.isfile(path):
+            relPath = os.path.relpath(script_dir, path)
+            print(f"Importing doc file: {relPath}")
+            with open(path, 'r') as f:
+                content += f.read() + "\n\n"
+        elif os.path.isdir(path):
+            # Get all items in the directory
+            items_in_directory = [os.path.join(path, item) for item in os.listdir(path)]
+            # Call the function recursively on the items in the directory
+            content += get_input_content(items_in_directory)
 
     return content
 
@@ -46,7 +54,8 @@ if __name__ == "__main__":
     markdown_files = sys.argv[1:]
 
     # Generate terse prompt
-    raw_content = generate_terse_prompt(markdown_files)
+    print(f"Searching for docs at: {markdown_files}")
+    raw_content = get_input_content(markdown_files)
 
     prompt = (
         f"Rewrite the following product instructions that can be used as a system prompt for OpenAI prompts - to enable a product user to ask questions about the product after installed.\n"
@@ -56,20 +65,8 @@ if __name__ == "__main__":
         f" {raw_content}"
     )
 
+    print("Using OpenAI to rewrite and compress the source documentation...")
     terse_content = call_openai_api(prompt)
-
-    # Write to product-usage-system.prompt
-    with open(os.path.join(script_dir, f'../chalicelib/prompts/{prompt_filename}'), 'w') as f:
-        f.write(terse_content)
-
-    print(f"Terse system prompt written to {prompt_filename}")
-
-    raw_tokens = num_tokens_from_string(raw_content)[0]
-    terse_tokens = num_tokens_from_string(terse_content)[0]
-    print(f"Instructions compressed from {raw_tokens} to {terse_tokens} tokens: {round(terse_tokens / raw_tokens * 100,2)}% of original length")
-
-    print("\n\n")
-    print(terse_content)
 
     # Write to product-usage-system.prompt
     with open(os.path.join(script_dir, f'../chalicelib/prompts/{prompt_filename}'), 'w') as f:
