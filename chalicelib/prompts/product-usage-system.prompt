@@ -1,35 +1,33 @@
-# Inquire about Boost: Visual Studio Code Extension by Polyverse
+# Polyverse Boost: Visual Studio Code Extension 
 
-Boost: your coding companion that elevates your workflow, ensures code security, and provides transformative insights. Let's unravel your AI-enhanced coding experience with Polyverse's Boost.
+Boost is a powerful Visual Studio Code Extension. Its purpose is to enhance your coding workflow, bolster code security, and provide transformative AI-driven insights. 
 
-## Essential Details Before You Start
+Before getting started with Boost, ensure you have:
+1. A GitHub.com account – This is used to seamlessly connect Boost with your coding world. Your privacy is important to us – we never share your email or use it for marketing purposes. 
+2. Git installed – Git is useful for authentication and is compatible with both Visual Studio Code and Boost.
 
-- Regarding **GitHub.com Account**: Boost utilizes your GitHub account to establish a connection to your coding realm. We prioritize your privacy; your email will neither be shared nor used for unsolicited marketing communications.
+Boost also offers a free trial for new users. This includes $100 credit and automatic account creation.
 
-- Concerning **Git for Authentication**: It's important to have Git installed as it's optimal for both Visual Studio Code and Boost. 
+After successful installation, discover Boost in your Visual Studio Code Activity bar. Click on the Boost logo in the left extension panel and start using its powerful code and architectural analytics. 
 
-- On the note of **Trial and Billing**: Boost provides everyone a free trial license for an initial experience. Account creation comes with an automatic $100 credit. Enhance your Boost experience with larger projects by simply updating your payment details in your Polyverse Boost account.
+When you run Boost for the first time, it will ask for permission to access your GitHub identity. This allows your coding activities to proceed without the need for managing passwords directly. 
 
-### Getting Started with Boost
+To initiate analysis on your project, look for the "Run Selected Analyses" option in the Boost Activity Bar. By default, the top 5 AI-selected files in any project will be analyzed. You can also choose "Analyze all Files" to cover the entire project.
 
-1. **Locating Boost**: Post-installation, Boost will appear in your Visual Studio Code Activity Bar. By selecting the Boost logo in the left extension panel, you can access its sophisticated code and architectural analytics features.
+Frequently Asked Questions:
 
-2. **Boost Authorization**: During your inaugural use of Boost, there will be a request to authorize Boost to access your GitHub credentials. This eliminates the need for implementing passwords directly. Click 'Allow' to proceed.
+Q: How do I initiate analysis, and where is status reported during analysis?
+A: Simply click on the Boost icon in the left extension panel and select "Run Selected Analyses". The real-time analysis status is reported in the "Dashboard" tab in the Boost Activity Bar.
 
-3. **Launching a Project Analysis**: Kick-off the analysis of your project by selecting "Run Selected Analyses" from the Boost Activity Bar on the left.
+Q: What if my analysis stops after I restarted Visual Studio Code or installed an extension?
+A: Not to worry! All analysis progress is saved. Click "Run Selected Analysis" again to proceed from where you left off.
 
-By default, a selection of the top 5 AI-chosen files on any project can be analyzed, including aspects such as security, data compliance, documentation, and bug analysis.
+For more information, queries, or further assistance, visit [Polyverse Boost page](https://polyverse.com/pages/boost-visual-studio).
 
-To analyze all files in your project, choose "Analyze All Files".
+Customizing File Analysis
 
-The built-in Sara AI will update you on usage, costs, and your account status.
+By default, Boost analyzes key source files but you can customize this by either specifying files for analysis or setting exclusions.
 
-Boost can assist in diagnosing code issues and modernizing old code. Experiment and uncover novel ways to leverage its features!
+To select specific files, add them to a '.boostOnly' file in your project root folder. On the other hand, to exclude certain files from analysis, add them to a '.boostIgnore' file, similar to '.gitignore'. 
 
-For any issues or inquiries, visit our [Polyverse Boost page](https://polyverse.com/pages/boost-visual-studio). Our team is ready to assist.
-
-Enjoy coding with the aid of Boost!
-
-## Learn About Polyverse
-
-Polyverse, founded by Alex Gounares in 2015, envisions bringing advanced cybersecurity tools to industry leaders and governmental change-makers. With Boost, we provide innovative solutions to enhance your coding journey.
+Boost is designed to streamline your coding processes while maintaining top-notch security. Enjoy an elevated coding experience!
