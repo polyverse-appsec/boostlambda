@@ -6,10 +6,11 @@ Polyverse Boost Cloud Service
 ## Version 0.9.9: October 15th, 2023
 
 ### New Features
-- Product documentation for Boost injected into cloud service for Chat - to enable real-time documentation updates without client upgrades
+- Product documentation for Boost dynamically injected into cloud service for Chat - to enable real-time documentation updates without client upgrades
+- Added S3 Cloud and Local Storage wrapper interface for Services to retrieve live data - e.g. prompts and docs from S3 (supports various cloud stages and backup to local storage)
 
 ### Enhancements
-- N/A
+- Enable legacy 'summaries' data to be passed along with new 'context' data - for testing
 
 ### Bug Fixes
 - N/A

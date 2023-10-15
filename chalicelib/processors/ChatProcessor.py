@@ -2,6 +2,7 @@ from chalicelib.processors.GenericProcessor import GenericProcessor, AnalysisOut
 from chalicelib.version import API_VERSION
 from chalice import BadRequestError
 from chalicelib.usage import OpenAIDefaults
+from chalicelib.storage import get_file
 
 import math
 
@@ -23,7 +24,7 @@ class ChatProcessor(GenericProcessor):
 
     def get_product_documentation(self):
         if not hasattr(self, 'product_documentation') or self.product_documentation is None:
-            self.product_documentation = self.load_prompt('product-usage-system.prompt')
+            self.product_documentation = get_file('prompts/product-usage-system.prompt')
         return self.product_documentation
 
     def get_chunkable_input(self) -> str:
@@ -53,27 +54,12 @@ class ChatProcessor(GenericProcessor):
             self.get_chunkable_input(): formatted_code, 'query': query
         } if code is not None else {'query': query}
 
-        if 'context' in data:
-            for index, contextData in enumerate(data['context']):
-                if contextData['name'] == 'productDocumentation':
-                    data['context'].pop(index)
-        else:
-            data['context'] = []
-
-        data['context'].append({
+        # insert the product docs into the chat processor contexts
+        self.insert_context(data, {
             'type': 'related',
             'data': f'Boost Product Documentation is:\n\n{self.get_product_documentation()}',
             'name': 'productDocumentation'
         })
-
-#        self.insert_context(data, prompt_format_args,
-#                            {
-#                                analysisContext.push({
-#                                    type: analysis.AnalysisContextType.related,
-#                                    data: `Boost Product Documentation is:\n\n${productDocumentation}`,
-#                                    name: "productDocumentation",
-#                                });
-#                            })
 
         result = self.process_input(data, account, function_name, correlation_id,
                                     prompt_format_args)

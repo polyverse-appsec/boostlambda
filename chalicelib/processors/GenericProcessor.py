@@ -218,6 +218,16 @@ class GenericProcessor:
             file_path = os.path.join(promptdir, prompt_filename[1])
             self.prompt_files_timestamps[file_path] = os.path.getmtime(file_path)
 
+    def insert_context(self, data, newContext):
+        if 'context' in data:
+            for index, contextData in enumerate(data['context']):
+                if contextData['name'] == 'productDocumentation':
+                    data['context'].pop(index)
+        else:
+            data['context'] = []
+
+        data['context'].append(newContext)
+
     def optimize_content(self, this_messages: List[Dict[str, Any]], data) -> Tuple[List[Dict[str, Any]], int]:
         def truncate_system_message(sys_message, index, total_system_buffer, total_system_tokens):
             sys_token_count, sys_tokens = num_tokens_from_string(sys_message['content'], data.get('model'))
@@ -773,7 +783,7 @@ class GenericProcessor:
 
         return this_messages
 
-    def makeOpenAICall(self, account, function_name, correlation_id, attempt, timeBufferRemaining, params) -> dict:
+    def makeOpenAICall(self, function_name, attempt, timeBufferRemaining, params) -> dict:
 
         due_time = datetime.datetime.now() + datetime.timedelta(seconds=timeBufferRemaining)
 
@@ -832,9 +842,7 @@ class GenericProcessor:
                     f"OpenAICallTimeRemaining:{mins_and_secs(openai_calltime_buffer_remaining)}")
 
                 response = self.makeOpenAICall(
-                    account,
                     function_name,
-                    correlation_id,
                     attempt,
                     allotted_time_buffer_for_this_openai_call,
                     params)
@@ -1045,10 +1053,8 @@ class GenericProcessor:
             prompt_format_args['summaries_type'] = 'general'
             prompt_format_args['summaries_data'] = summaries
 
-            return
-
         # get the JSON object out of the data payload
-        context_json = data['context']
+        context_json = data['context'] if 'context' in data else []
         context_names = ""
         context_data = ""
         for context in context_json:
