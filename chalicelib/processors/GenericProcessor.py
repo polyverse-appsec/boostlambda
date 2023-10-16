@@ -10,7 +10,6 @@ import threading
 import random
 import json
 from typing import List, Tuple, Dict, Any
-import glob
 import re
 import datetime
 
@@ -29,6 +28,11 @@ from chalicelib.usage import (
     num_tokens_from_string,
     decode_string_from_input,
     tokens_from_function)
+from chalicelib.storage import (
+    get_file,
+    get_file_time,
+    search_storage
+)
 from chalicelib.payments import update_usage_for_text
 from chalicelib.log import mins_and_secs
 from chalicelib.openai_throttler import (
@@ -45,7 +49,7 @@ key_IsChunked = 'chunked'
 key_ChunkingPrompt = 'chunking'
 
 # Define the directory where prompt files are stored
-PROMPT_DIR = "chalicelib/prompts"
+PROMPT_DIR = "prompts"
 
 secret_json = pvsecret.get_secrets()
 
@@ -131,15 +135,11 @@ class GenericProcessor:
 
         print(f"{self.__class__.__name__}_api_version: ", self.api_version)
 
-        # early load the prompts to catch issues as soon as possible
-        self.promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
-
         self.prompts = None
         self.load_prompts()
 
     def load_prompt(self, prompt_filename) -> str:
-        with open(os.path.join(self.promptdir, prompt_filename), 'r') as f:
-            return f.read()
+        return get_file(os.path.join(PROMPT_DIR, prompt_filename))
 
     def load_prompts(self):
 
@@ -159,31 +159,24 @@ class GenericProcessor:
         for prompt_key in self.numbered_prompt_keys if self.numbered_prompt_keys is not None else []:
             # if the definition is a prompt & response pairing, load both files and process in order
             if prompt_key[0] == 'response':
-                for file in sorted(glob.glob(os.path.join(self.promptdir, f"{prompt_key[1]}-user-*.prompt"))):
-                    # Get the filename from the full path
+                for file in search_storage(PROMPT_DIR, f"{prompt_key[1]}-user-*.prompt"):
+
                     response_user_prompt_filename = os.path.basename(file)
 
                     # response has a user prompt....
-                    with open(file, 'r') as f:
-                        prompts.append([["user", response_user_prompt_filename], f.read()])
+                    prompts.append([["user", response_user_prompt_filename], get_file(file)])
 
                     # construct the corresponding assistant file name
                     assistant_file = file.replace("-user-", "-assistant-")
                     response_assistant_prompt_filename = os.path.basename(assistant_file)
 
-                    # Open assistant file, if it exists
-                    if os.path.isfile(assistant_file):
-                        with open(assistant_file, 'r') as f:
-                            prompts.append([["assistant", response_assistant_prompt_filename], f.read()])
-                    else:
-                        raise FileNotFoundError(f"Assistant file {assistant_file} not found for {file}")
+                    prompts.append([["assistant", response_assistant_prompt_filename], get_file(assistant_file)])
             else:
-                file_list = sorted(glob.glob(os.path.join(self.promptdir, f"{prompt_key[1]}-{prompt_key[0]}-*.prompt")))
+                file_list = search_storage(PROMPT_DIR, f"{prompt_key[1]}-{prompt_key[0]}-*.prompt")
 
                 for file in file_list:
                     dynamic_filename = os.path.basename(file)
-                    with open(file, 'r') as f:
-                        prompts.append([[prompt_key[0], dynamic_filename], f.read()])
+                    prompts.append([[prompt_key[0], dynamic_filename], get_file(file)])
 
         self.prompts = prompts
 
@@ -204,8 +197,8 @@ class GenericProcessor:
         # Compare the current timestamps with the cached timestamps
         files_changed = False
         for prompt_filename in prompts_to_check:
-            file_path = os.path.join(self.promptdir, prompt_filename[1])
-            current_timestamp = os.path.getmtime(file_path)
+            file_path = os.path.join(PROMPT_DIR, prompt_filename[1])
+            current_timestamp = get_file_time(file_path)
 
             # file not in cache, it's new; update timestamp
             if file_path not in self.prompt_files_timestamps:
@@ -230,11 +223,10 @@ class GenericProcessor:
 
     def cache_prompt_files_timestamps(self):
         # Store the last modification timestamps in the cache
-        promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
         self.prompt_files_timestamps = {}
         for prompt_filename in self.prompt_filenames:
-            file_path = os.path.join(promptdir, prompt_filename[1])
-            self.prompt_files_timestamps[file_path] = os.path.getmtime(file_path)
+            file_path = os.path.join(PROMPT_DIR, prompt_filename[1])
+            self.prompt_files_timestamps[file_path] = get_file_time(file_path)
 
     def insert_context(self, data, newContext):
         if 'context' in data:
