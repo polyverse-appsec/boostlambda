@@ -13,7 +13,7 @@ Polyverse Boost Cloud Service
 - Enable legacy 'summaries' data to be passed along with new 'context' data - for testing
 
 ### Bug Fixes
-- N/A
+- Fixed email address for production notifications
 
 ## Version 0.9.8: October 11th, 2023
 

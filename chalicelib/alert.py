@@ -15,7 +15,7 @@ service_stage = os.environ.get('CHALICE_STAGE', 'local')
 if 'AWS_CHALICE_CLI_MODE' not in os.environ and 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
     if service_stage in ('dev', 'test'):
         notify_recipients = dev_email
-    elif service_stage == ('staging', 'prod'):
+    elif service_stage in ('staging', 'prod'):
         notify_recipients = production_email
 else:
     # when doing local debugging, don't send email (by default)
@@ -29,11 +29,14 @@ def notify_email(email, org, subject, body=""):
     if body:
         body = f"\n\n{body}"
 
-    send_email(
-        subject=f"{subject}: {org}",
-        body=f"{subject}:\n  Email: {email}\n  Org: {org}{body}",
-        recipient_email=(notify_recipients if not alert_bypassed else ""),
-        sender_email=alert_sender_email)
+    try:
+        send_email(
+            subject=f"{subject}: {org}",
+            body=f"{subject}:\n  Email: {email}\n  Org: {org}{body}",
+            recipient_email=(notify_recipients if not alert_bypassed else ""),
+            sender_email=alert_sender_email)
+    except Exception as e:
+        print(f"Failed to send alert email for {subject} to {email} for {org}: {e}")
 
 
 def notify_new_customer(email, org):
