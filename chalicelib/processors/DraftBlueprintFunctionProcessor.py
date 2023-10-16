@@ -81,10 +81,6 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
 
         return output_buffer_size
 
-    def get_call_timeout_settings(self, data) -> Tuple[float, float, float]:
-        settings = super().get_call_timeout_settings(data)  # noqa
-        return 1.0 * seconds_in_a_minute, 3 * seconds_in_a_minute, 6 * seconds_in_a_minute
-
     def get_function_definition(self):
         return build_draft_blueprint
 
