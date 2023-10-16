@@ -80,6 +80,10 @@ def get_file(filename) -> str:
 
 
 def get_file_time(filename):
+    # note the cache is not aware of stages at this time, so if
+    #   the timestamp represents the first stage it was loaded from
+    #   if a different stage has a newer file at a later time, it won't
+    #   be refreshed in the cache
     if filename in file_contents_cache:
         return file_contents_cache.get(filename).get("time")
     else:
@@ -141,10 +145,11 @@ def search_storage_with_stage(stage, prefix, pattern=None) -> list:
                                            'PageSize': 50}
                                        ):
             for obj in page.get('Contents', []):
-                if pattern:
-                    if fnmatch.fnmatch(obj['Key'], pattern):  # using fnmatch to filter results
-                        matched_files.append(obj['Key'])
-                else:
-                    matched_files.append(obj['Key'])
+                actualFile = os.path.relpath(obj['Key'], stage)
+
+                # using fnmatch to filter results
+                if (pattern is None
+                        or fnmatch.fnmatch(obj['Key'], os.path.join(stage, prefix, pattern))):
+                    matched_files.append(actualFile)
 
     return sorted(matched_files)
