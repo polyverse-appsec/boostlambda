@@ -41,12 +41,12 @@ def get_file(filename) -> str:
                         print(f"Local File {filename} has not changed, returning cached contents.")
                     return cached_file_contents['contents']
 
-            print(f"Found Local file: {os.path.join(LOCAL_BASE_FOLDER, filename)}")
             with open(fullLocalPath, 'r') as f:
-
                 file_content = f.read()
 
-                break
+            print(f"Found Local file: {os.path.join(LOCAL_BASE_FOLDER, filename)}")
+            break
+
         elif file_exists_in_s3(s3_storage_bucket_name, os.path.join(stage, filename), stage):
             print(f"Retrieving S3 file: {filename} in {stage}")
             s3 = boto3.client('s3')
