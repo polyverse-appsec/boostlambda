@@ -11,10 +11,12 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Enable legacy 'summaries' data to be passed along with new 'context' data - for testing
+- Move all processors' prompts to S3 storage (static and dynamic prompts)
 
 ### Bug Fixes
 - Fixed email address for production notifications
 - Fix cache refresh miss for dynamic prompts
+- Tweak Draft Blueprint prompt to ensure project files are included in results
 
 ## Version 0.9.8: October 11th, 2023
 
