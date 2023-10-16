@@ -14,6 +14,7 @@ Polyverse Boost Cloud Service
 
 ### Bug Fixes
 - Fixed email address for production notifications
+- Fix cache refresh miss for dynamic prompts
 
 ## Version 0.9.8: October 11th, 2023
 

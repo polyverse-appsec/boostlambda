@@ -191,20 +191,38 @@ class GenericProcessor:
         self.cache_prompt_files_timestamps()
 
     def check_prompt_files_changed(self):
+        # since prompts contains dynamic prompts, we'll build a temporary list
+        #   of static and dynamic prompt filenames to check for changes
+        prompts_to_check = self.prompt_filenames.copy()
+
+        # make sure all dynamic prompts and prompt pairs are added to the prompt_filenames list
+        #   so we can effectively check their timestamps
+        for prompt in self.prompts:
+            if prompt[0][1] not in [prompt_file[1] for prompt_file in self.prompt_filenames]:
+                prompts_to_check.append([prompt[0][0], prompt[0][1]])
+
         # Compare the current timestamps with the cached timestamps
-        promptdir = os.path.join(os.path.abspath(os.path.curdir), PROMPT_DIR)
         files_changed = False
-        for prompt_filename in self.prompt_filenames:
-            file_path = os.path.join(promptdir, prompt_filename[1])
+        for prompt_filename in prompts_to_check:
+            file_path = os.path.join(self.promptdir, prompt_filename[1])
             current_timestamp = os.path.getmtime(file_path)
+
+            # file not in cache, it's new; update timestamp
             if file_path not in self.prompt_files_timestamps:
                 files_changed = True
                 print(f"File '{prompt_filename[1]}' has changed. New timestamp: {time.strftime('%Y-%m-%d %H:%M', time.localtime(current_timestamp))}")
+
+            # timestamp doesn't match, file has changed
             elif self.prompt_files_timestamps[file_path] != current_timestamp:
                 files_changed = True
                 old_timestamp = self.prompt_files_timestamps[file_path]
                 time_difference = (current_timestamp - old_timestamp) / 60  # Difference in minutes
                 print(f"File '{prompt_filename[1]}' has changed. New timestamp: {time.strftime('%Y-%m-%d %H:%M', time.localtime(current_timestamp))}. Time difference: {time_difference:.2f} minutes.")
+
+            # timestamp matches, just move on
+            else:
+                continue
+
             # Update the timestamp in the cache
             self.prompt_files_timestamps[file_path] = current_timestamp
 
