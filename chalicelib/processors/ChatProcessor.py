@@ -20,12 +20,8 @@ class ChatProcessor(GenericProcessor):
                 AnalysisOutputFormat.rankedList,
                 AnalysisOutputFormat.numberedList])
 
-        self.get_product_documentation()
-
-    def get_product_documentation(self):
-        if not hasattr(self, 'product_documentation') or self.product_documentation is None:
-            self.product_documentation = get_file('prompts/product-usage-system.prompt')
-        return self.product_documentation
+        # force fetch on startup to make sure we have a functional version at all
+        self.product_documentation = get_file('prompts/product-usage-system.prompt')
 
     def get_chunkable_input(self) -> str:
         return 'code'
@@ -55,6 +51,10 @@ class ChatProcessor(GenericProcessor):
         } if code is not None else {'query': query}
 
         # insert the product docs into the chat processor contexts
+
+        # refresh the product documentation if it's changed
+        self.product_documentation = get_file('prompts/product-usage-system.prompt')
+
         self.insert_context(data, {
             'type': 'related',
             'data': f'Boost Product Documentation is:\n\n{self.get_product_documentation()}',
