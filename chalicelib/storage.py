@@ -30,21 +30,24 @@ def get_file(filename) -> str:
             # first read the file cache
             cached_file_contents = file_contents_cache.get(filename)
             if cached_file_contents is not None:
+
+                # if the file has changed, then we need to reload it
                 if cached_file_contents['time'] != timestamp:
-                    # if the file has changed, then we need to reload it
                     print(f"Local File {filename} has changed, reloading.")
+
+                # if the file hasn't changed, then we can just return the cached contents
                 else:
-                    # if the file hasn't changed, then we can just return the cached contents
-                    print(f"Local File {filename} has not changed, returning cached contents.")
+                    if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+                        print(f"Local File {filename} has not changed, returning cached contents.")
                     return cached_file_contents['contents']
 
-            print(f"Looking Locally for file: {filename} in {fullLocalPath}")
+            print(f"Found Local file: {os.path.join(LOCAL_BASE_FOLDER, filename)}")
             with open(fullLocalPath, 'r') as f:
 
                 file_content = f.read()
 
                 break
-        elif file_exists_in_s3(s3_storage_bucket_name, os.path.join(stage, filename)):
+        elif file_exists_in_s3(s3_storage_bucket_name, os.path.join(stage, filename), stage):
             print(f"Retrieving S3 file: {filename} in {stage}")
             s3 = boto3.client('s3')
 
@@ -55,12 +58,15 @@ def get_file(filename) -> str:
             # first read the file cache
             cached_file_contents = file_contents_cache.get(filename)
             if cached_file_contents is not None:
+
+                # if the file has changed, then we need to reload it
                 if cached_file_contents['time'] != timestamp:
-                    # if the file has changed, then we need to reload it
                     print(f"S3 File {filename} has changed, reloading.")
+
+                # if the file hasn't changed, then we can just return the cached contents
                 else:
-                    # if the file hasn't changed, then we can just return the cached contents
-                    print(f"S3 File {filename} has not changed, returning cached contents.")
+                    if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+                        print(f"S3 File {filename} has not changed, returning cached contents.")
                     return cached_file_contents['contents']
 
             file_content = s3_object['Body'].read().decode('utf-8')
@@ -75,7 +81,11 @@ def get_file(filename) -> str:
         "time": timestamp
     }
     timestamp_pretty = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-    print(f"File contents cached for {filename} - time: {timestamp_pretty}")
+
+    # if performing deployment, don't print cache messages
+    if 'AWS_CHALICE_CLI_MODE' not in os.environ:
+        print(f"File contents cached for {filename} - time: {timestamp_pretty}")
+
     return file_content
 
 
@@ -90,19 +100,25 @@ def get_file_time(filename):
         raise FileNotFoundError(f"File {filename} not found in cache.")
 
 
-def file_exists_in_s3(bucket_name, key_name):
+def file_exists_in_s3(bucket_name, key_name, stage=None):
     s3 = boto3.client('s3')
 
     try:
         # This only retrieves metadata and doesn't download the object
         s3.head_object(Bucket=bucket_name, Key=key_name)
-        print(f"File found in S3: {key_name}")
+        print(f" File found in S3: {key_name}")
         return True
     except ClientError as e:
         # If a client error is thrown, then check that it was a 404 error.
         # If it was a 404 error, then the object does not exist.
         if e.response['Error']['Code'] == '404':
-            print(f"File not found in S3: {key_name}")
+            # if we're doing chalice deployment and we're in the target stage
+            #       then warn admin that the file is missing
+            if 'AWS_CHALICE_CLI_MODE' in os.environ:
+                if os.environ.get("CHALICE_STAGE") == stage:
+                    print(f"WARNING: File not found in S3 stage: {key_name}")
+            else:
+                print(f"File not found in S3: {key_name}")
             return False
         else:
             # If it was a different error, then raise the error
