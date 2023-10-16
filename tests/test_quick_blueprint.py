@@ -2,6 +2,7 @@ from chalice.test import Client
 from app import app
 import json
 import random
+import os
 
 from .test_utils import warn
 
@@ -19,6 +20,9 @@ use_simulated_service_responses = False
 
 def test_quick_blueprint():
     with Client(app) as client:
+
+        # set the CHALICE_STAGE to dev so that we can test Cloud-based files
+        os.environ['CHALICE_STAGE'] = 'dev'
 
         realProjectFiles = ['src/extension.ts',
                             'src/test/runTest.ts',
