@@ -47,7 +47,7 @@ def get_file(filename) -> str:
             print(f"Found Local file: {os.path.join(LOCAL_BASE_FOLDER, filename)}")
             break
 
-        elif file_exists_in_s3(s3_storage_bucket_name, os.path.join(stage, filename), stage):
+        elif file_exists_in_s3(s3_storage_bucket_name, filename, stage):
             print(f"Retrieving S3 file: {filename} in {stage}")
             s3 = boto3.client('s3')
 
@@ -103,26 +103,23 @@ def get_file_time(filename):
 def file_exists_in_s3(bucket_name, key_name, stage=None):
     s3 = boto3.client('s3')
 
-    try:
-        # This only retrieves metadata and doesn't download the object
-        s3.head_object(Bucket=bucket_name, Key=key_name)
+    response = s3.list_objects_v2(
+        Bucket=bucket_name,
+        Prefix=key_name if stage is None else os.path.join(stage, key_name)
+    )
+
+    if response.get('KeyCount') > 0:
         print(f" File found in S3: {key_name}")
         return True
-    except ClientError as e:
-        # If a client error is thrown, then check that it was a 404 error.
-        # If it was a 404 error, then the object does not exist.
-        if e.response['Error']['Code'] == '404':
-            # if we're doing chalice deployment and we're in the target stage
-            #       then warn admin that the file is missing
-            if 'AWS_CHALICE_CLI_MODE' in os.environ:
-                if os.environ.get("CHALICE_STAGE") == stage:
-                    print(f"WARNING: File not found in S3 stage: {key_name}")
-            else:
-                print(f"File not found in S3: {key_name}")
-            return False
+    else:
+        # if we're doing chalice deployment and we're in the target stage
+        #       then warn admin that the file is missing
+        if 'AWS_CHALICE_CLI_MODE' in os.environ:
+            if os.environ.get("CHALICE_STAGE") == stage:
+                print(f"WARNING: File not found in S3 stage: {key_name}")
         else:
-            # If it was a different error, then raise the error
-            raise
+            print(f"File not found in S3: {key_name}")
+        return False
 
 
 def search_storage(prefix, pattern=None) -> list:

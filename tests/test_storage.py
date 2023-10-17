@@ -72,27 +72,18 @@ def test_get_file_from_local(mock_exists_in_s3, mock_path_gettime, mock_open):
 @patch('boto3.client')
 def test_file_exists_in_s3_true(mock_client):
     s3_mock = Mock()
-    s3_mock.head_object.return_value = True
+    # Mock the response for list_objects_v2 indicating the object exists
+    s3_mock.list_objects_v2.return_value = {'KeyCount': 1}
     mock_client.return_value = s3_mock
 
     assert chalicelib.storage.file_exists_in_s3("test_bucket", "sample.txt") is True
 
 
-def mocked_client_error(*args, **kwargs):
-    error_response = {
-        'Error': {
-            'Code': '404',
-            'Message': 'Not Found'
-        }
-    }
-    raise ClientError(error_response, 'HeadObject')
-
-
 @patch('boto3.client')
 def test_file_exists_in_s3_false(mock_client):
-
     s3_mock = Mock()
-    s3_mock.head_object.side_effect = mocked_client_error
+    # Mock the response for list_objects_v2 indicating the object does not exist
+    s3_mock.list_objects_v2.return_value = {'KeyCount': 0}
     mock_client.return_value = s3_mock
 
     assert chalicelib.storage.file_exists_in_s3(chalicelib.storage.s3_storage_bucket_name, "non_existent_file.txt") is False
