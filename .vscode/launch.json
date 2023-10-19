@@ -76,6 +76,19 @@
           "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
         "justMyCode": true
+    },
+    {
+        "name": "Shrink Project Data",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/client/shrink_project_data.py",
+        "args": [
+            "/Users/stephenfisher/development/github-vs-boost/vs-boost/.boost/vs-boost.boost-project",
+            "shrunk.json"
+          ],
+          "cwd": "${workspaceFolder}",
+        "console": "integratedTerminal",
+        "justMyCode": true
     }
     ]
 }
