@@ -13,13 +13,17 @@ LOCAL_BASE_FOLDER = 'chalicelib'
 SEARCH_STAGES = ['dev', 'test', 'staging', 'prod', 'local']
 
 
-def log(message):
+def log(message, debug=False):
     # if we're running in chalice cmd line (e.g. deployment), don't log
     if 'AWS_CHALICE_CLI_MODE' in os.environ:
         return
 
     # if we're running in prod, only log when debug messages are enabled
     if 'prod' in os.environ.get("CHALICE_STAGE", "") and os.environ.get("LOG_LEVEL", "info") != "debug":
+        return
+
+    # if logging is not in debug mode, only log debug messages
+    if debug and os.environ.get("LOG_LEVEL", "info") != "debug":
         return
 
     print(f"STORAGE: {message}")
@@ -95,7 +99,7 @@ def get_file(filename) -> str:
     }
     timestamp_pretty = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
-    log(f"File contents cached for {filename} - time: {timestamp_pretty}")
+    log(f"File contents cached for {filename} - time: {timestamp_pretty}", True)
 
     return file_content
 
