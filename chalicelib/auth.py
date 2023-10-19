@@ -313,7 +313,7 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
 
 def clean_account(account, email=None, organization=None):
     # if we are in an extreme error path without account info
-    #   then return unknown for statu and email
+    #   then return unknown for status and email
     if (account is None):
         return {
             'enabled': False,
