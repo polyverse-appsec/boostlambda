@@ -57,7 +57,7 @@ class ChatProcessor(GenericProcessor):
 
         self.insert_context(data, {
             'type': 'related',
-            'data': f'Boost Product Documentation is:\n\n{self.product_documentation()}',
+            'data': f'Boost Product Documentation is:\n\n{self.product_documentation}',
             'name': 'productDocumentation'
         })
 

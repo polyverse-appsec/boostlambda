@@ -48,8 +48,7 @@ def get_file(filename) -> str:
 
                 # if the file hasn't changed, then we can just return the cached contents
                 else:
-                    if 'AWS_CHALICE_CLI_MODE' not in os.environ:
-                        log(f"Local File {filename} has not changed, returning cached contents.")
+                    log(f"Local File {filename} has not changed, returning cached contents.")
                     return cached_file_contents['contents']
 
             with open(fullLocalPath, 'r') as f:
@@ -76,8 +75,7 @@ def get_file(filename) -> str:
 
                 # if the file hasn't changed, then we can just return the cached contents
                 else:
-                    if 'AWS_CHALICE_CLI_MODE' not in os.environ:
-                        log(f"S3 File {filename} has not changed, returning cached contents.")
+                    log(f"S3 File {filename} has not changed, returning cached contents.")
                     return cached_file_contents['contents']
 
             file_content = s3_object['Body'].read().decode('utf-8')
@@ -94,8 +92,7 @@ def get_file(filename) -> str:
     timestamp_pretty = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
     # if performing deployment, don't print cache messages
-    if 'AWS_CHALICE_CLI_MODE' not in os.environ:
-        log(f"File contents cached for {filename} - time: {timestamp_pretty}")
+    log(f"File contents cached for {filename} - time: {timestamp_pretty}")
 
     return file_content
 
