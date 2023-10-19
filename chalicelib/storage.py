@@ -28,6 +28,10 @@ def log(message):
 def get_file(filename) -> str:
     CHALICE_STAGE = os.environ.get("CHALICE_STAGE", "local")
 
+    # use local storage only if we're running in chalice cmd line (e.g. deployment)
+    if "AWS_CHALICE_CLI_MODE" in os.environ:
+        CHALICE_STAGE = "local"
+
     # Find where to start searching based on the CHALICE_STAGE
     start_index = SEARCH_STAGES.index(CHALICE_STAGE)
 
