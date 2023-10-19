@@ -117,12 +117,13 @@ def test_update_usage():
     subscription_item = check_create_subscription_item(subscription=subscription, email=email)
 
     # Call the updateUsage function with the test inputs
-    result = update_usage(subscription_item=subscription_item, bytes=1000)
+    cost = update_usage(subscription_item=subscription_item, bytes=1000)
 
-    # Assert that the result is a customer object
-    assert result is not None
+    # Assert that we captured revenue
+    assert cost != 0
+
     # Assert that there is a customer id
-    assert result.id is not None
+    assert customer.id is not None
 
 
 # now test usage with a large amount to make sure we get charged the right amount
@@ -150,22 +151,22 @@ def test_update_usage_large():
     assert account_status['enabled'] is True
     assert account_status['status'] == 'active'
     # Call the updateUsage function with the test inputs
-    result = update_usage(subscription_item=subscription_item, bytes=oneDollarInData)  # small amount of data
+    cost = update_usage(subscription_item=subscription_item, bytes=oneDollarInData)  # small amount of data
 
     # now check that we correctly flag the customer as in a trial
     account_status = check_customer_account_status(customer=customer)
     assert account_status['enabled'] is True
     assert account_status['status'] == 'trial'
     # Call the updateUsage function with the test inputs
-    result = update_usage(subscription_item=subscription_item, bytes=trialNinetyNineDollars)
+    cost = update_usage(subscription_item=subscription_item, bytes=trialNinetyNineDollars)
 
-    # Assert that the result is a customer object
-    assert result is not None
-    # Assert that there is a customer id
-    assert result.id is not None
+    # Assert that the result is revenue
+    assert cost != 0
+    # Assert that there is a cost object id
+    assert subscription_item.id is not None
 
     # Add a bit more data to go over the trial limit, and require credit card
-    result = update_usage(subscription_item=subscription_item, bytes=oneDollarInData)  # small amount of data
+    cost = update_usage(subscription_item=subscription_item, bytes=oneDollarInData)  # small amount of data
 
     # now get the current balance from the customer.  we should look up the customer id again to get the latest
     customer = stripe.Customer.retrieve(customer.id)

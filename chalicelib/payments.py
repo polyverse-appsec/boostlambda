@@ -13,6 +13,7 @@ from chalicelib.telemetry import capture_metric, InfoMetrics
 from . import pvsecret
 from chalicelib.alert import notify_new_customer, notify_customer_first_usage
 from chalicelib.log import mins_and_secs
+from chalicelib.usage import boost_cost_per_kb
 
 customerportal_api_version = API_VERSION  # API version is global for now, not service specific
 print("customerportal_api_version: ", customerportal_api_version)
@@ -226,13 +227,16 @@ def update_usage(subscription_item, bytes):
     usage = math.ceil(bytes / 1024)
     idempotency_key = str(uuid.uuid4())
 
+    # calculate the cost
+    cost = usage * boost_cost_per_kb
+
     # update the usage
     stripe_retry(stripe.SubscriptionItem.create_usage_record,
                  subscription_item.id,
                  quantity=usage,
                  idempotency_key=idempotency_key
                  )
-    return subscription_item
+    return cost
 
 
 def update_usage_for_text(account, bytes_of_text, usage_type):
@@ -240,7 +244,10 @@ def update_usage_for_text(account, bytes_of_text, usage_type):
     subscription_item = account['subscription_item']
 
     # update the usage
-    update_usage(subscription_item, bytes_of_text)
+    cost = update_usage(subscription_item, bytes_of_text)
+
+    # store the operation cost for the caller
+    account['operation_cost'] = cost
 
     # if we have 0.0 usage, and tracking usage, then notify of first usage
     if 'usage_this_month' in account and account['usage_this_month'] == 0.0:

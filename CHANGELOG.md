@@ -11,6 +11,7 @@ Polyverse Boost Cloud Service
 ### Enhancements
 - Faster Lambda function initialization by excluding all other functions from initializing
 - Less storage logging
+- Return cost of the API call in account data:operation_cost
 
 ### Bug Fixes
 - N/A
