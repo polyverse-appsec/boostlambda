@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 1.0.0: October 18th, 2023
+## Version 1.0.0: October 19th, 2023
 
 ### New Features
 - N/A
@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - Update to Storage wrapper file existence check to avoid triggering exceptiosn on non-existent files
 
 ### Bug Fixes
-- N/A
+- Fix Chat failure with product documentation injection
 
 
 ## Version 0.9.9: October 15th, 2023
