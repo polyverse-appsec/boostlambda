@@ -1,7 +1,6 @@
 import boto3
 import os
 from datetime import datetime
-from botocore.exceptions import ClientError
 import fnmatch
 import glob
 
@@ -12,6 +11,18 @@ s3_storage_bucket_name = "polyverse-boost"
 LOCAL_BASE_FOLDER = 'chalicelib'
 
 SEARCH_STAGES = ['dev', 'test', 'staging', 'prod', 'local']
+
+
+def log(message):
+    # if we're running in chalice cmd line (e.g. deployment), don't log
+    if 'AWS_CHALICE_CLI_MODE' in os.environ:
+        return
+
+    # if we're running in prod, only log when debug messages are enabled
+    if 'prod' in os.environ.get("CHALICE_STAGE", "") and os.environ.get("LOG_LEVEL", "info") != "debug":
+        return
+
+    print(f"STORAGE: {message}")
 
 
 def get_file(filename) -> str:
@@ -33,18 +44,18 @@ def get_file(filename) -> str:
 
                 # if the file has changed, then we need to reload it
                 if cached_file_contents['time'] != timestamp:
-                    print(f"Local File {filename} has changed, reloading.")
+                    log(f"Local File {filename} has changed, reloading.")
 
                 # if the file hasn't changed, then we can just return the cached contents
                 else:
                     if 'AWS_CHALICE_CLI_MODE' not in os.environ:
-                        print(f"Local File {filename} has not changed, returning cached contents.")
+                        log(f"Local File {filename} has not changed, returning cached contents.")
                     return cached_file_contents['contents']
 
             with open(fullLocalPath, 'r') as f:
                 file_content = f.read()
 
-            print(f"Found Local file: {os.path.join(LOCAL_BASE_FOLDER, filename)}")
+            log(f"Found Local file: {os.path.join(LOCAL_BASE_FOLDER, filename)}")
             break
 
         elif file_exists_in_s3(s3_storage_bucket_name, filename, stage):
@@ -61,12 +72,12 @@ def get_file(filename) -> str:
 
                 # if the file has changed, then we need to reload it
                 if cached_file_contents['time'] != timestamp:
-                    print(f"S3 File {filename} has changed, reloading.")
+                    log(f"S3 File {filename} has changed, reloading.")
 
                 # if the file hasn't changed, then we can just return the cached contents
                 else:
                     if 'AWS_CHALICE_CLI_MODE' not in os.environ:
-                        print(f"S3 File {filename} has not changed, returning cached contents.")
+                        log(f"S3 File {filename} has not changed, returning cached contents.")
                     return cached_file_contents['contents']
 
             file_content = s3_object['Body'].read().decode('utf-8')
@@ -84,7 +95,7 @@ def get_file(filename) -> str:
 
     # if performing deployment, don't print cache messages
     if 'AWS_CHALICE_CLI_MODE' not in os.environ:
-        print(f"File contents cached for {filename} - time: {timestamp_pretty}")
+        log(f"File contents cached for {filename} - time: {timestamp_pretty}")
 
     return file_content
 
@@ -109,16 +120,16 @@ def file_exists_in_s3(bucket_name, key_name, stage=None):
     )
 
     if response.get('KeyCount') > 0:
-        print(f" File found in S3: {key_name}")
+        log(f" File found in S3: {key_name}")
         return True
     else:
         # if we're doing chalice deployment and we're in the target stage
         #       then warn admin that the file is missing
         if 'AWS_CHALICE_CLI_MODE' in os.environ:
             if os.environ.get("CHALICE_STAGE") == stage:
-                print(f"WARNING: File not found in S3 stage: {key_name}")
+                log(f"WARNING: File not found in S3 stage: {key_name}")
         else:
-            print(f"File not found in S3: {key_name}")
+            log(f"File not found in S3: {key_name}")
         return False
 
 

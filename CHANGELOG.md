@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Update to Storage wrapper file existence check to avoid triggering exceptiosn on non-existent files
+- Enable storage logging on non-Production service stages only, unless LogLevel=DEBUG environment variable is set
 
 ### Bug Fixes
 - Fix Chat failure with product documentation injection
