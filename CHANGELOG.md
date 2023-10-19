@@ -3,6 +3,18 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 1.0.1: October 20th, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- Faster Lambda function initialization by excluding all other functions from initializing
+- Less storage logging
+
+### Bug Fixes
+- N/A
+
 ## Version 1.0.0: October 19th, 2023
 
 ### New Features

@@ -45,187 +45,142 @@ app = Chalice(app_name='boost')
 # app.log.debug("This is a debug statement")
 # app.log.error("This is an error statement")
 
-flowDiagramProcessor = FlowDiagramProcessor()
-
 
 @app.lambda_function(name='flowdiagram')
 def flowdiagram(event, _):
+    flowDiagramProcessor = FlowDiagramProcessor()
     return process_request(event, flowDiagramProcessor.flowdiagram_code, flowDiagramProcessor.api_version)
-
-
-summarizeProcessor = SummarizeProcessor()
 
 
 @app.lambda_function(name='summarize')
 def summarize(event, _):
+    summarizeProcessor = SummarizeProcessor()
     return process_request(event, summarizeProcessor.summarize_inputs, summarizeProcessor.api_version)
-
-
-explainProcessor = ExplainProcessor()
 
 
 @app.lambda_function(name='explain')
 def explain(event, _):
+    explainProcessor = ExplainProcessor()
     return process_request(event, explainProcessor.explain_code, explainProcessor.api_version)
-
-
-generateProcessor = GenerateProcessor()
 
 
 @app.lambda_function(name='generate')
 def generate(event, _):
+    generateProcessor = GenerateProcessor()
     return process_request(event, generateProcessor.convert_code, generateProcessor.api_version)
-
-
-convertCodeFunctionProcessor = ConvertCodeFunctionProcessor()
 
 
 @app.lambda_function(name='convert_code')
 def convert_code(event, context):
+    convertCodeFunctionProcessor = ConvertCodeFunctionProcessor()
     return process_request(event, convertCodeFunctionProcessor.convert_code, convertCodeFunctionProcessor.api_version)
-
-
-compareCodeProcessor = CompareCodeProcessor()
 
 
 @app.lambda_function(name='compare_code')
 def compare_code(event, _):
+    compareCodeProcessor = CompareCodeProcessor()
     return process_request(event, compareCodeProcessor.compare_code, compareCodeProcessor.api_version)
-
-
-testGeneratorProcessor = TestGeneratorProcessor()
 
 
 @app.lambda_function(name='testgen')
 def testgen(event, _):
+    testGeneratorProcessor = TestGeneratorProcessor()
     return process_request(event, testGeneratorProcessor.testgen_code, testGeneratorProcessor.api_version)
-
-
-analyzeProcessor = AnalyzeProcessor()
 
 
 @app.lambda_function(name='analyze')
 def analyze(event, _):
+    analyzeProcessor = AnalyzeProcessor()
     return process_request(event, analyzeProcessor.analyze_code, analyzeProcessor.api_version)
-
-
-securityFunctionProcessor = SecurityFunctionProcessor()
 
 
 @app.lambda_function(name='analyze_function')
 def analyze_function(event, _):
+    securityFunctionProcessor = SecurityFunctionProcessor()
     return process_request(event, securityFunctionProcessor.secure_code, securityFunctionProcessor.api_version)
-
-
-complianceProcessor = ComplianceProcessor()
 
 
 @app.lambda_function(name='compliance')
 def compliance(event, context):
+    complianceProcessor = ComplianceProcessor()
     return process_request(event, complianceProcessor.compliance_code, complianceProcessor.api_version)
-
-
-complianceFunctionProcessor = ComplianceFunctionProcessor()
-
+    
 
 @app.lambda_function(name='compliance_function')
 def compliance_function(event, _):
+    complianceFunctionProcessor = ComplianceFunctionProcessor()
     return process_request(event, complianceFunctionProcessor.check_compliance, complianceFunctionProcessor.api_version)
-
-
-codeguidelinesProcessor = CodingGuidelinesProcessor()
 
 
 @app.lambda_function(name='codeguidelines')
 def codeguidelines(event, context):
+    codeguidelinesProcessor = CodingGuidelinesProcessor()
     return process_request(event, codeguidelinesProcessor.checkguidelines_code, codeguidelinesProcessor.api_version)
-
-
-performanceProcessor = PerformanceProcessor()
 
 
 @app.lambda_function(name='performance')
 def performance(event, context):
+    performanceProcessor = PerformanceProcessor()
     return process_request(event, performanceProcessor.check_performance, performanceProcessor.api_version)
-
-
-performanceFunctionProcessor = PerformanceFunctionProcessor()
 
 
 @app.lambda_function(name='performance_function')
 def performance_function(event, context):
+    performanceFunctionProcessor = PerformanceFunctionProcessor()
     return process_request(event, performanceFunctionProcessor.check_performance, performanceFunctionProcessor.api_version)
-
-
-customScanFunctionProcessor = CustomScanFunctionProcessor()
 
 
 @app.lambda_function(name='customscan_function')
 def customscan_function(event, context):
+    customScanFunctionProcessor = CustomScanFunctionProcessor()
     return process_request(event, customScanFunctionProcessor.custom_scan, customScanFunctionProcessor.api_version)
-
-
-blueprintProcessor = BlueprintProcessor()
 
 
 @app.lambda_function(name='blueprint')
 def blueprint(event, context):
+    blueprintProcessor = BlueprintProcessor()
     return process_request(event, blueprintProcessor.blueprint_code, blueprintProcessor.api_version)
-
-
-quickBlueprintProcessor = QuickBlueprintProcessor()
 
 
 @app.lambda_function(name='quick-blueprint')
 def quick_blueprint(event, context):
+    quickBlueprintProcessor = QuickBlueprintProcessor()
     return process_request(event, quickBlueprintProcessor.quick_blueprint, quickBlueprintProcessor.api_version)
-
-
-quickSummaryProcessor = QuickSummaryProcessor()
 
 
 @app.lambda_function(name='quick-summary')
 def quick_summary(event, context):
+    quickSummaryProcessor = QuickSummaryProcessor()
     return process_request(event, quickSummaryProcessor.quick_summary, quickSummaryProcessor.api_version)
-
-
-draftBlueprintFunctionProcessor = DraftBlueprintFunctionProcessor()
 
 
 @app.lambda_function(name='draft-blueprint')
 def draft_blueprint(event, context):
+    draftBlueprintFunctionProcessor = DraftBlueprintFunctionProcessor()
     return process_request(event, draftBlueprintFunctionProcessor.draft_blueprint, draftBlueprintFunctionProcessor.api_version)
-
-
-chatProcessor = ChatProcessor()
 
 
 @app.lambda_function(name='chat')
 def chatprocess(event, _):
+    chatProcessor = ChatProcessor()
     return process_request(event, chatProcessor.process_chat, chatProcessor.api_version)
-
-
-chatDriverFunctionProcessor = ChatDriverFunctionProcessor()
 
 
 @app.lambda_function(name='chat_driver')
 def chat_driver(event, _):
+    chatDriverFunctionProcessor = ChatDriverFunctionProcessor()
     return process_request(event, chatDriverFunctionProcessor.chat_driver, chatDriverFunctionProcessor.api_version)
-
-
-uiDriverFunctionProcessor = UIDriverFunctionProcessor()
 
 
 @app.lambda_function(name='ui_driver')
 def ui_driver(event, _):
+    uiDriverFunctionProcessor = UIDriverFunctionProcessor()
     return process_request(event, uiDriverFunctionProcessor.ui_driver, uiDriverFunctionProcessor.api_version)
-
-
-customProcessor = CustomProcessor()
 
 
 @app.lambda_function(name='customprocess')
 def customprocess(event, _):
+    customProcessor = CustomProcessor()
     return process_request(event, customProcessor.customprocess_code, customProcessor.api_version)
 
 
