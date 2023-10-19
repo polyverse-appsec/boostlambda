@@ -62,7 +62,7 @@ def get_file(filename) -> str:
             break
 
         elif file_exists_in_s3(s3_storage_bucket_name, filename, stage):
-            print(f"Retrieving S3 file: {filename} in {stage}")
+            log(f"Found S3({stage if stage is not None else 'any'}) file: {filename}")
             s3 = boto3.client('s3')
 
             s3_object = s3.get_object(Bucket=s3_storage_bucket_name, Key=os.path.join(stage, filename))
@@ -95,7 +95,6 @@ def get_file(filename) -> str:
     }
     timestamp_pretty = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
-    # if performing deployment, don't print cache messages
     log(f"File contents cached for {filename} - time: {timestamp_pretty}")
 
     return file_content
@@ -121,16 +120,18 @@ def file_exists_in_s3(bucket_name, key_name, stage=None):
     )
 
     if response.get('KeyCount') > 0:
-        log(f" File found in S3: {key_name}")
+        log(f" File found in S3({stage if stage is not None else 'any'}): {key_name}")
         return True
     else:
         # if we're doing chalice deployment and we're in the target stage
         #       then warn admin that the file is missing
-        if 'AWS_CHALICE_CLI_MODE' in os.environ:
-            if os.environ.get("CHALICE_STAGE") == stage:
-                log(f"WARNING: File not found in S3 stage: {key_name}")
-        else:
-            log(f"File not found in S3: {key_name}")
+        logMsg = f"File not found in S3({stage if stage is not None else 'any'}): {key_name}"
+        if os.environ.get("CHALICE_STAGE") == stage:
+            if 'AWS_CHALICE_CLI_MODE' in os.environ:
+                log(f"WARNING: {logMsg}")
+            else:
+                log(logMsg)
+
         return False
 
 
