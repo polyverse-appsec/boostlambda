@@ -13,8 +13,8 @@ class ChatProcessor(GenericProcessor):
             ['main', 'chat.prompt'],
             ['system', 'chat-role-system.prompt']],
             None,
-            {'model': OpenAIDefaults.boost_default_gpt_model,
-             'temperature': OpenAIDefaults.temperature_medium_with_explanation},
+            {'model': OpenAIDefaults.boost_model_cheap_fast_generic,
+             'temperature': OpenAIDefaults.temperature_terse_and_accurate},
             AnalysisOutputFormat.prose, [
                 AnalysisOutputFormat.bulletedList,
                 AnalysisOutputFormat.rankedList,

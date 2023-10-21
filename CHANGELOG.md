@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 1.1.0: October 21st, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- Faster Chat responses (3.5 model, terse temperature)
+
+### Bug Fixes
+- N/A
+
 ## Version 1.0.1: October 20th, 2023
 
 ### New Features
