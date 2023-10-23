@@ -253,6 +253,8 @@ def update_usage_for_text(account, bytes_of_text, usage_type):
     if 'usage_this_month' in account and account['usage_this_month'] == 0.0:
         notify_customer_first_usage(account['email'], account['org'], usage_type)
 
+    return cost
+
 
 # Check if the customer has a non-zero balance and if they do NOT have a payment method
 # in this case, we know their trial has expired.

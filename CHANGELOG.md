@@ -11,6 +11,9 @@ Polyverse Boost Cloud Service
 ### Enhancements
 - Faster Chat responses (3.5 model, terse temperature)
 - Split out prompt user and background message content sizes for telemetry reporting
+- Update billed/charged usage to use user prompt messages, instead of raw input (e.g. avoid charging for truncated data or background data)
+- Allow customization of billed/charged usage cost model per operation in each processor
+- Charged Usage cost is reported to console and CloudWatch metrics
 
 ### Bug Fixes
 - Ensure API operation cost is returned in operations (bypassing account info cleaning)

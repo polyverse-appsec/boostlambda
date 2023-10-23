@@ -12,6 +12,7 @@ import json
 from typing import List, Tuple, Dict, Any
 import re
 import datetime
+from collections import namedtuple
 
 from chalice import UnprocessableEntityError
 
@@ -1101,6 +1102,25 @@ class GenericProcessor:
     def get_call_timeout_settings(self, data) -> Tuple[float, float, float]:
         return max_timeout_seconds_for_single_openai_call_default, max_timeout_seconds_for_all_openai_calls_default, total_analysis_time_buffer_default
 
+    BillingMetrics = namedtuple('BillingMetrics', [
+        'user_input_size',
+        'output_size',
+        'user_messages_size',
+        'openai_input_cost',
+        'openai_output_cost',
+        'boost_cost',
+        'openai_input_tokens',
+        'openai_customerinput_tokens',
+        'openai_output_tokens',
+        'openai_tokens'
+    ])
+
+    def report_usage_cost(self,
+                          account, function_name,
+                          billing_metrics: BillingMetrics):
+
+        return update_usage_for_text(account, billing_metrics.user_messages_size + billing_metrics.output_size, function_name)
+
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
 
         # enable new throttler by default unless disabled in environment variable
@@ -1396,10 +1416,38 @@ class GenericProcessor:
                 openai_tokens = openai_input_tokens + openai_output_tokens
                 openai_cost = openai_input_cost + openai_output_cost
 
+                billed_cost = 0
+
                 try:
                     if success:
-                        # update the billing usage for this analysis (charge for input + output) as long as analysis is successful
-                        update_usage_for_text(account, user_input_size + output_size, function_name)
+                        billing_metrics = self.BillingMetrics(
+                            user_input_size=user_input_size,
+                            output_size=output_size,
+                            user_messages_size=user_messages_size,
+                            openai_input_cost=openai_input_cost,
+                            openai_output_cost=openai_output_cost,
+                            boost_cost=boost_cost,
+                            openai_input_tokens=openai_input_tokens,
+                            openai_customerinput_tokens=openai_customerinput_tokens,
+                            openai_output_tokens=openai_output_tokens,
+                        )
+
+                        # update the billing usage for this analysis (charge for input + output)
+                        #
+                        # We only charge for at least some successful analysis
+                        #
+                        # note that currently, if there is a partially successful analysis, we still charge for the full user
+                        #     message input, since we don't know how much of the user input was actually used
+                        #
+                        # Also, the original user input potentially includes a large amount of training and background data, and we
+                        #   may truncate, chunk, or transform the user input further - we're going to charge based on the actual user
+                        #   message content (and the final output)
+                        # Note that this excludes background message data - usually training and system data - some of which is built from
+                        #   user input. But this is a reasonable tradeoff, since the core of the user action is the actual user message
+                        #
+                        # This can all be overridden per processor
+                        billed_cost = self.report_usage_cost(account, function_name,
+                                                             billing_metrics)
                 except Exception:
                     success = False
                     exception_info = traceback.format_exc().replace('\n', ' ')
@@ -1419,6 +1467,7 @@ class GenericProcessor:
                                {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_COST, 'value': round(openai_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.BOOST_CHARGED_USAGE, 'value': round(billed_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.LOST_BOOST_COST, 'value': round(boost_lost_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_INPUT_TOKENS, 'value': openai_input_tokens, 'unit': 'Count'},
                                {'name': CostMetrics.OPENAI_CUSTOMERINPUT_TOKENS, 'value': openai_customerinput_tokens, 'unit': 'Count'},
