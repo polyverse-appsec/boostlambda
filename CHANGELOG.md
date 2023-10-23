@@ -14,6 +14,7 @@ Polyverse Boost Cloud Service
 - Update billed/charged usage to use user prompt messages, instead of raw input (e.g. avoid charging for truncated data or background data)
 - Allow customization of billed/charged usage cost model per operation in each processor
 - Charged Usage cost is reported to console and CloudWatch metrics
+- Operational margin (for OpenAI) is reported to console and CloudWatch metrics
 
 ### Bug Fixes
 - Ensure API operation cost is returned in operations (bypassing account info cleaning)

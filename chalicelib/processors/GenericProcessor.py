@@ -24,7 +24,6 @@ from chalicelib.usage import (
     get_openai_usage_per_token,
     get_openai_usage_per_string,
     max_tokens_for_model,
-    get_boost_cost,
     OpenAIDefaults,
     num_tokens_from_string,
     decode_string_from_input,
@@ -1117,9 +1116,10 @@ class GenericProcessor:
 
     def report_usage_cost(self,
                           account, function_name,
+                          success,
                           billing_metrics: BillingMetrics):
 
-        return update_usage_for_text(account, billing_metrics.user_messages_size + billing_metrics.output_size, function_name)
+        return update_usage_for_text(account, billing_metrics.user_messages_size + billing_metrics.output_size, function_name, success)
 
     def process_input(self, data, account, function_name, correlation_id, prompt_format_args) -> dict:
 
@@ -1407,54 +1407,77 @@ class GenericProcessor:
                 # Get the cost of the outputs and prior inputs - so we have visibiity into our cost per user API
                 output_size = len(result) if result is not None else 0
 
-                boost_cost_overall = get_boost_cost(user_input_size + output_size)
-                boost_cost = boost_cost_overall if success else 0
-                boost_lost_cost = total_incompletions + (boost_cost_overall if not success else 0)
-
                 openai_output_tokens, openai_output_cost = get_openai_usage_per_token(
                     sum([r['output_tokens'] for r in results]), False, data.get('model')) if results is not None else (0, 0)
                 openai_tokens = openai_input_tokens + openai_output_tokens
                 openai_cost = openai_input_cost + openai_output_cost
 
-                billed_cost = 0
+                billed_cost = 0.0
+
+                boostAiCostMargin = 0.0
+
+                # current Boost operating costs are only calculated based on OpenAI - excluding AWS
+                #   This is wildly misleading - but not yet implemented
+                boost_cost = openai_cost
+
+                # default in case of billing failure
+                boost_lost_cost = boost_cost
 
                 try:
-                    if success:
-                        billing_metrics = self.BillingMetrics(
-                            user_input_size=user_input_size,
-                            output_size=output_size,
-                            user_messages_size=user_messages_size,
-                            openai_input_cost=openai_input_cost,
-                            openai_output_cost=openai_output_cost,
-                            boost_cost=boost_cost,
-                            openai_input_tokens=openai_input_tokens,
-                            openai_customerinput_tokens=openai_customerinput_tokens,
-                            openai_output_tokens=openai_output_tokens,
-                        )
+                    billing_metrics = self.BillingMetrics(
+                        user_input_size=user_input_size,
+                        output_size=output_size,
+                        user_messages_size=user_messages_size,
+                        openai_input_cost=openai_input_cost,
+                        openai_output_cost=openai_output_cost,
+                        boost_cost=boost_cost,
+                        openai_input_tokens=openai_input_tokens,
+                        openai_customerinput_tokens=openai_customerinput_tokens,
+                        openai_output_tokens=openai_output_tokens,
+                        openai_tokens=openai_tokens
+                    )
 
-                        # update the billing usage for this analysis (charge for input + output)
-                        #
-                        # We only charge for at least some successful analysis
-                        #
-                        # note that currently, if there is a partially successful analysis, we still charge for the full user
-                        #     message input, since we don't know how much of the user input was actually used
-                        #
-                        # Also, the original user input potentially includes a large amount of training and background data, and we
-                        #   may truncate, chunk, or transform the user input further - we're going to charge based on the actual user
-                        #   message content (and the final output)
-                        # Note that this excludes background message data - usually training and system data - some of which is built from
-                        #   user input. But this is a reasonable tradeoff, since the core of the user action is the actual user message
-                        #
-                        # This can all be overridden per processor
-                        billed_cost = self.report_usage_cost(account, function_name,
-                                                             billing_metrics)
+                    # update the billing usage for this analysis (charge for input + output)
+                    #
+                    # We only charge for at least some successful analysis
+                    #
+                    # note that currently, if there is a partially successful analysis, we still charge for the full user
+                    #     message input, since we don't know how much of the user input was actually used
+                    #
+                    # Also, the original user input potentially includes a large amount of training and background data, and we
+                    #   may truncate, chunk, or transform the user input further - we're going to charge based on the actual user
+                    #   message content (and the final output)
+                    # Note that this excludes background message data - usually training and system data - some of which is built from
+                    #   user input. But this is a reasonable tradeoff, since the core of the user action is the actual user message
+                    #
+                    # This can all be overridden per processor
+                    billed_cost = self.report_usage_cost(account, function_name,
+                                                         success,
+                                                         billing_metrics)
+
+                    boostAiCostMargin = -100.0  # negative 100% margin means complete loss
+
+                    if not success:
+                        boost_lost_cost = total_incompletions + (billed_cost if billed_cost > 0 else boost_cost)
+
+                    else:
+
+                        # if we charged user, record the margin
+                        if billed_cost > 0:
+                            boostAiCostMargin = (billed_cost - boost_cost) / boost_cost * 100.0
+                            boost_lost_cost = total_incompletions
+
+                        # if we didn't charge user, record it as lost revenue, and negative margin
+                        else:
+                            boost_lost_cost = boost_cost + total_incompletions
+
                 except Exception:
                     success = False
                     exception_info = traceback.format_exc().replace('\n', ' ')
                     log(f"UPDATE_USAGE_FAILURE:"
                         f"Error updating ~${boost_cost} usage: {exception_info}", False, True)
                     capture_metric(customer, email, function_name, correlation_id,
-                                   {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_cost, 5), "unit": "None"})
+                                   {"name": InfoMetrics.BILLING_USAGE_FAILURE, "value": round(boost_lost_cost, 5), "unit": "None"})
 
                     pass  # Don't fail if we can't update usage / but that means we may have lost revenue
 
@@ -1467,6 +1490,7 @@ class GenericProcessor:
                                {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_COST, 'value': round(openai_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.BOOST_AI_COST_MARGIN, 'value': round(boostAiCostMargin, 5), 'unit': 'None'},
                                {'name': CostMetrics.BOOST_CHARGED_USAGE, 'value': round(billed_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.LOST_BOOST_COST, 'value': round(boost_lost_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_INPUT_TOKENS, 'value': openai_input_tokens, 'unit': 'Count'},

@@ -222,7 +222,7 @@ def check_create_subscription_item(subscription, email):
     return subscription_item
 
 
-def update_usage(subscription_item, bytes):
+def update_usage(subscription_item, bytes, chargeToCustomer=True):
     # calculate the usage by dividing the bytes by 1024 and rounding up
     usage = math.ceil(bytes / 1024)
     idempotency_key = str(uuid.uuid4())
@@ -230,21 +230,22 @@ def update_usage(subscription_item, bytes):
     # calculate the cost
     cost = usage * boost_cost_per_kb
 
-    # update the usage
-    stripe_retry(stripe.SubscriptionItem.create_usage_record,
-                 subscription_item.id,
-                 quantity=usage,
-                 idempotency_key=idempotency_key
-                 )
+    # update the usage if the customer is being charged
+    if chargeToCustomer:
+        stripe_retry(stripe.SubscriptionItem.create_usage_record,
+                     subscription_item.id,
+                     quantity=usage,
+                     idempotency_key=idempotency_key
+                     )
     return cost
 
 
-def update_usage_for_text(account, bytes_of_text, usage_type):
+def update_usage_for_text(account, bytes_of_text, usage_type, chargeToCustomer=True):
     # get the subscription item
     subscription_item = account['subscription_item']
 
     # update the usage
-    cost = update_usage(subscription_item, bytes_of_text)
+    cost = update_usage(subscription_item, bytes_of_text, chargeToCustomer)
 
     # store the operation cost for the caller
     account['operation_cost'] = cost
