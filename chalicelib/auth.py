@@ -325,6 +325,7 @@ def clean_account(account, email=None, organization=None):
     return {
         'enabled': account['enabled'],
         'status': account['status'],
+        'operation_cost': account['operation_cost'] if 'operation_cost' in account else 0.00,
         'org': account['org'] if 'org' in account else organization if organization is not None else 'unknown',
         'email': account['email'] if 'email' in account else email if email is not None else 'unknown',
     }
