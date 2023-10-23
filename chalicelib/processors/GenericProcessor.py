@@ -695,13 +695,17 @@ class GenericProcessor:
                 # add the newly build prompt and max tokens into the list
                 prompts_set.extend(each_chunk_prompt_set)
 
-        user_prompts_size = 0
+        user_message_size = 0
+        background_message_size = 0
         for prompt, *_ in prompts_set:
-            for message in prompt:
-                if 'content' in message and message["role"] == "user":
-                    user_prompts_size += len(message["content"])
+            # get last message in prompt
+            user_message_size += len(prompt[-1]["content"])
 
-        return prompts_set, user_prompts_size, truncated
+            # get all messages except the last one
+            for message in prompt[0:-1]:
+                background_message_size += len(message["content"])
+
+        return prompts_set, user_message_size, background_message_size, truncated
 
     def get_chunkable_input(self) -> str:
         raise NotImplementedError
@@ -1122,7 +1126,7 @@ class GenericProcessor:
 
         prompt_set: List[Tuple[str, int]] = []
 
-        prompt_set, prompts_size, truncated = self.build_prompts_from_input(data, params, prompt_format_args, function_name)
+        prompt_set, user_messages_size, background_messages_size, truncated = self.build_prompts_from_input(data, params, prompt_format_args, function_name)
         chunked = len(prompt_set) > 1
 
         success = False
@@ -1407,7 +1411,8 @@ class GenericProcessor:
                     pass  # Don't fail if we can't update usage / but that means we may have lost revenue
 
                 capture_metric(customer, email, function_name, correlation_id,
-                               {'name': CostMetrics.PROMPT_SIZE, 'value': prompts_size, 'unit': 'Count'},
+                               {'name': CostMetrics.USER_MESSAGE_SIZE, 'value': user_messages_size, 'unit': 'Count'},
+                               {'name': CostMetrics.BACKGROUND_MESSAGE_SIZE, 'value': background_messages_size, 'unit': 'Count'},
                                {'name': CostMetrics.RESPONSE_SIZE, 'value': output_size, 'unit': 'Count'},
                                {'name': CostMetrics.OPENAI_INPUT_COST, 'value': round(openai_input_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_CUSTOMERINPUT_COST, 'value': round(openai_customerinput_cost, 5), 'unit': 'None'},

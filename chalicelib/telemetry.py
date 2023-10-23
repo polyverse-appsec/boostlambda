@@ -32,7 +32,8 @@ class InfoMetrics:
 
 class CostMetrics:
     RESPONSE_SIZE = 'ResponseSize'
-    PROMPT_SIZE = 'PromptSize'
+    USER_MESSAGE_SIZE = 'UserMessageSize'
+    BACKGROUND_MESSAGE_SIZE = 'BackgroundMessageSize'
     OPENAI_COST = 'OpenAICost'
     LOST_BOOST_COST = 'LostBoostCost'
     BOOST_COST = 'BoostCost'

@@ -10,6 +10,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Faster Chat responses (3.5 model, terse temperature)
+- Split out prompt user and background message content sizes for telemetry reporting
 
 ### Bug Fixes
 - Ensure API operation cost is returned in operations (bypassing account info cleaning)
