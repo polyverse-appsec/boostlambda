@@ -154,6 +154,9 @@ def decode_string_from_input(input: list[int], model=OpenAIDefaults.boost_defaul
         if (original_encoding is None):
             raise Exception("No original encoding available")
 
+        # encoding and decoding are not working yet for old <= 3.0 models
+        raise Exception("Encoding and decoding are not working yet for old <= 3.0 models")
+
         output = original_encoding.decode(input)
         return output
 
