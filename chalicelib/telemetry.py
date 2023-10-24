@@ -37,6 +37,7 @@ class CostMetrics:
     OPENAI_COST = 'OpenAICost'
     LOST_BOOST_COST = 'LostBoostCost'
     BOOST_COST = 'BoostCost'
+    AWS_COST = 'AWSCost'
     BOOST_AI_COST_MARGIN = 'BoostAICostMargin'
     BOOST_CHARGED_USAGE = 'BoostChargedUsage'
     OPENAI_INPUT_COST = 'OpenAIInputCost'

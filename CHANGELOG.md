@@ -15,6 +15,7 @@ Polyverse Boost Cloud Service
 - Allow customization of billed/charged usage cost model per operation in each processor
 - Charged Usage cost is reported to console and CloudWatch metrics
 - Operational margin (for OpenAI) is reported to console and CloudWatch metrics
+- Operational costs for AWS are recorded to console and CloudWatch
 
 ### Bug Fixes
 - Ensure API operation cost is returned in operations (bypassing account info cleaning)

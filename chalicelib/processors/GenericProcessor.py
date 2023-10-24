@@ -42,6 +42,8 @@ from chalicelib.openai_throttler import (
     total_analysis_time_buffer_default,
 )
 
+from chalicelib.aws import get_current_lambda_cost
+
 key_ChunkedInputs = 'chunked_inputs'
 key_ChunkPrefix = 'chunk_prefix'
 key_NumberOfChunks = 'chunks'
@@ -1416,9 +1418,14 @@ class GenericProcessor:
 
                 boostAiCostMargin = 0.0
 
-                # current Boost operating costs are only calculated based on OpenAI - excluding AWS
-                #   This is wildly misleading - but not yet implemented
-                boost_cost = openai_cost
+                # current Boost operating costs are only calculated based on OpenAI + AWS compute costs
+                #   This is somewhat misleading - as we have storage of CloudWatch, logs, etc.
+                #  But this is a reasonable fixed cost approximation for now
+                #   as storage, logs, etc can all be groomed or reduced later
+
+                aws_cost = get_current_lambda_cost(correlation_id)
+
+                boost_cost = openai_cost + aws_cost
 
                 # default in case of billing failure
                 boost_lost_cost = boost_cost
@@ -1489,6 +1496,7 @@ class GenericProcessor:
                                {'name': CostMetrics.OPENAI_CUSTOMERINPUT_COST, 'value': round(openai_customerinput_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_OUTPUT_COST, 'value': round(openai_output_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.OPENAI_COST, 'value': round(openai_cost, 5), 'unit': 'None'},
+                               {'name': CostMetrics.AWS_COST, 'value': round(aws_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.BOOST_COST, 'value': round(boost_cost, 5), 'unit': 'None'},
                                {'name': CostMetrics.BOOST_AI_COST_MARGIN, 'value': round(boostAiCostMargin, 5), 'unit': 'None'},
                                {'name': CostMetrics.BOOST_CHARGED_USAGE, 'value': round(billed_cost, 5), 'unit': 'None'},

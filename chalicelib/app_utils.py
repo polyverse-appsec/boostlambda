@@ -14,11 +14,17 @@ from chalicelib.auth import \
     clean_account, \
     extract_client_version
 
+from chalicelib.aws import \
+    init_current_lambda_cost
+
 
 def process_request(event, function, api_version):
     # Generate a new UUID for the correlation ID
     correlation_id = str(uuid.uuid4())
     print("correlation_id is: " + correlation_id)
+
+    init_current_lambda_cost(correlation_id)
+
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
     account = None
