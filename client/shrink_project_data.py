@@ -21,7 +21,7 @@ def compress_data(input_data):
 
     # Compress sectionSummary
     compressed_data["analysisSummary"] = {
-        "keys": ["status", "blocksCompleted", "analysisErrors", "blocksWithIssues", "totalBlocks", "filesAnalyzed"]
+        "keys": ["status", "blocksCompleted", "analysisErrors", "blocksWithIssues", "totalBlocks", "analyzedFiles"]
     }
     for section, values in input_data["sectionSummary"].items():
         if section in ["summary", "bugAnalysis", "complianceCode", "performance", "flowDiagram"]:
@@ -36,7 +36,7 @@ def compress_data(input_data):
         ]
 
     # Compress files
-    compressed_data["fileDetails"] = {}
+    compressed_data["analyzedFiles"] = {}
     for file_name, file_data in input_data["files"].items():
         status_set = set()
 
@@ -54,7 +54,7 @@ def compress_data(input_data):
         else:
             final_status = "incomplete"
 
-        compressed_data["files"][file_name] = final_status
+        compressed_data["analyzedFiles"][file_name] = final_status
 
     return compressed_data
 
