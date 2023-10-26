@@ -3,7 +3,7 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 1.1.0: October 23rd, 2023
+## Version 1.1.0: October 25rd, 2023
 
 ### New Features
 - N/A
@@ -19,6 +19,7 @@ Polyverse Boost Cloud Service
 
 ### Bug Fixes
 - Ensure API operation cost is returned in operations (bypassing account info cleaning)
+- Fix duplicated context prompt - expansion of multiple related or history prompts added an extra raw source prompt
 
 ## Version 1.0.1: October 20th, 2023
 

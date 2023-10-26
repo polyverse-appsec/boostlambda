@@ -107,18 +107,20 @@ class GenericProcessor:
         # Iterate over the new_prompt_filenames
         for i, prompt in enumerate(new_prompt_filenames):
             # Check if the prompt type is 'system'
-            if prompt[0] == 'system':
-                # Insert the summaries after the first system prompt
-                new_prompt_filenames.insert(i + 1, summaries)
+            if prompt[0] != 'system':
+                continue
 
-                # insert the context-aware prompts after the summaries
-                #   we start with historical data
-                new_prompt_filenames.insert(i + 2, context_history)
-                #   then add related info
-                new_prompt_filenames.insert(i + 3, context_related)
-                # and finally add the key user focus
-                new_prompt_filenames.insert(i + 4, context_userFocus)
-                break
+            # Insert the summaries after the first system prompt
+            new_prompt_filenames.insert(i + 1, summaries)
+
+            # insert the context-aware prompts after the summaries
+            #   we start with historical data
+            new_prompt_filenames.insert(i + 2, context_history)
+            #   then add related info
+            new_prompt_filenames.insert(i + 3, context_related)
+            # and finally add the key user focus
+            new_prompt_filenames.insert(i + 4, context_userFocus)
+            break
 
         # make sure we have a main prompt
         if not any(prompt[0] == 'main' for prompt in new_prompt_filenames):
@@ -742,6 +744,7 @@ class GenericProcessor:
                     print(f"Skipping {prompt[0][0]} prompt {prompt[0][1]} due to missing tags")
                     continue
 
+            expandedList = 0
             # Check if this prompt text contains a '{tag}' that exists in our reformatting args
             for tag in re.findall(r'\{(.+?)\}', prompt[1]):
                 if tag not in prompt_format_args:
@@ -750,6 +753,7 @@ class GenericProcessor:
                 if not isinstance(prompt_format_args.get(tag), list):
                     continue
 
+                expandedList += 1
                 role, content_list = prompt_format_args[tag]
                 for content in content_list:
                     # inject each piece of custom content into the prompt
@@ -767,6 +771,13 @@ class GenericProcessor:
                     })
 
                 # finished with this prompt
+                continue
+
+            # if we already expanded and inserted the messages based on a list tag, then move on to next prompt
+            if expandedList > 0:
+                if expandedList > 1:
+                    raise ValueError(f"Prompt {prompt[0][1]} has more than one expansion list tag - only one is supported currently")
+
                 continue
 
             content = self.safe_format(prompt[1], **prompt_format_args)
