@@ -35,8 +35,8 @@ def test_chat():
 
         result = json.loads(response.payload['body'])
         assert result['analysis'] is not None
-        if not (("unknown" in result['analysis'].lower()) or ("javascript" in result['analysis'].lower())):
-            warn("The analysis result is not what was expected.")
+        if not (("unknown" in result['analysis'].lower()) or ("javascript" in result['analysis'].lower()) or ("credit card" in result['analysis'].lower())):
+            warn(lambda: "The analysis result is not what was expected.")
         assert result['account'] is not None
         assert result['account']['email'] == 'unittest@polytest.ai'
         assert result['account']['org'] == 'polytest.ai'
