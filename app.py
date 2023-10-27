@@ -104,7 +104,7 @@ def analyze_function(event, _):
 def compliance(event, context):
     complianceProcessor = ComplianceProcessor()
     return process_request(event, complianceProcessor.compliance_code, complianceProcessor.api_version)
-    
+
 
 @app.lambda_function(name='compliance_function')
 def compliance_function(event, _):
