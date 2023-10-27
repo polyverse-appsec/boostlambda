@@ -79,6 +79,11 @@ class AnalysisContextType:
     related = "related"
 
 
+# changes pascal and camel cased strings into space delimited strings
+def spacify(input):
+    return ' '.join(re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)', input))
+
+
 class GenericProcessor:
 
     def __init__(self, api_version, prompt_filenames, numbered_prompt_keys,
@@ -1089,6 +1094,9 @@ class GenericProcessor:
                 print(f"Skipping context {context['name']} due to missing data")
                 continue
 
+            contextTag = f"context_{context['type']}"
+            userFriendContextName = spacify(context['name'])
+            contextInsertion = f"{userFriendContextName}:\n{context['data']}"
             # store contextual project summary data for use in prompts
             if context['type'] == AnalysisContextType.projectSummary:
                 context_names = f"{context_names}, {context['name']}" if context_names != "" else f"{context['name']}"
@@ -1099,14 +1107,17 @@ class GenericProcessor:
 
             # for related and historical data, we send mulitple messages for each entry to managed and truncated
             elif context['type'] in [AnalysisContextType.history, AnalysisContextType.related]:
-                if f"context_{context['type']}" not in prompt_format_args:
-                    prompt_format_args[f"context_{context['type']}"] = ['system', [context['data']]]
+                if contextTag not in prompt_format_args:
+                    prompt_format_args[contextTag] = ['system', [contextInsertion]]
                 else:
-                    prompt_format_args[f"context_{context['type']}"][1].append(context['data'])
+                    prompt_format_args[contextTag][1].append(contextInsertion)
 
             # for user focus, we send one system prompt so analysis sees all user-focus in one message
             elif context['type'] == AnalysisContextType.userFocus:
-                prompt_format_args['context_userFocus'] = ['system', [context['data']]] if 'context_userFocus' not in prompt_format_args else ['system', [f"{prompt_format_args['context_userFocus'][1][0]}\n\n {context['data']}"]]
+                if 'context_userFocus' not in prompt_format_args:
+                    prompt_format_args[contextTag] = ['system', [contextInsertion]]
+                else:
+                    prompt_format_args[contextTag] = ['system', [f"{prompt_format_args['context_userFocus'][1][0]}\n\n\n {contextInsertion}"]]
 
             else:
                 print(f"Unsupported context type {context['type']} - discarding data for {context['name']}")

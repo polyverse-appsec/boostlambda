@@ -16,6 +16,7 @@ Polyverse Boost Cloud Service
 - Charged Usage cost is reported to console and CloudWatch metrics
 - Operational margin (for OpenAI) is reported to console and CloudWatch metrics
 - Operational costs for AWS are recorded to console and CloudWatch
+- Include context name (e.g. "analyzed files") in context prompts to improve chat relationship
 
 ### Bug Fixes
 - Ensure API operation cost is returned in operations (bypassing account info cleaning)
