@@ -13,6 +13,7 @@ Polyverse Boost Cloud Service
 
 ### Bug Fixes
 - Revert to GPT4.0 model for chat - slightly slower, but 3.5 token context window limits causing issues in Chat completing successfully
+- Enable Draft Blueprint to be run against tiny projects (e.g. 1 or a few files) - without failing to find recommended excluded files, etc.
 
 ## Version 1.1.0: October 25rd, 2023
 

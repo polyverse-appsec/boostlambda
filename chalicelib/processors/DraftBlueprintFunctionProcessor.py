@@ -1,13 +1,9 @@
-from typing import Tuple
 from chalice import BadRequestError
 
 import json
 import math
 
 from chalicelib.processors.FunctionGenericProcessor import FunctionGenericProcessor
-from chalicelib.openai_throttler import (
-    seconds_in_a_minute,
-)
 from chalicelib.version import API_VERSION
 
 build_draft_blueprint = {
@@ -83,6 +79,12 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
 
     def get_function_definition(self):
         return build_draft_blueprint
+
+    def is_required_property(self, prop):
+        if prop == 'draftBlueprint':
+            return True
+        else:
+            return False
 
     def process_function_output(self, result, log):
         return super().process_function_output(result, log)

@@ -102,12 +102,17 @@ class FunctionGenericProcessor(GenericProcessor):
         for prop in required_properties:
             if prop not in arguments or (isinstance(arguments[prop], (list, str)) and not arguments[prop]):
                 log(f"{prop} was not generated or is empty")
+                if not self.is_required_property(prop):
+                    continue
                 success = 0
 
         return {
             "status": success,
             "details": arguments
         }
+
+    def is_required_property(self, prop):
+        return True
 
     def collect_inputs_for_processing(self, data):
         # Extract the code from the json data
