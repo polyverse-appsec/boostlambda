@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 1.1.1: October 27th, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Revert to GPT4.0 model for chat - slightly slower, but 3.5 token context window limits causing issues in Chat completing successfully
+
 ## Version 1.1.0: October 25rd, 2023
 
 ### New Features
