@@ -16,6 +16,29 @@ with open('./tests/data/chat/blueprint.json', 'r') as file:
     blueprint = json.loads(blueprint_json).get('data')
 
 
+# load the data files into a string, relative to the root directory
+with open('./tests/data/sha512.c', 'r') as file:
+    sha512_c = file.read()
+
+
+def concatenate_object_properties(obj):
+    concatenated_string = ""
+
+    for attr_name in dir(obj):
+        # Check if the attribute is not a method and not a magic method or system attribute
+        if not callable(getattr(obj, attr_name)) and not attr_name.startswith("__"):
+            concatenated_string += str(getattr(obj, attr_name))
+
+    return concatenated_string
+
+
+# load the data files into a string, relative to the root directory
+with open('./tests/data/chat/summary.json', 'r') as file:
+    summary_json = file.read()
+    summary = json.loads(summary_json)
+    all_summaries = concatenate_object_properties(summary)
+
+
 def test_chat():
     with Client(app_module.app) as client:
         request_body = {
@@ -130,3 +153,30 @@ def test_chat_with_s3_doc_boost_ignore():
         finally:
             if old_stage is not None:
                 os.environ['CHALICE_STAGE'] = old_stage
+
+
+def test_chat_with_large_context():
+    with Client(app_module.app) as client:
+        request_body = {
+            'query': 'What is this code language?',
+            'context': [{'type': 'userFocus', 'data': sha512_c, 'name': 'activeCode'},
+                        {'type': 'projectSummary', 'data': all_summaries, 'name': 'allSummaries'}],
+            'session': 'testemail: unittest@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'chat', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
+        result = json.loads(response.payload['body'])
+        assert result['analysis'] is not None
+        assert ("C" in result['analysis'])
+
+        assert result['account'] is not None
+        assert result['account']['email'] == 'unittest@polytest.ai'
+        assert result['account']['org'] == 'polytest.ai'
