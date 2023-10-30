@@ -9,7 +9,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Enhancements
-- N/A
+- Added product docs covering generation of PDF, Markdown and HTML output
 
 ### Bug Fixes
 - N/A
