@@ -3,10 +3,10 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 1.1.2: October 30th, 2023
+## Version 1.2.0: October 31st, 2023
 
 ### New Features
-- N/A
+- Added support for sending training data to any processor request - "training" context with data object of prompt+response
 
 ### Enhancements
 - Added product docs covering generation of PDF, Markdown and HTML output

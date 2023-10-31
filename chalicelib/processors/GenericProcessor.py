@@ -77,6 +77,7 @@ class AnalysisContextType:
     userFocus = "userFocus"
     history = "history"
     related = "related"
+    training = "training"
 
 
 # changes pascal and camel cased strings into space delimited strings
@@ -105,6 +106,8 @@ class GenericProcessor:
         context_history = ['system', 'context-history-system.prompt']
         context_related = ['system', 'context-related-system.prompt']
         context_userFocus = ['system', 'context-userFocus-system.prompt']
+        context_training_prompt = ['user', 'context-training-user.prompt']
+        context_training_response = ['assistant', 'context-training-assistant.prompt']
 
         # If prompt_filenames is not None, create a copy, otherwise initialize an empty list
         new_prompt_filenames = prompt_filenames.copy() if prompt_filenames is not None else []
@@ -123,8 +126,13 @@ class GenericProcessor:
             new_prompt_filenames.insert(i + 2, context_history)
             #   then add related info
             new_prompt_filenames.insert(i + 3, context_related)
-            # and finally add the key user focus
+            #   then add the key user focus
             new_prompt_filenames.insert(i + 4, context_userFocus)
+
+            # finally add training
+            new_prompt_filenames.insert(i + 5, context_training_prompt)
+            new_prompt_filenames.insert(i + 6, context_training_response)
+
             break
 
         # make sure we have a main prompt
@@ -312,7 +320,7 @@ class GenericProcessor:
             # If it's a user (training) prompt followed by an assistant (training) response
             elif message['role'] == 'user' and index + 1 < len(this_messages) and this_messages[index + 1]['role'] == 'assistant':
                 length = combined_length(message, this_messages[index + 1])
-                message_sequences.append((index, 'assistant_user', length))
+                message_sequences.append((index, 'user_assistant', length))
                 index += 2
             else:
                 print(f"Unexpected message type in system message sequence: {message['role']}")
@@ -333,7 +341,7 @@ class GenericProcessor:
                 total_truncated_token_count += truncated
                 system_truncated_token_count += truncated
                 new_messages.append(this_messages[idx])
-            elif message_type == 'assistant_user':
+            elif message_type == 'user_assistant':
                 was_truncated, truncated = truncate_system_message(this_messages[idx], idx, total_system_buffer, total_system_tokens)
                 truncated_training_messages_count += was_truncated
                 total_truncated_token_count += truncated
@@ -737,7 +745,9 @@ class GenericProcessor:
         this_messages = []
 
         # Generate messages for all roles
-        for prompt in self.prompts:
+        for i in range(len(self.prompts) - 1):
+            prompt = self.prompts[i]
+            next_prompt = self.prompts[i + 1] if i + 1 < len(self.prompts) else None
             if prompt[0][0] == 'main':  # we handle 'main' last
                 main_prompt = prompt[1]
                 continue
@@ -761,19 +771,37 @@ class GenericProcessor:
                 expandedList += 1
                 role, content_list = prompt_format_args[tag]
                 for content in content_list:
-                    # inject each piece of custom content into the prompt
-                    this_prompt_format_args = prompt_format_args.copy()
-                    this_prompt_format_args[tag] = content
-                    formatted_content = self.safe_format(prompt[1], **this_prompt_format_args)
 
-                    if str.isspace(formatted_content):
-                        print(f"Skipping empty prompt for role {role}")
-                        continue
+                    def expand_prompt_content(raw_prompt, prompt_format_args, role, content):
+                        # inject each piece of custom content into the prompt
+                        this_prompt_format_args = prompt_format_args.copy()
 
-                    this_messages.append({
-                        "role": role,
-                        "content": formatted_content
-                    })
+                        this_prompt_format_args[tag] = content
+                        formatted_content = self.safe_format(raw_prompt, **this_prompt_format_args)
+
+                        if str.isspace(formatted_content):
+                            print(f"Skipping empty prompt for role {role}")
+                            return
+
+                        this_messages.append({
+                            "role": role,
+                            "content": formatted_content
+                        })
+
+                    # we're going to special case training prompt data, since these will be injected raw
+                    #   without formatting or customization - these will be used to train the AI on good
+                    #   answers
+                    if role == 'user_assistant':
+                        if 'prompt' not in content or 'response' not in content:
+                            print(f"Skipping Training Data due to missing prompt or response in data: {content}")
+                            continue
+
+                        expand_prompt_content(prompt[1], prompt_format_args, "user", content['prompt'])
+                        expand_prompt_content(next_prompt[1], prompt_format_args, "assistant", content['response'])
+
+                    # otherwise, just expand this into one message
+                    else:
+                        expand_prompt_content(prompt[1], prompt_format_args, role, content)
 
                 # finished with this prompt
                 continue
@@ -1111,6 +1139,15 @@ class GenericProcessor:
                     prompt_format_args[contextTag] = ['system', [contextInsertion]]
                 else:
                     prompt_format_args[contextTag][1].append(contextInsertion)
+
+            # for training data, we send mulitple messages for each entry to managed and truncated
+            elif context['type'] in [AnalysisContextType.training]:
+                # for training data, we will generate a user message and an assistant message (reply)
+                #   so we send the entire data object along to be unpacked into multiple messages later
+                if contextTag not in prompt_format_args:
+                    prompt_format_args[contextTag] = ['user_assistant', [context['data']]]
+                else:
+                    prompt_format_args[contextTag][1].append(context['data'])
 
             # for user focus, we send one system prompt so analysis sees all user-focus in one message
             elif context['type'] == AnalysisContextType.userFocus:

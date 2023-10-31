@@ -180,3 +180,96 @@ def test_chat_with_large_context():
         assert result['account'] is not None
         assert result['account']['email'] == 'unittest@polytest.ai'
         assert result['account']['org'] == 'polytest.ai'
+
+
+def test_chat_with_trained_answer():
+    with Client(app_module.app) as client:
+        prompt = 'What is this code language?'
+        request_body = {
+            'query': prompt,
+            'context': [{'type': 'userFocus', 'data': sha512_c, 'name': 'activeCode'},
+                        {'type': 'projectSummary', 'data': all_summaries, 'name': 'allSummaries'},
+                        {'type': 'training', 'data': {'prompt': prompt, 'response': 'The language is COBOL.'}, 'name': 'training'}],
+            'session': 'testemail: unittest@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'chat', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
+        result = json.loads(response.payload['body'])
+        assert result['analysis'] is not None
+        assert ("COBOL" in result['analysis'])
+
+        assert result['account'] is not None
+        assert result['account']['email'] == 'unittest@polytest.ai'
+        assert result['account']['org'] == 'polytest.ai'
+
+
+def test_chat_with_multiple_trained_answers_first():
+    with Client(app_module.app) as client:
+        prompt = 'What is this code language?'
+        second_prompt = 'What is your name?'
+        second_response = 'My name is Sara.'
+        request_body = {
+            'query': prompt,
+            'context': [{'type': 'userFocus', 'data': sha512_c, 'name': 'activeCode'},
+                        {'type': 'projectSummary', 'data': all_summaries, 'name': 'allSummaries'},
+                        {'type': 'training', 'data': {'prompt': prompt, 'response': 'The language is COBOL.'}, 'name': 'training'},
+                        {'type': 'training', 'data': {'prompt': second_prompt, 'response': second_response}, 'name': 'training'}],
+            'session': 'testemail: unittest@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'chat', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
+        result = json.loads(response.payload['body'])
+        assert result['analysis'] is not None
+        assert ("COBOL" in result['analysis'])
+
+        assert result['account'] is not None
+        assert result['account']['email'] == 'unittest@polytest.ai'
+        assert result['account']['org'] == 'polytest.ai'
+
+
+def test_chat_with_multiple_trained_answers_second():
+    with Client(app_module.app) as client:
+        prompt = 'What is this code language?'
+        second_prompt = 'What is your name?'
+        second_response = 'My name is Sara.'
+        request_body = {
+            'query': second_prompt,
+            'context': [{'type': 'userFocus', 'data': sha512_c, 'name': 'activeCode'},
+                        {'type': 'projectSummary', 'data': all_summaries, 'name': 'allSummaries'},
+                        {'type': 'training', 'data': {'prompt': prompt, 'response': 'The language is COBOL.'}, 'name': 'training'},
+                        {'type': 'training', 'data': {'prompt': second_prompt, 'response': second_response}, 'name': 'training'}],
+            'session': 'testemail: unittest@polytest.ai',
+            'organization': 'polytest.ai',
+            'version': client_version
+        }
+
+        response = client.lambda_.invoke(
+            'chat', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+        print(f"\nResponse:\n\n{response.payload['body']}")
+
+        result = json.loads(response.payload['body'])
+        assert result['analysis'] is not None
+        assert ("COBOL" in result['analysis'])
+
+        assert result['account'] is not None
+        assert result['account']['email'] == 'unittest@polytest.ai'
+        assert result['account']['org'] == 'polytest.ai'
