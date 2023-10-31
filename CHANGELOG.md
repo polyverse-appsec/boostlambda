@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - Added product docs covering generation of PDF, Markdown and HTML output
 
 ### Bug Fixes
-- N/A
+- Changed token calculator to use 4% extra buffer (instead of 2.5%) to accomodate for 3.5 token size
 
 ## Version 1.1.1: October 27th, 2023
 

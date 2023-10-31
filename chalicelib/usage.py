@@ -89,7 +89,8 @@ cost_codex_per_token = 0.02 / 1000
 
 cost_codex_cheap_per_token = 0.0004 / 1000
 
-encoding_calculated_variation_buffer = 1.025  # 2.5% buffer for variation in encoding size
+encoding_calculated_variation_buffer_gpt35 = 1.04  # 4% buffer for variation in encoding size
+encoding_calculated_variation_buffer_gpt4 = 1.025  # 2.5% buffer for variation in encoding size
 
 try:
     text_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt4_and_gpt35)
@@ -109,12 +110,15 @@ if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
 
 # Returns the number of tokens in a text string, and the encoded string
 def num_tokens_from_string(string: str, model=OpenAIDefaults.boost_default_gpt_model) -> Tuple[int, List[int]]:
+
     # oldest models from 3.0 or earlier
     if model in [OpenAIDefaults.boost_model_cheap_fast_generic]:
         if (original_encoding is None):
             raise Exception("No original encoding available")
 
         tokenized = original_encoding.encode(string)
+
+        encoding_calculated_variation_buffer = encoding_calculated_variation_buffer_gpt35
 
     # code focused models
     elif model in [
@@ -124,6 +128,8 @@ def num_tokens_from_string(string: str, model=OpenAIDefaults.boost_default_gpt_m
             raise Exception("No code encoding available")
 
         tokenized = code_encoding.encode(string)
+
+        encoding_calculated_variation_buffer = encoding_calculated_variation_buffer_gpt35
 
     else:
         if model not in [
@@ -137,6 +143,8 @@ def num_tokens_from_string(string: str, model=OpenAIDefaults.boost_default_gpt_m
         # else we assume we are using gpt3.5 or newer
         if text_encoding is None:
             raise Exception("No text encoding available")
+
+        encoding_calculated_variation_buffer = encoding_calculated_variation_buffer_gpt4
 
     tokenized = text_encoding.encode(string)
 
