@@ -204,7 +204,7 @@ def test_chat_with_trained_answer():
 
         result = json.loads(response.payload['body'])
         assert result['analysis'] is not None
-        assert ("COBOL" in result['analysis'])
+        assert ("confusion" in result['analysis'])  # verifying "confusion" with language conflict
 
         assert result['account'] is not None
         assert result['account']['email'] == 'unittest@polytest.ai'
@@ -236,7 +236,7 @@ def test_chat_with_multiple_trained_answers_first():
 
         result = json.loads(response.payload['body'])
         assert result['analysis'] is not None
-        assert ("COBOL" in result['analysis'])
+        assert ("confusion" in result['analysis'])  # verifying "confusion" with language conflict
 
         assert result['account'] is not None
         assert result['account']['email'] == 'unittest@polytest.ai'
@@ -268,7 +268,7 @@ def test_chat_with_multiple_trained_answers_second():
 
         result = json.loads(response.payload['body'])
         assert result['analysis'] is not None
-        assert ("COBOL" in result['analysis'])
+        assert ("Sara" in result['analysis'])
 
         assert result['account'] is not None
         assert result['account']['email'] == 'unittest@polytest.ai'
