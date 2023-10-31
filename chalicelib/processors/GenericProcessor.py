@@ -330,6 +330,9 @@ class GenericProcessor:
         # Sort sequences based on their lengths
         sorted_sequences = sorted(message_sequences, key=lambda x: x[2])
 
+        # Create a dictionary to store the modified content of the messages
+        modified_content_dict = {}
+
         # Add the first message
         new_messages.append(this_messages[0])
 
@@ -340,13 +343,23 @@ class GenericProcessor:
                 truncated_system_messages_count += was_truncated
                 total_truncated_token_count += truncated
                 system_truncated_token_count += truncated
-                new_messages.append(this_messages[idx])
+                modified_content_dict[idx] = this_messages[idx]['content']
             elif message_type == 'user_assistant':
                 was_truncated, truncated = truncate_system_message(this_messages[idx], idx, total_system_buffer, total_system_tokens)
                 truncated_training_messages_count += was_truncated
                 total_truncated_token_count += truncated
                 training_truncated_token_count += truncated
-                new_messages.append(this_messages[idx])
+                modified_content_dict[idx] = this_messages[idx]['content']
+                modified_content_dict[idx + 1] = this_messages[idx + 1]['content']
+
+        # Now, using the original order of the messages, append them to new_messages after modification
+        for idx, message_type, _ in message_sequences:
+            if idx in modified_content_dict:
+                this_messages[idx]['content'] = modified_content_dict[idx]
+            new_messages.append(this_messages[idx])
+            if message_type == 'user_assistant':
+                if idx + 1 in modified_content_dict:
+                    this_messages[idx + 1]['content'] = modified_content_dict[idx + 1]
                 new_messages.append(this_messages[idx + 1])
 
         # add the last message
