@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Bug Fixes
-- Fix long-standing bug where last pro
+- Fix long-standing bug where last prompt was dropped and message never generated correctly
 
 ## Version 1.2.0: November 3rd, 2023
 
