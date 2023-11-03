@@ -1,59 +1,44 @@
-# Boost: Polyverse's Visual Studio Code Extension
-=======================================
+Welcome to Polyverse Boost, an AI-powered Visual Studio Code extension designed to enhance your coding experience. You can explore its powerful features right after the setup.
 
-Experience an evolved coding journey with AI-powered insights from Polyverse Boost, a superlative Visual Studio Code extension. Boost is designed to enhance your workflow, ensure code security, and provide transformative insights. Explore the future of AI-enabled coding through Boost!
+## Getting Started
 
-## Getting Started 🚀
+### Set Up Essentials
+- A [GitHub.com](https://GitHub.com) account is required to integrate Boost into your coding environment. We prioritize your privacy and won't use your email for marketing purposes. 
 
-### Pre-requisites
+- Boost also uses Git for authentication, ensure it's installed on your system for seamless operation.
 
-- 📌 **Hold a [GitHub.com](https://GitHub.com) account**: This links Boost with your coding workspace. Rest assured, your privacy is maintained — your email will not be misused.
+- A free trial license is provided by Boost for everyone. An automatic account creation and $100 credit are given. You just need to update your payment details for bigger projects in the future.
 
-- 📌 **Authentication using Git**: Ensure Git is installed as it's integral for Boost and Visual Studio Code.
+### Launching Boost
 
-- 📌 **Trial and Billing**: A free trial license is available for Boost.
+1. **Access Boost**: Open the Boost logo on your Visual Studio Code Activity Bar on the left extension panel. You can access its code and architectural analytics.
 
-### Configuration of Boost
+2. **Authorization**: Since it's your first time, Boost will request access to your GitHub identity. This helps both, you, and Boost to avoid directly managing passwords! Click "Allow" to proceed.
 
-1. **Locating Boost**: You should now be able to see Boost on your Visual Studio Code Activity Bar. Simply click on the Boost logo in the left extension panel and utilize its comprehensive code and architectural analytics.
-   
-2. **Authorization**: The first time you run Boost, it will request permission to access your GitHub identity, eliminating the necessity to manage passwords mindfully.
+3. **Boost Actions**: To initiate analysis on your project, click on "Run Selected Analyses" on the Boost Activity Bar. You can also select "Analyze All Files".
 
-3. **Utilizing Boost**: To initiate analysis on your project, use the Boost Activity Bar on the left to "Run Selected Analyses".
+Boost is ready to detect potential pitfalls and modernize your existing code. Enjoy its functionalities!
 
-You can also select "Analyze All Files" to examine all project files.
+### Common Queries
 
-Boost offers a host of features, from code analysis to code revitalization. Explore and improve your coding efficiency!
+- **Starting An Analysis?**: Click on the Boost icon in the left extension panel and select "Run Selected Analyses". Look for ongoing status in the "Dashboard" tab of the Boost activity bar.
+- **Analysis Paused?**: If you modified anything in the Visual Studio Code workspace, your analysis might pause. But don't worry, you can resume where you left off by clicking "Run Selected Analysis" again.
 
-### Boost FAQ
+For additional queries or problems, visit our [Polyverse Boost page](https://polyverse.com/pages/boost-visual-studio).
 
-**Q: How do I initiate an analysis? Or where is status updated when analysis is active?**
+## Customization and Analysis
 
-A: Initiate an analysis by selecting "Run Selected Analyses" through the Boost icon in the left panel. Current analysis status will be displayed in the "Dashboard" tab of the Boost "Activity Bar".
+Sara, by default, analyses the most interesting files first. You can either select specific files or exclude some for analysis.
 
-**Q: My analysis stopped after restarting Visual Studio Code, after the installation, upgrade or uninstallation of an extension. Why?**
+- **Selecting Files**: Add the concerned file names or folders in a .boostOnly file located in the project root folder.
+- **Creating Exclusion List**: Use a .boostIgnore file to specify files to ignore/exclude from analysis.
 
-A: Your analysis progress hasn't been lost – it simply paused because Boost analysis is linked to the Visual Studio Code workspace. Functions are halted when you restart Visual Studio Code or make alterations to extensions. You can resume the process by hitting "Run Selected Analysis" again.
+Sara can take a while to analyze files. If needed, you can stop the analysis by closing Source Project Folder in Visual Studio Code.
 
-**Looking for more information or troubleshooting?**
-Visit our [Polyverse Boost page](https://polyverse.com/pages/boost-visual-studio) for additional resources.
+## Documentation and Modifications
 
-**Boost your coding experience!**
+- **Generating Documents**: Boost generates PDF, HTML, and Markdown documentation automatically and outputs it into the sub-folder under .boost in the File Explorer.
 
-## About Polyverse
+- **Changing the Default Output Format**: Visit the "Polyverse Boost" section in the Settings of Visual Studio Code, and select "Output Formats". Then, select your preferred output format which can be either PDF, Markdown, or HTML. Note: The default format is Markdown.
 
-Founded in 2015 by tech wizard Alex Gounares, Polyverse aims to provide top-tier cybersecurity tools for industry leaders and government innovators. Boost is our latest offering, putting revolutionary solutions at your fingertips.
-
-# Tailoring the File List for Analysis
-
-Sara, the AI assistant, will initially prioritize all source files to identify the most interesting files for analysis. To customize the source file list, either select specific files for analysis or exclude certain files.
-
-## Selecting Files for Analysis
-If you have identified specific files for analysis, list their names and/or folders in a .boostOnly file in your project root folder. The file should be formatted with relative patterns or globs, one per line.
-
-## Creating a Custom Exclusion List
-Create a .boostIgnore file to specify files to ignore or exclude. The file's format should mirror that of .gitignore, utilizing relative or glob patterns.
-
-Sara can generate a .boostIgnore file excluding files she deems uninteresting. Feel free to modify this file.
-
-Keep in mind that Sara can take anywhere from a few minutes to several hours to analyze files based on the project size. If you want to discontinue the analysis, simply close the Source Project Folder in Visual Studio Code or exit Visual Studio Code entirely. Sara will pause the analysis and retain the progress made.
+Have a great Boosted coding experience!

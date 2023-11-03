@@ -11,6 +11,7 @@ Polyverse Boost Cloud Service
 ### Enhancements
 - Added product docs covering generation of PDF, Markdown and HTML output
 - Preserve original message order when performing truncation and optimization of OpenAI messages
+- Update product docs with PDF/HTML/MD output
 
 ### Bug Fixes
 - Changed token calculator to use 4% extra buffer (instead of 2.5%) to accomodate for 3.5 token size
