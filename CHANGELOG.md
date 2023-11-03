@@ -10,7 +10,6 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Added product docs covering generation of PDF, Markdown and HTML output
-- Faster Chat responses (3.5 model, terse temperature)
 - Preserve original message order when performing truncation and optimization of OpenAI messages
 
 ### Bug Fixes
