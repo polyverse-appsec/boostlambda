@@ -757,8 +757,10 @@ class GenericProcessor:
         # handle variable replacements safely
         this_messages = []
 
+        main_prompt = None  # we must have a user prompt - but we'll check again after message generation
+
         # Generate messages for all roles
-        for i in range(len(self.prompts) - 1):
+        for i in range(len(self.prompts)):
             prompt = self.prompts[i]
             next_prompt = self.prompts[i + 1] if i + 1 < len(self.prompts) else None
             if prompt[0][0] == 'main':  # we handle 'main' last
@@ -836,6 +838,10 @@ class GenericProcessor:
                 "role": prompt[0][0],
                 "content": content
             })
+
+        # At this point, all prompts should have been processed.
+        if main_prompt is None:
+            raise ValueError("Main (User) prompt is required but not found")
 
         # Check if main prompt contains a '{tag}' that exists in data
         for tag in re.findall(r'\{(.+?)\}', main_prompt):
