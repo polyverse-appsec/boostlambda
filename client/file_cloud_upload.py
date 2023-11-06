@@ -27,7 +27,8 @@ def upload_to_s3(stage, filepath, path):
 if __name__ == "__main__":
     # Check command line arguments
     if len(sys.argv) != 4:
-        print("Usage: python script_name.py <stage> <filename> <path>")
+        print("Usage: python file_cloud_upload.py <stage> <filename> <path>")
+        print("Example: python file_cloud_upload.py prod chalicelib/prompts/product-usage-system.prompt prompts")
         sys.exit(1)
 
     # Get arguments
