@@ -8,6 +8,7 @@
     "deploy-staging": "chalice deploy --stage staging",
     "deploy-production": "chalice deploy --stage production",
     "enable-tracing": "bash ./enable-all-xray-tracing.sh",
-    "build-docs": "python3 client/generate_product_docs.py ../vs-boost/raw_instructions.md documentation"
+    "build-docs": "python3 client/generate_product_docs.py ../vs-boost/raw_instructions.md documentation",
+    "deploy-docs": "python3 client/file_cloud_upload.py chalicelib/prompts/product_usage_system.prompt prompts"
   }
 }
