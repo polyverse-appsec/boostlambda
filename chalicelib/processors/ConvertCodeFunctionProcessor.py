@@ -105,7 +105,7 @@ class ConvertCodeFunctionProcessor(FunctionGenericProcessor):
         prompt_format_args = {self.get_chunkable_input(): explanation,
                               "code": code,
                               "originalFilename": originalFilename,
-                              "outputlanguage": outputlanguage}
+                              "language": outputlanguage}
 
         return prompt_format_args
 
