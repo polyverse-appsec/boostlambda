@@ -10,6 +10,8 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Ensure Code generation / conversion doesn't generate empty stub functions for missing references (e.g. missing imports)
+- Function processors can customize their data result validation
+- Code conversion service will return success or failure if neither code or conversion issues are found
 
 ### Bug Fixes
 - Fix recommended file extension in code generation

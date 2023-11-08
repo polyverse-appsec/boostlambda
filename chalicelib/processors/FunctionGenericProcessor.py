@@ -98,18 +98,25 @@ class FunctionGenericProcessor(GenericProcessor):
                 pass
 
         # Check if all required properties exist in the arguments
-        success = 1
-        for prop in required_properties:
-            if prop not in arguments or (isinstance(arguments[prop], (list, str)) and not arguments[prop]):
-                log(f"{prop} was not generated or is empty")
-                if not self.is_required_property(prop):
-                    continue
-                success = 0
+        success = self.validate_response_properties(arguments, required_properties, log)
 
         return {
             "status": success,
             "details": arguments
         }
+
+    function_response_success = 1
+    function_response_failure = 0
+
+    def validate_response_properties(self, arguments, required_properties, log):
+        success = self.function_response_success
+        for prop in required_properties:
+            if prop not in arguments or (isinstance(arguments[prop], (list, str)) and not arguments[prop]):
+                log(f"{prop} was not generated or is empty")
+                if not self.is_required_property(prop):
+                    continue
+                success = self.function_response_failure
+        return success
 
     def is_required_property(self, prop):
         return True

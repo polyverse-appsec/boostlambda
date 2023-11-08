@@ -57,6 +57,25 @@ class ConvertCodeFunctionProcessor(FunctionGenericProcessor):
     def get_function_definition(self):
         return convert_code
 
+    # no properties are required by default - since we can collect a list of issues
+    def is_required_property(self, prop):
+        return False
+
+    def validate_response_properties(self, arguments, required_properties, log):
+        success = super().validate_response_properties(arguments, required_properties, log)
+        if success == super().function_response_failure:
+            return success
+
+        # if we have issues during conversion, the process ran to completion
+        if 'issuesDuringConversion' in arguments and len(arguments['issuesDuringConversion']) > 0:
+            return super().function_response_success
+
+        # of if we have converted code
+        if 'convertedCode' in arguments:
+            return super().function_response_success
+
+        return super().function_response_failure
+
     # we are going to chunk the explanation, since its bigger than the code presumptively
     # However - realistically, we should be chunking both. But they segment independently - e.g.
     # 1 line of code could be a paragraph of explanation. Harder to slice and dice them blindly
