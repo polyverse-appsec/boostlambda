@@ -1,5 +1,6 @@
 ### For 'convertedCode', generate clean and concise {language} code from the explanation above, using appropriate {language} techniques
 Use the original code shown earlier as a reference for variable, data, and function names.
+Do not add stub or add placeholder code for missing functions or types references in original code.
 
 The original source filename is {originalFilename}
 
