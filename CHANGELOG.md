@@ -13,6 +13,7 @@ Polyverse Boost Cloud Service
 - Function processors can customize their data result validation
 - Code conversion service will return success or failure if neither code or conversion issues are found
 - Enable Test Generation to choose the best test Framework by default (instead of requiring pytest)
+- Code Generation and Conversion/Advice will use existing programming language if not changed explicitly (instead of choosing Python)
 
 ### Bug Fixes
 - Fix recommended file extension in code generation

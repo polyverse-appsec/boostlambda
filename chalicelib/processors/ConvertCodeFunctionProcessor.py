@@ -95,8 +95,8 @@ class ConvertCodeFunctionProcessor(FunctionGenericProcessor):
         if code is None:
             raise BadRequestError("Error: please provide the original code")
 
-        # The output language is optional; if not set, then default to Python
-        outputlanguage = data.get('language', 'python')
+        # The output language is optional; if not set, then default to existing programming language
+        outputlanguage = data.get('language', 'programming')
 
         originalFilename = data.get('originalFilename') if 'originalFilename' in data else None
         if originalFilename is None:
