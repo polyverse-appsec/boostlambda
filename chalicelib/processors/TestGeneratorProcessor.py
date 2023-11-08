@@ -24,14 +24,14 @@ class TestGeneratorProcessor(GenericProcessor):
 
         outputlanguage = data['language'] if 'language' in data else None
         if outputlanguage is None:
-            outputlanguage = "python"
+            outputlanguage = "language of this code"
 
         framework = data['framework'] if 'framework' in data else None
         if framework is None:
             if outputlanguage == "python":
                 framework = "pytest"
             else:
-                framework = "the best framework for " + outputlanguage + " tests"
+                framework = "the best matched framework"
 
         result = self.process_input(data, account, function_name, correlation_id,
                                     {self.get_chunkable_input(): code,
