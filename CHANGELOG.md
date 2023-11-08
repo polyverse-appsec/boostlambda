@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - Ensure Code generation / conversion doesn't generate empty stub functions for missing references (e.g. missing imports)
 
 ### Bug Fixes
-- N/A
+- Fix recommended file extension in code generation
 
 ## Version 1.2.1: November 3rd, 2023
 
