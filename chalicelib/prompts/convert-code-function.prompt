@@ -1,12 +1,12 @@
-### For 'convertedCode', generate clean and concise {language} code from the explanation above, using appropriate {language} techniques
+### For 'convertedCode', generate clean and concise code in {language} language from the explanation above, using appropriate techniques from {language} language.
 Use the original code shown earlier as a reference for variable, data, and function names.
 Do not add stub or add placeholder code for missing functions or types references in original code.
 
 The original source filename is {originalFilename}
 
 In addition to converting the code, please:
- * Provide a recommended new base filename (recommendedConvertedFilenameBase) appropriate to the target language (without the file extension)
- * Provide a recommended filename extension (convertedFileExtension) based on the converted code appropriate to {language} language
+ * Provide a recommended new base filename (recommendedConvertedFilenameBase) appropriate to the {language} language (without the file extension)
+ * Provide a recommended filename extension (convertedFileExtension) based on the generated code appropriate to {language} language
  * Provide a list of issues, warnings or potential problems identified in the conversion (issuesDuringConversion)
 
 Also, use the following architectural guidelines when performing your code conversion - including only using libraries and frameworks and architectural principles defined in these guidelines:

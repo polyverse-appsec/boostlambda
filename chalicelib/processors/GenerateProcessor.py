@@ -40,7 +40,7 @@ class GenerateProcessor(GenericProcessor):
             raise BadRequestError("Error: please provide the original code")
 
         # The output language is optional; if not set, then default to existing language
-        outputlanguage = data.get('language', 'programming')
+        outputlanguage = data.get('language', 'above programming')
 
         result = self.process_input(data, account, function_name, correlation_id,
                                     {self.get_chunkable_input(): explanation,
