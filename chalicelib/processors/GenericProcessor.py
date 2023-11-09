@@ -1520,8 +1520,8 @@ class GenericProcessor:
                 try:
                     billing_metrics = self.BillingMetrics(
                         user_input_size=user_input_size,
-                        output_size=output_size,
-                        user_messages_size=user_messages_size,
+                        output_size=output_size,                # charged to billing
+                        user_messages_size=user_messages_size,  # charged to billing
                         openai_input_cost=openai_input_cost,
                         openai_output_cost=openai_output_cost,
                         boost_cost=boost_cost,
