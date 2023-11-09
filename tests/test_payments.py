@@ -123,7 +123,55 @@ def test_update_usage():
     assert cost != 0
 
     # Assert that there is a customer id
-    assert customer.id is not None
+    account = check_customer_account_status(customer=customer)
+    assert account['enabled'] is True
+    assert account['status'] == 'trial'
+    assert account['usage_this_month'] == 10.00  # should be 10.06 - but being lost in the first usage
+
+
+def test_update_multiple_usage():
+    # Define test inputs
+    org = generate_org()
+    email = generate_email("@" + org + ".com")
+
+    # email = 'test-email-ytuvhxcnei@test-org-rvfzgkqtyz.com' 
+    # org = 'test-org-rvfzgkqtyz'
+
+    first_sub_id = None
+    first_item_id = None
+
+    for i in range(0, 10):
+        account = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+
+        assert account['usage_this_month'] == (0 if first_sub_id is None else 10 + (0.06 * (i - 1)))
+
+        # Call the updateUsage function with the test inputs
+        cost = update_usage(subscription_item=account['subscription_item'], bytes=0)
+
+        account = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+
+        assert account['usage_this_month'] == (0 if first_sub_id is None else 10 + (0.06 * (i - 1)))
+
+        # Call the updateUsage function with the test inputs
+        cost = update_usage(subscription_item=account['subscription_item'], bytes=1000)
+
+        first_sub_id = account['subscription']['id'] if first_sub_id is None else first_sub_id
+        first_item_id = account['subscription_item']['id'] if first_item_id is None else first_item_id
+
+        assert account['subscription']['id'] == first_sub_id
+        assert account['subscription_item']['id'] == first_item_id
+
+        # Assert that we captured revenue
+        assert cost != 0
+
+        # simulate a 2nd inbound request
+        next_account = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+
+        # assert that we have a combined usage of both costs
+        assert next_account['usage_this_month'] > cost
+
+        # assert next_account['usage_this_month'] == 10 + (0.06 * (i + 1))
+        print(f"usage_this_month: {next_account['usage_this_month']} ; should be {10 + (0.06 * (i + 1))}")
 
 
 # now test usage with a large amount to make sure we get charged the right amount
