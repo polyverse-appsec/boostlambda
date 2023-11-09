@@ -92,27 +92,27 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                 #     print(f"Non-Boost Customer: {customer.email}")
                 continue
 
-            account_status = check_customer_account_status(customer, True)
-
-            # In your 'Processing customer data' loop, add a check for the user email
-            if user and user != "*" and user not in account_status['owner']:
+            # We use customer (instead of account) since its a little faster for quick stripe lookups than a deep account lookup
+            if user and user != "*" and user not in customer['email']:
                 print("-", end="")
                 continue
 
             # exclude any customer with test email in email address, unless the command line argument "showTest" is specified
-            if ('test-email-' in account_status['owner']) and not show_test:
+            elif ('test-email-' in customer['email']) and not show_test:
                 if debug:
-                    print(f"Test Account: {account_status['owner']}")
+                    print(f"Test Account: {customer['email']}")
 
                 print("-", end="")
                 continue
 
             # exclude polyverse accounts (dev and test) unless specifically requested
-            if ('polyverse' in account_status['owner'] or 'polytest.ai' in account_status['owner']) and not includePolyverse:
+            elif ('polyverse' in customer['email'] or 'polytest.ai' in customer['email']) and not includePolyverse:
                 if debug:
-                    print(f"Test Account: {account_status['owner']}")
+                    print(f"Test Account: {customer['email']}")
                 print("-", end="")
                 continue
+
+            account_status = check_customer_account_status(customer, True)
 
             print(".", end="")
 
@@ -148,6 +148,8 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                 total_paying_customers += 1
 
             for invoice in targetInvoices:
+                invoice_end = datetime.datetime.fromtimestamp(invoice['period_end']).strftime("%-m/%-d/%y")
+                invoice_status = invoice['status']
                 for invoice_data in invoice.lines.data:
                     usageInKb, plan_name = split_leading_number_from_description(invoice_data.description)
                     thisCustomerUsage += usageInKb
@@ -161,6 +163,8 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                                            f"{account_status['status']}",
                                            f"{account_status['credit_card_linked']}",
                                            f"{plan_name}",
+                                           f"{invoice_end}",
+                                           f"{invoice_status}",
                                            f"{usageInKb}",
                                            f"${invoice_data.amount / 100:.2f}",
                                            f"${account_status['balance_due']:.2f}",
@@ -196,19 +200,19 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
         # If --csv switch is used, write data to CSV instead of table.
         with open(csvFile, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Organization', "Customer", 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'New Usage', 'Trial Left', 'Discounted', 'Paid'])
-            for org, customer, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid in customers_list:
-                writer.writerow([org, customer, email, created, cc, plan, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid])
+            writer.writerow(['Organization', "Customer", 'Email', 'Created', 'Status', 'CCard', 'Plan', "Invoice", "Inv. Status", "Usage", 'Usage(%)', 'Cost', 'Due', 'New Usage', 'Trial Left', 'Discounted', 'Paid'])
+            for org, customer, email, created, status, cc, plan, invoice_end, invoice_status, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid in customers_list:
+                writer.writerow([org, customer, email, created, cc, plan, invoice_end, invoice_status, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid])
     else:
 
         # customers_list.sort()  # sort by org name
         total_coupons = 0
 
-        table = PrettyTable(['Organization', 'Customer', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Usage", 'Usage(%)', 'Cost', 'Due', 'New Usage', 'Trial Left', 'Discount', 'Paid'])
+        table = PrettyTable(['Organization', 'Customer', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Invoice", "Inv. Status", "Usage", 'Usage(%)', 'Cost', 'Due', 'New Usage', 'Trial Left', 'Discount', 'Paid'])
         lastUserEmail = ''
         lastCustomerEmail = ''
         lastOrg = ''
-        for org, customer, email, created, status, cc, plan, usageInMb, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid in customers_list:
+        for org, customer, email, created, status, cc, plan, invoice_end, invoice_status, usageInMb, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid in customers_list:
             customer = customer.split('@')[0]
             newOrg = org != lastOrg
             org = org if org != lastOrg else '"'
@@ -219,6 +223,8 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
             lastCustomerEmail = customer if customer != '"' else lastCustomerEmail
             percent = "{:.2f}%".format(((int(usageInMb) / total_usage_kb) if total_usage_kb > 0 else 0) * 100)  # usageInMb is Kb at this point
             percent = percent if percent != '0.00%' else '-'
+            # invoice_end = invoice_end
+            # invoice_status = invoice_status
             usageInMb = "{:.0f} Kb".format((int(usageInMb))) if usageInMb != '0' else '-'
             # usageInMb = "{:.3f} Mb".format((int(usageInMb) / 1024)) if usageInMb != '0' else '-'
             pending_item_cost = pending_item_cost if pending_item_cost != '$0.00' else '-'
@@ -245,7 +251,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                 shortOrg = org[:20] + "..."
             else:
                 shortOrg = org
-            table.add_row([shortOrg, customer, email, created, status, cc, plan, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid])
+            table.add_row([shortOrg, customer, email, created, status, cc, plan, invoice_end, invoice_status, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid])
 
         # If --csv is not used, print the table.
         print(table)
