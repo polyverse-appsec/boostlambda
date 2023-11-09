@@ -760,9 +760,14 @@ class GenericProcessor:
         main_prompt = None  # we must have a user prompt - but we'll check again after message generation
 
         # Generate messages for all roles
-        for i in range(len(self.prompts)):
+        i = 0
+        while i < len(self.prompts):
+
             prompt = self.prompts[i]
             next_prompt = self.prompts[i + 1] if i + 1 < len(self.prompts) else None
+
+            i += 1  # Increment the prompt counter at the start of the loop to ensure progress each iteration.
+
             if prompt[0][0] == 'main':  # we handle 'main' last
                 main_prompt = prompt[1]
                 continue
@@ -817,6 +822,10 @@ class GenericProcessor:
                     # otherwise, just expand this into one message
                     else:
                         expand_prompt_content(prompt[1], prompt_format_args, role, content)
+
+                # if we have a training prompt, then we'll skip the next prompt since it's the response
+                if role == 'user_assistant':
+                    i += 1
 
                 # finished with this prompt
                 continue
