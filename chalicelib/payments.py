@@ -167,17 +167,14 @@ def check_create_customer(email, org, correlation_id=0):
 
 
 def check_create_subscription(customer, email):
-    # first see if the customer already has a subscription. this can be found on the subscription field of the customer. make sure the field exists first!
-
-    # check if the subscriptions field exists
-    if hasattr(customer, 'subscriptions'):
-        subscriptions = customer.subscriptions
-        for subscription in subscriptions.data:
-            if subscription.status == "active":
-                return subscription
 
     if (email is None):
         raise Exception("Email is required to create a payment account")
+
+    # check if the customer has an active subscription
+    active_subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id, status='active')
+    if active_subscriptions.data:
+        return active_subscriptions.data[0]
 
     # if we got here, we don't have a subscription, so create one
     # we need to create a price per email address

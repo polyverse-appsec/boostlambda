@@ -19,6 +19,7 @@ Polyverse Boost Cloud Service
 - Fix recommended file extension in code generation
 - Fix issue in Code Generation (function-based) doesn't respect output language and uses implied or guessed language
 - Fix indexing issue causing processing failures with some Chat training data
+- Fix issue with check subscription always creating a new subscription - not reusing existing active
 
 ## Version 1.2.1: November 3rd, 2023
 
