@@ -8,7 +8,7 @@ from . import test_utils  # noqa pylint: disable=unused-import
 
 # Import the checkCreateCustomer function from the payments module in the chalicelib directory
 from chalicelib.payments import check_create_customer, check_create_subscription, check_create_subscription_item, update_usage, check_customer_account_status, check_valid_subscriber
-from chalicelib.usage import boost_cost_per_kb
+from chalicelib.usage import boost_cost_per_kb, boost_base_monthly_cost
 
 
 # utility function to generate an org name with a random domain
@@ -103,10 +103,11 @@ def test_check_create_subscription_item():
     assert result.id is not None
 
 
-def test_update_usage():
+def test_update_usage_base():
     # Define test inputs
     org = generate_org()
     email = generate_email("@" + org + ".com")
+
     # Call the checkCreateCustomer function with the test inputs
     customer = check_create_customer(email=email, org=org)
 
@@ -126,7 +127,35 @@ def test_update_usage():
     account = check_customer_account_status(customer=customer)
     assert account['enabled'] is True
     assert account['status'] == 'trial'
-    assert account['usage_this_month'] == 10.00  # should be 10.06 - but being lost in the first usage
+    assert account['usage_this_month'] == boost_base_monthly_cost  # first 1 unit is $10 / month
+
+
+def test_update_usage_base_plus_extra():
+    # Define test inputs
+    org = generate_org()
+    email = generate_email("@" + org + ".com")
+
+    # Call the checkCreateCustomer function with the test inputs
+    customer = check_create_customer(email=email, org=org)
+
+    # Call the checkCreateSubscription function with the test inputs
+    subscription = check_create_subscription(customer=customer, email=email)
+
+    # Call the checkCreateSubscriptionItem function with the test inputs
+    subscription_item = check_create_subscription_item(subscription=subscription, email=email)
+
+    # Call the updateUsage function with the test inputs
+    extra_units = 4
+    cost = update_usage(subscription_item=subscription_item, bytes=(1000 + (extra_units * 1000)))
+
+    # Assert that we captured revenue
+    assert cost != 0
+
+    # Assert that there is a customer id
+    account = check_customer_account_status(customer=customer)
+    assert account['enabled'] is True
+    assert account['status'] == 'trial'
+    assert account['usage_this_month'] == boost_base_monthly_cost + (extra_units * boost_cost_per_kb)
 
 
 def test_update_multiple_usage():
@@ -134,7 +163,7 @@ def test_update_multiple_usage():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    # email = 'test-email-ytuvhxcnei@test-org-rvfzgkqtyz.com' 
+    # email = 'test-email-ytuvhxcnei@test-org-rvfzgkqtyz.com'
     # org = 'test-org-rvfzgkqtyz'
 
     first_sub_id = None
@@ -143,14 +172,20 @@ def test_update_multiple_usage():
     for i in range(0, 10):
         account = check_valid_subscriber(email=email, organization=org, correlation_id="test")
 
-        assert account['usage_this_month'] == (0 if first_sub_id is None else 10 + (0.06 * (i - 1)))
+        if first_sub_id is None:
+            assert account['usage_this_month'] == 0
+        else:
+            assert account['usage_this_month'] == boost_base_monthly_cost + (boost_cost_per_kb * (i - 1))
 
         # Call the updateUsage function with the test inputs
         cost = update_usage(subscription_item=account['subscription_item'], bytes=0)
 
         account = check_valid_subscriber(email=email, organization=org, correlation_id="test")
 
-        assert account['usage_this_month'] == (0 if first_sub_id is None else 10 + (0.06 * (i - 1)))
+        if first_sub_id is None:
+            assert account['usage_this_month'] == 0
+        else:
+            assert account['usage_this_month'] == boost_base_monthly_cost + (boost_cost_per_kb * (i - 1))
 
         # Call the updateUsage function with the test inputs
         cost = update_usage(subscription_item=account['subscription_item'], bytes=1000)
@@ -170,8 +205,7 @@ def test_update_multiple_usage():
         # assert that we have a combined usage of both costs
         assert next_account['usage_this_month'] > cost
 
-        # assert next_account['usage_this_month'] == 10 + (0.06 * (i + 1))
-        print(f"usage_this_month: {next_account['usage_this_month']} ; should be {10 + (0.06 * (i + 1))}")
+        assert next_account['usage_this_month'] == boost_base_monthly_cost + (boost_cost_per_kb * i)
 
 
 # now test usage with a large amount to make sure we get charged the right amount

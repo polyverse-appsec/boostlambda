@@ -73,6 +73,8 @@ def max_tokens_for_model(model: str):
 # | 32K context  | $0.06 / 1K tokens   | $0.12 / 1K tokens         |
 
 
+boost_base_monthly_cost = 10.0
+
 # Assuming the cost per kb is 0.06 cents
 boost_cost_per_kb = 0.06
 
