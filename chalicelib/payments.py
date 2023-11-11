@@ -174,7 +174,7 @@ def check_create_subscription(customer, email):
     # check if the customer has an active subscription
     active_subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id, status='active')
     if active_subscriptions.data:
-        return active_subscriptions.data[0]
+        return active_subscriptions.data[-1]
 
     # if we got here, we don't have a subscription, so create one
     # we need to create a price per email address
@@ -204,8 +204,6 @@ def check_create_subscription_item(subscription, email):
         # if the email in the metadata matches the email we are looking for, return the subscription item
         if subscription_item.metadata.email == email:
             return subscription_item
-
-    # if not, create a subscription
 
     # we need to create a price per email address
     price = create_price(email)
@@ -314,7 +312,7 @@ def check_customer_account_status(customer, deep=False):
     price_per_kb_unit = round(float(original_price['tiers'][1]['unit_amount'] / 100), 2)
     account_status['plan'] = f"Boost Monthly Metered: ${price_per_user_per_month:.2f} per user + ${price_per_kb_unit:.2f} per kb"
 
-    subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id)
+    subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id, status='active')
 
     # if stripe thinks the customer is delinquent (e.g. didn't pay a bill), then we will suspend them
     if customer['delinquent']:

@@ -20,6 +20,7 @@ Polyverse Boost Cloud Service
 - Fix issue in Code Generation (function-based) doesn't respect output language and uses implied or guessed language
 - Fix indexing issue causing processing failures with some Chat training data
 - Fix issue with check subscription always creating a new subscription - not reusing existing active
+- Fix issue where a customer with multiple active Subscriptions (not a valid state) is not correctly billed for usage (charges are lost)s
 
 ## Version 1.2.1: November 3rd, 2023
 
