@@ -2,9 +2,13 @@
 import stripe
 from chalice.test import Client
 import json
-from app import app
 
 from . import test_utils  # noqa pylint: disable=unused-import
+
+# import os
+# os.environ['CHALICE_STAGE'] = 'prod'
+
+from app import app
 
 # Import the checkCreateCustomer function from the payments module in the chalicelib directory
 from chalicelib.payments import check_create_customer, check_create_subscription, check_create_subscription_item, update_usage, check_customer_account_status, check_valid_subscriber
@@ -162,9 +166,6 @@ def test_update_multiple_usage():
     # Define test inputs
     org = generate_org()
     email = generate_email("@" + org + ".com")
-
-    # email = 'test-email-ytuvhxcnei@test-org-rvfzgkqtyz.com'
-    # org = 'test-org-rvfzgkqtyz'
 
     first_sub_id = None
     first_item_id = None
