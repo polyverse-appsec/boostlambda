@@ -11,7 +11,7 @@
     "stages": {
         "dev": {
             "api_gateway_stage": "api",
-            "lambda_timeout": 240,
+            "lambda_timeout": 900,
             "tags": {
                 "Environment": "Development"
             },
@@ -21,7 +21,7 @@
         },
         "test": {
             "api_gateway_stage": "api",
-            "lambda_timeout": 240,
+            "lambda_timeout": 900,
             "tags": {
                 "Environment": "Test"
             },
@@ -31,7 +31,7 @@
         },
         "staging": {
             "api_gateway_stage": "api",
-            "lambda_timeout": 240,
+            "lambda_timeout": 900,
             "tags": {
                 "Environment": "Staging"
             },
@@ -41,7 +41,7 @@
         },
         "prod": {
             "api_gateway_stage": "api",
-            "lambda_timeout": 240,
+            "lambda_timeout": 900,
             "tags": {
                 "Environment": "prod"
             },

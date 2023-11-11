@@ -14,6 +14,7 @@ Polyverse Boost Cloud Service
 - Code conversion service will return success or failure if neither code or conversion issues are found
 - Enable Test Generation to choose the best test Framework by default (instead of requiring pytest)
 - Code Generation and Conversion/Advice will use existing programming language if not changed explicitly (instead of choosing Python)
+- Ensure Service Timeout is set to 15 minutes by default during deployment - avoid unexpected early timeouts (e.g. previously 4 minutes)
 
 ### Bug Fixes
 - Fix recommended file extension in code generation
