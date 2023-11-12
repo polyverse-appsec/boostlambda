@@ -43,8 +43,8 @@ class ConvertCodeFunctionProcessor(FunctionGenericProcessor):
 
                           # shared with the non-function version
                           ['system', 'convert-role-system.prompt'],
-                          ['assistant', 'convert-role-assistant.prompt'],
-                          ['user', 'convert-role-user.prompt']],
+                          ['user', 'convert-role-user.prompt'],
+                          ['assistant', 'convert-role-assistant.prompt']],
                          'convert_code',
                          convert_code)
 
