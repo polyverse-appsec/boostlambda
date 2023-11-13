@@ -294,8 +294,6 @@ def supports_json(event):
                 return True
             elif 'application/*+json' in event['headers']['accept']:
                 return True
-            elif '*/*' in event['headers']['accept']:
-                return True
             elif 'application/vnd.api+json' in event['headers']['accept']:
                 return True
 
