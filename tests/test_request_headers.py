@@ -1,4 +1,4 @@
-from app import customer_portal
+from app import customer_portal, user_organizations, chat
 
 sample_header = {
     "version": "2.0",
@@ -49,9 +49,27 @@ class MockContext:
 
 
 # test the customer portal with an invalid session
-def test_request_headers_unauthorized():
+def test_request_headers_unauthorized_user():
 
     response = customer_portal(sample_header, MockContext('customer_portal'))
+
+    assert response['statusCode'] == 401
+    assert response['headers']['Content-Type'] == 'text/html'
+
+
+# test the user orgs with an invalid session
+def test_request_headers_unauthorized_orgs():
+
+    response = user_organizations(sample_header, MockContext('user_organizations'))
+
+    assert response['statusCode'] == 401
+    assert response['headers']['Content-Type'] == 'text/html'
+
+
+# test the chat with an invalid session
+def test_request_headers_unauthorized_chat():
+
+    response = chat(sample_header, MockContext('chat'))
 
     assert response['statusCode'] == 401
     assert response['headers']['Content-Type'] == 'text/html'
