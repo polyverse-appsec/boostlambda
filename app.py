@@ -163,7 +163,7 @@ def draft_blueprint(event, context):
 
 
 @app.lambda_function(name='chat')
-def chatprocess(event, _):
+def chat(event, _):
     chatProcessor = ChatProcessor()
     return process_request(event, chatProcessor.process_chat, chatProcessor.api_version)
 
