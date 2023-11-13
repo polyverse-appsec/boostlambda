@@ -19,8 +19,7 @@ def customer_portal_handler(event, context):
         account = validate_request_lambda(json_data, context.function_name, correlation_id, False)
 
         # Specific logic for customer_portal
-        if 'email' in account:
-            email = account['email']
+        email = account['email'] if 'email' in account else None
 
         if not account['enabled'] and account['status'] not in ('suspended', 'expired'):
             status = account['status']
