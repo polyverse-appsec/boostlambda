@@ -8,6 +8,7 @@ Polyverse Boost Cloud Service
 ### New Features
 - New Function-based Test Generator - can generate tests in different languages, of all test types
 - All Lambda services handle CORS requests - enabling direct browser access to all services
+- Browser-based requests to Boost Cloud Service will return HTML unless JSON is requested
 
 ### Enhancements
 - Return Unauthorized/401 if no session info passed to Service API

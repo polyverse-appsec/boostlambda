@@ -17,6 +17,8 @@ from chalicelib.auth import \
 from chalicelib.aws import \
     init_current_lambda_cost
 
+allow_origin = 'http://hosted-sara.s3-website-us-west-2.amazonaws.com'
+
 
 def generate_correlation_id():
     correlation_id = str(uuid.uuid4())
@@ -39,7 +41,11 @@ def handle_exception(e, correlation_id, email, organization, function_name, api_
     status_code = getattr(e, 'STATUS_CODE', 500)
     return {
         'statusCode': status_code,
-        'headers': {'Content-Type': 'application/json', 'X-API-Version': api_version},
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': allow_origin,
+            'X-API-Version': api_version
+        },
         'body': json.dumps({"error": str(e)})
     }
 
@@ -49,14 +55,17 @@ def common_lambda_logic(event, function_name, handler_function, api_version):
 
     print(f'Inbound request {correlation_id} {function_name}')
 
+    if os.environ.get('CHALICE_STAGE', 'local') == 'dev':
+        print(f'Request Payload:\n{json.dumps(event)}')
+
     preflight_response = process_cors_preflight(event)
     if preflight_response:
-        return preflight_response
+        return process_response(preflight_response, event, function_name)
 
     try:
-        return handler_function(event, correlation_id)
+        return process_response(handler_function(event, correlation_id), event, function_name)
     except Exception as e:
-        return handle_exception(e, correlation_id, "unknown", "unknown", function_name, api_version)
+        return process_response(handle_exception(e, correlation_id, "unknown", "unknown", function_name, api_version), event, function_name)
 
 
 def process_request(event, function, api_version):
@@ -73,7 +82,7 @@ def process_request(event, function, api_version):
 
     preflight_response = process_cors_preflight(event)
     if preflight_response:
-        return preflight_response
+        return process_response(preflight_response, event, function.__name__)
 
     try:
         # Extract parameters from the event object
@@ -170,26 +179,127 @@ def process_request(event, function, api_version):
 
         account = clean_account(account, email, organization)
 
-        return {
+        return process_response({
             'statusCode': status_code,
-            'headers': {'Content-Type': 'application/json',
-                        'X-API-Version': api_version},
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': allow_origin,
+                'X-API-Version': api_version
+            },
             'body': json.dumps({
                 "error": serviceFailureDetails,
                 'account': account
             }),
-        }
+        }, event, function.__name__)
 
     result['account'] = clean_account(account)
     # Put this into a JSON object - assuming the result is already an object
     json_obj = result
 
-    return {
+    return process_response({
         'statusCode': 200,
-        'headers': {'Content-Type': 'application/json',
-                    'X-API-Version': api_version},
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': allow_origin,
+            'X-API-Version': api_version
+        },
         'body': json.dumps(json_obj),
-    }
+    }, event, function.__name__)
+
+
+def process_response(response, event, function_name):
+    is_browser = is_broser_client(event)
+    use_json = supports_json(event)
+
+    # if client requested JSON, then we're done
+    if use_json:
+        return response
+
+    # otherwise, if a browser client, then we need to return HTML
+    if is_browser:
+        wrap_html(response, function_name)
+
+    # default to JSON
+    return response
+
+
+def wrap_html(response, function_name):
+    # we're going to wrap the response in HTML so it can be rendered as a default page in a browser
+
+    # if 'statusCode' is not 200, then the response is an error so we'll make the page title an error
+    if response['statusCode'] != 200:
+        page_title = 'Error'
+    else:
+        page_title = 'Polyverse Boost - ' + function_name
+
+    # we also need to change the content-type to text/html
+    response['headers']['Content-Type'] = 'text/html'
+
+    htmlBody = response['body']
+
+    current_datetime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
+    # create the HTML code to store in the new response body
+    html = f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>{page_title}</title>
+    </head>
+    <body>
+        <h1>{page_title}: {current_datetime}</h1>
+        <pre>{htmlBody}</pre>
+    </body>
+    </html>
+    '''
+
+    # update the response body
+    response['body'] = html
+
+    return response
+
+
+def is_broser_client(event):
+    # we're going to look at the user agent to determine if the client is a browser
+    # e.g. "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
+    # We want to support safari, chrome, firefox, edge, and IE11
+
+    if 'headers' in event:
+        if 'user-agent' in event['headers']:
+            user_agent = event['headers']['user-agent']
+            if 'Safari' in user_agent:
+                return True
+            if 'Chrome' in user_agent:
+                return True
+            if 'Firefox' in user_agent:
+                return True
+            if 'Edge' in user_agent:
+                return True
+            if 'Trident' in user_agent:
+                return True
+
+    return False
+
+
+def supports_json(event):
+    # we're going to check the 'accept' header in the request
+    #    and if it contains 'application/json', then we'll return JSON
+    # e.g. "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+
+    if 'headers' in event:
+        if 'accept' in event['headers']:
+            if 'application/json' in event['headers']['accept']:
+                return True
+            elif 'text/json' in event['headers']['accept']:
+                return True
+            elif 'application/*+json' in event['headers']['accept']:
+                return True
+            elif '*/*' in event['headers']['accept']:
+                return True
+            elif 'application/vnd.api+json' in event['headers']['accept']:
+                return True
+
+    return False
 
 
 def process_cors_preflight(event):
@@ -202,13 +312,14 @@ def process_cors_preflight(event):
         return None
 
     if event['requestContext']['http']['method'] == 'OPTIONS':
+        print("CORS preflight request received")
         return {
             'statusCode': 200,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',  # Specify your domain in production
+                'Access-Control-Allow-Origin': allow_origin,
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type'
+                'Access-Control-Allow-Headers': 'Content-Type, User-Agent'
             },
             'body': json.dumps({"message": "CORS preflight response"})
         }
