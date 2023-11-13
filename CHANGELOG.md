@@ -12,7 +12,7 @@ Polyverse Boost Cloud Service
 - N/A
 
 ### Bug Fixes
-- N/A
+- Fix customer_portal API issue where account missing organization results in a failure
 
 ## Version 1.2.2: November 11th, 2023
 
