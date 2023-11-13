@@ -18,10 +18,50 @@ from chalicelib.aws import \
     init_current_lambda_cost
 
 
+def generate_correlation_id():
+    correlation_id = str(uuid.uuid4())
+
+    print("correlation_id is: " + correlation_id)
+
+    return correlation_id
+
+
+def handle_exception(e, correlation_id, email, organization, function_name, api_version):
+    exception_info = traceback.format_exc().replace('\n', ' ')
+    print(f'BOOST_USAGE: email:{email}, organization:{organization}, function({function_name}:{correlation_id}) FAILED with exception: {exception_info}')
+
+    if cloudwatch is not None:
+        subsegment = xray_recorder.begin_subsegment('exception')
+        subsegment.put_annotation('correlation_id', correlation_id)
+        subsegment.put_annotation('error', exception_info)
+        xray_recorder.end_subsegment()
+
+    status_code = getattr(e, 'STATUS_CODE', 500)
+    return {
+        'statusCode': status_code,
+        'headers': {'Content-Type': 'application/json', 'X-API-Version': api_version},
+        'body': json.dumps({"error": str(e)})
+    }
+
+
+def common_lambda_logic(event, function_name, handler_function, api_version):
+    correlation_id = generate_correlation_id()
+
+    print(f'Inbound request {correlation_id} {function_name}')
+
+    preflight_response = process_cors_preflight(event)
+    if preflight_response:
+        return preflight_response
+
+    try:
+        return handler_function(event, correlation_id)
+    except Exception as e:
+        return handle_exception(e, correlation_id, "unknown", "unknown", function_name, api_version)
+
+
 def process_request(event, function, api_version):
     # Generate a new UUID for the correlation ID
-    correlation_id = str(uuid.uuid4())
-    print("correlation_id is: " + correlation_id)
+    correlation_id = generate_correlation_id()
 
     init_current_lambda_cost(correlation_id)
 
@@ -158,6 +198,9 @@ def process_cors_preflight(event):
     If the incoming request is an OPTIONS request, returns a response with necessary headers.
     Otherwise, returns None indicating that normal processing should continue.
     """
+    if 'requestContext' not in event:
+        return None
+
     if event['requestContext']['http']['method'] == 'OPTIONS':
         return {
             'statusCode': 200,
