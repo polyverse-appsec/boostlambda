@@ -94,16 +94,34 @@ cost_codex_cheap_per_token = 0.0004 / 1000
 encoding_calculated_variation_buffer_gpt35 = 1.04  # 4% buffer for variation in encoding size
 encoding_calculated_variation_buffer_gpt4 = 1.025  # 2.5% buffer for variation in encoding size
 
-try:
-    text_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt4_and_gpt35)
-    code_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_codex)
-    original_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt3)
-except Exception as error:
-    text_encoding = None
-    code_encoding = None
-    original_encoding = None
-    print("Failed to load OpenAI encodings due to error: " + str(error))
-    pass
+text_encoding = None
+code_encoding = None
+original_encoding = None
+encoding_loaded = False
+
+
+def load_encodings():
+    global text_encoding
+    global code_encoding
+    global original_encoding
+    global encoding_loaded
+
+    if encoding_loaded:
+        return
+
+    encoding_loaded = True
+
+    try:
+        text_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt4_and_gpt35)
+        code_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_codex)
+        original_encoding = tiktoken.get_encoding(OpenAIDefaults.encoding_gpt3)
+    except Exception as error:
+        text_encoding = None
+        code_encoding = None
+        original_encoding = None
+        print("Failed to load OpenAI encodings due to error: " + str(error))
+        pass
+
 
 # Don't run this under Chalice deployment
 if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
@@ -112,27 +130,22 @@ if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
 
 # Returns the number of tokens in a text string, and the encoded string
 def num_tokens_from_string(string: str, model=OpenAIDefaults.boost_default_gpt_model) -> Tuple[int, List[int]]:
+    load_encodings()
 
-    # oldest models from 3.0 or earlier
+    tokenized = None
+    encoding_calculated_variation_buffer = None
+
+    # Determine the encoding and buffer based on the model
     if model in [OpenAIDefaults.boost_model_cheap_fast_generic]:
-        if (original_encoding is None):
+        if original_encoding is None:
             raise Exception("No original encoding available")
-
         tokenized = original_encoding.encode(string)
-
         encoding_calculated_variation_buffer = encoding_calculated_variation_buffer_gpt35
-
-    # code focused models
-    elif model in [
-            OpenAIDefaults.boost_model_codex,
-            OpenAIDefaults.boost_model_gpt35_generic]:
+    elif model in [OpenAIDefaults.boost_model_codex, OpenAIDefaults.boost_model_gpt35_generic]:
         if code_encoding is None:
             raise Exception("No code encoding available")
-
         tokenized = code_encoding.encode(string)
-
         encoding_calculated_variation_buffer = encoding_calculated_variation_buffer_gpt35
-
     else:
         if model not in [
                 OpenAIDefaults.boost_model_gpt4,
@@ -143,12 +156,11 @@ def num_tokens_from_string(string: str, model=OpenAIDefaults.boost_default_gpt_m
             print(f"Using default Token Encoding due to known model: {model}")
 
         # else we assume we are using gpt3.5 or newer
+
         if text_encoding is None:
             raise Exception("No text encoding available")
-
+        tokenized = text_encoding.encode(string)
         encoding_calculated_variation_buffer = encoding_calculated_variation_buffer_gpt4
-
-    tokenized = text_encoding.encode(string)
 
     num_tokens = len(tokenized)
 
@@ -160,6 +172,8 @@ def num_tokens_from_string(string: str, model=OpenAIDefaults.boost_default_gpt_m
 
 # Returns the decoded string from an array of tokens based on a specific model
 def decode_string_from_input(input: list[int], model=OpenAIDefaults.boost_default_gpt_model) -> str:
+    load_encodings()
+
     if model in [OpenAIDefaults.boost_model_cheap_fast_generic]:
         if (original_encoding is None):
             raise Exception("No original encoding available")

@@ -12,6 +12,7 @@ Polyverse Boost Cloud Service
 
 ### Enhancements
 - Return Unauthorized/401 if no session info passed to Service API
+- Speed up User Service APIs (Portal and Orgs) and Error paths by lazy loading OpenAI encodings
 
 ### Bug Fixes
 - Fix customer_portal API issue where account missing organization results in a failure
