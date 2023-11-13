@@ -7,6 +7,7 @@ Polyverse Boost Cloud Service
 
 ### New Features
 - New Function-based Test Generator - can generate tests in different languages, of all test types
+- All Lambda services handle CORS requests - enabling direct browser access to all services
 
 ### Enhancements
 - N/A

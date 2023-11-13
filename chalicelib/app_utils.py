@@ -31,6 +31,10 @@ def process_request(event, function, api_version):
 
     print(f'Inbound request {correlation_id} {function.__name__}')
 
+    preflight_response = process_cors_preflight(event)
+    if preflight_response:
+        return preflight_response
+
     try:
         # Extract parameters from the event object
         if 'body' in event:
@@ -146,3 +150,24 @@ def process_request(event, function, api_version):
                     'X-API-Version': api_version},
         'body': json.dumps(json_obj),
     }
+
+
+def process_cors_preflight(event):
+    """
+    Handles CORS preflight requests.
+    If the incoming request is an OPTIONS request, returns a response with necessary headers.
+    Otherwise, returns None indicating that normal processing should continue.
+    """
+    if event['requestContext']['http']['method'] == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',  # Specify your domain in production
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': json.dumps({"message": "CORS preflight response"})
+        }
+    else:
+        return None
