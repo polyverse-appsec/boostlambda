@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 1.3.0: November 13th, 2023
+
+### New Features
+- New Function-based Test Generator - can generate tests in different languages, of all test types
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- N/A
+
 ## Version 1.2.2: November 11th, 2023
 
 ### New Features

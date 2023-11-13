@@ -13,6 +13,7 @@ from chalicelib.processors.CustomProcessor import CustomProcessor
 from chalicelib.processors.GenerateProcessor import GenerateProcessor
 from chalicelib.processors.ConvertCodeFunctionProcessor import ConvertCodeFunctionProcessor
 from chalicelib.processors.TestGeneratorProcessor import TestGeneratorProcessor
+from chalicelib.processors.TestGeneratorFunctionProcessor import TestGeneratorFunctionProcessor
 from chalicelib.processors.AnalyzeProcessor import AnalyzeProcessor
 from chalicelib.processors.ComplianceProcessor import ComplianceProcessor
 from chalicelib.processors.CodingGuidelinesProcessor import CodingGuidelinesProcessor
@@ -86,6 +87,12 @@ def compare_code(event, _):
 def testgen(event, _):
     testGeneratorProcessor = TestGeneratorProcessor()
     return process_request(event, testGeneratorProcessor.testgen_code, testGeneratorProcessor.api_version)
+
+
+@app.lambda_function(name='generate_tests')
+def generate_tests(event, _):
+    testGeneratorFunctionProcessor = TestGeneratorFunctionProcessor()
+    return process_request(event, testGeneratorFunctionProcessor.generate_tests, testGeneratorFunctionProcessor.api_version)
 
 
 @app.lambda_function(name='analyze')

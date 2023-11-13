@@ -1,0 +1,23 @@
+
+### For 'generatedTestCases', generate test cases from the code shown here, using the {framework} for {language}.
+
+For each generated test, please provide:
+* Source code in {language} for the test case
+* Testing Type - e.g. unit, functional, negative, fuzzing, performance, stress, platform, and regression
+* Recommended filename for the test case
+
+In addition to generating test code, please provide:
+ * Recommended Test Framework to run the test cases
+ * Programming language of the newly generated tests
+ * Recommended test language file extension
+
+Use the following architectural guidelines when performing your test generation - including for consistency with or conflicts between the testing approach and the guidelines:
+{guidelines}
+
+{chunking}
+
+Here is the code to test:
+
+```
+{code}
+```
