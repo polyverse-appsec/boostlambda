@@ -251,8 +251,8 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
     organization = request_json.get('organization')
     version = request_json.get('version')
 
-    # if no version or organization specified, then we need to ask the client to upgrade
-    if session is None and organization is None:
+    # if session is missing, the client isn't authorized
+    if session is None:
         raise ExtendedUnauthorizedError("Invalid authentication/authorization", reason="InvalidSession")
 
     if version is None:

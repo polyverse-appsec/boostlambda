@@ -5,6 +5,7 @@ from chalicelib.auth import extract_client_version, fetch_orgs, fetch_email_and_
 from chalicelib.log import mins_and_secs
 from chalicelib.telemetry import cloudwatch, xray_recorder
 from chalicelib.app_utils import common_lambda_logic
+from chalicelib.auth import ExtendedUnauthorizedError
 
 
 def user_organizations_handler(event, context):
@@ -13,6 +14,10 @@ def user_organizations_handler(event, context):
         json_data = json.loads(event['body']) if 'body' in event else event
         client_version = extract_client_version(event)
         json_data['version'] = json_data.get('version', client_version)
+
+        # if session is missing, the client isn't authorized
+        if 'session' not in json_data:
+            raise ExtendedUnauthorizedError("Invalid authentication/authorization", reason="InvalidSession")
 
         # Specific logic for user_organizations
         if cloudwatch is not None:
