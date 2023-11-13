@@ -252,6 +252,9 @@ def validate_request_lambda(request_json, function_name, correlation_id, raiseOn
     version = request_json.get('version')
 
     # if no version or organization specified, then we need to ask the client to upgrade
+    if session is None and version is None and organization is None:
+        raise ExtendedUnauthorizedError("Invalid authentication/authorization", reason="InvalidSession")
+
     if version is None:
         if raiseOnError:
             raise ExtendedUnauthorizedError("Please upgrade your client software to use Boost service", reason="UpgradeRequired")

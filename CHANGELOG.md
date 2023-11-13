@@ -10,7 +10,7 @@ Polyverse Boost Cloud Service
 - All Lambda services handle CORS requests - enabling direct browser access to all services
 
 ### Enhancements
-- N/A
+- Return Unauthorized/401 if no session info passed to Service API
 
 ### Bug Fixes
 - Fix customer_portal API issue where account missing organization results in a failure
