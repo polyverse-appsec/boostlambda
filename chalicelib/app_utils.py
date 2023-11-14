@@ -147,6 +147,9 @@ def process_request(event, function, api_version):
         exception_info = traceback.format_exc().replace('\n', ' ')
         serviceFailureDetails = str(e)
 
+        if os.environ.get('CHALICE_STAGE', 'local') == 'dev':
+            print(f'Incoming Request Data that failed to process:\n{json.dumps(event)}')
+
         # Use the get() method to retrieve the value of CHALICE_STAGE, with a default value of 'local' - e.g. local debugging
         service_stage = os.environ.get('CHALICE_STAGE', 'local')
 
@@ -335,17 +338,14 @@ def handle_cors_response(response, event):
     """
     Handles CORS response.
     If the incoming request has an ORIGIN header, we need to make sure the response
-    includes the allow response
+    includes the allow response.
     """
 
-    if 'Origin' not in event['headers'] and 'origin' not in event['headers']:
-        print("CORS response not required")
-        return response
-
-    origin = event['headers']['Origin'] if 'Origin' in event else event['headers']['origin']
-
+    # Check for Origin in the request headers
+    origin = event['headers'].get('Origin', event['headers'].get('origin', '*'))
     response['headers']['Access-Control-Allow-Origin'] = origin
 
-    print(f'CORS-enabled Response:\n{json.dumps(response)}')
+    if os.environ.get('CHALICE_STAGE', 'local') == 'dev':
+        print('CORS-enabled Response')
 
     return response
