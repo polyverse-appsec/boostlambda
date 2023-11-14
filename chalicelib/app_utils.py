@@ -17,8 +17,6 @@ from chalicelib.auth import \
 from chalicelib.aws import \
     init_current_lambda_cost
 
-allow_origin = 'http://hosted-sara.s3-website-us-west-2.amazonaws.com'
-
 
 def generate_correlation_id():
     correlation_id = str(uuid.uuid4())
@@ -43,7 +41,6 @@ def handle_exception(e, correlation_id, email, organization, function_name, api_
         'statusCode': status_code,
         'headers': {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': allow_origin,
             'X-API-Version': api_version
         },
         'body': json.dumps({"error": str(e)})
@@ -183,7 +180,6 @@ def process_request(event, function, api_version):
             'statusCode': status_code,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': allow_origin,
                 'X-API-Version': api_version
             },
             'body': json.dumps({
@@ -200,7 +196,6 @@ def process_request(event, function, api_version):
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': allow_origin,
             'X-API-Version': api_version
         },
         'body': json.dumps(json_obj),
@@ -210,6 +205,8 @@ def process_request(event, function, api_version):
 def process_response(response, event, function_name):
     is_browser = is_broser_client(event)
     use_json = supports_json(event)
+
+    response = handle_cors_response(response, event)
 
     # if client requested JSON, then we're done
     if use_json:
@@ -296,6 +293,16 @@ def supports_json(event):
                 return True
             elif 'application/vnd.api+json' in event['headers']['accept']:
                 return True
+            elif '*/*' in event['headers']['accept']:
+                # for clients that ask for html or xml by preference we'll send html
+                #    even if they technically could support json via the wildcard filter
+                if 'text/html' in event['headers']['accept']:
+                    return False
+                elif 'application/xhtml+xml' in event['headers']['accept']:
+                    return False
+                elif 'application/xml' in event['headers']['accept']:
+                    return False
+                return True
 
     return False
 
@@ -315,7 +322,6 @@ def process_cors_preflight(event):
             'statusCode': 200,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': allow_origin,
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, User-Agent'
             },
@@ -323,3 +329,19 @@ def process_cors_preflight(event):
         }
     else:
         return None
+
+
+def handle_cors_response(response, event):
+    """
+    Handles CORS response.
+    If the incoming request has an ORIGIN header, we need to make sure the response
+    includes the allow response
+    """
+    if 'Origin' not in event and 'origin' not in event:
+        return response
+
+    origin = event['Origin'] if 'Origin' in event else event['origin']
+
+    response['headers']['Access-Control-Allow-Origin'] = origin
+
+    return response
