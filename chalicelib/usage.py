@@ -122,10 +122,9 @@ def load_encodings():
         print("Failed to load OpenAI encodings due to error: " + str(error))
         pass
 
-
-# Don't run this under Chalice deployment
-if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
-    print("Loaded OpenAI encodings")
+    # Don't run this under Chalice deployment
+    if 'AWS_LAMBDA_FUNCTION_NAME' in os.environ:
+        print("Loaded OpenAI encodings")
 
 
 # Returns the number of tokens in a text string, and the encoded string
