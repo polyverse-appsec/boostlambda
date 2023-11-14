@@ -337,11 +337,15 @@ def handle_cors_response(response, event):
     If the incoming request has an ORIGIN header, we need to make sure the response
     includes the allow response
     """
-    if 'Origin' not in event and 'origin' not in event:
+
+    if 'Origin' not in event['headers'] and 'origin' not in event['headers']:
+        print("CORS response not required")
         return response
 
-    origin = event['Origin'] if 'Origin' in event else event['origin']
+    origin = event['headers']['Origin'] if 'Origin' in event else event['headers']['origin']
 
     response['headers']['Access-Control-Allow-Origin'] = origin
+
+    print(f'CORS-enabled Response:\n{json.dumps(response)}')
 
     return response
