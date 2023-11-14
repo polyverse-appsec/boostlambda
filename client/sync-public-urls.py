@@ -144,12 +144,27 @@ def main(cloud_stage, monitors, whatif, check_src):
                         config = None
 
                 url = None
+
+                cors_enabled = False
                 # if the config for the URL is missing, rebuild it
                 if url_config:
                     if url_config['FunctionUrl'] is None:
                         url_config = None
                     else:
                         url = url_config['FunctionUrl']
+
+                if url_config is not None and 'Cors' in url_config and url_config['Cors'] is not None:
+                    cors_enabled = True
+                    if whatif:
+                        print(colored(f"    CORS enabled for {function_name}", 'red'))
+                        exit_code = 1
+                    else:
+                        # disable CORS
+                        response = client.update_function_url_config(
+                            FunctionName=function_name,
+                            Cors={}
+                        )
+                        print(colored(f"    Disabled CORS for {function_name}", 'green'))
 
                 if not url_config or not existing_permissions:
                     # Create public access for the function
