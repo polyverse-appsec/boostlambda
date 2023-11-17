@@ -206,7 +206,7 @@ def process_request(event, function, api_version):
 
 
 def process_response(response, event, function_name):
-    is_browser = is_broser_client(event)
+    is_browser = is_browser_client(event)
     use_json = supports_json(event)
 
     response = handle_cors_response(response, event)
@@ -259,24 +259,26 @@ def wrap_html(response, function_name):
     return response
 
 
-def is_broser_client(event):
+def is_browser_client(event):
     # we're going to look at the user agent to determine if the client is a browser
     # e.g. "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
     # We want to support safari, chrome, firefox, edge, and IE11
 
-    if 'headers' in event:
-        if 'user-agent' in event['headers']:
-            user_agent = event['headers']['user-agent']
-            if 'Safari' in user_agent:
-                return True
-            if 'Chrome' in user_agent:
-                return True
-            if 'Firefox' in user_agent:
-                return True
-            if 'Edge' in user_agent:
-                return True
-            if 'Trident' in user_agent:
-                return True
+    if 'headers' not in event:
+        return False
+    
+    if 'user-agent' in event['headers']:
+        user_agent = event['headers']['user-agent']
+        if 'Safari' in user_agent:
+            return True
+        if 'Chrome' in user_agent:
+            return True
+        if 'Firefox' in user_agent:
+            return True
+        if 'Edge' in user_agent:
+            return True
+        if 'Trident' in user_agent:
+            return True
 
     return False
 
@@ -286,26 +288,29 @@ def supports_json(event):
     #    and if it contains 'application/json', then we'll return JSON
     # e.g. "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
 
-    if 'headers' in event:
-        if 'accept' in event['headers']:
-            if 'application/json' in event['headers']['accept']:
-                return True
-            elif 'text/json' in event['headers']['accept']:
-                return True
-            elif 'application/*+json' in event['headers']['accept']:
-                return True
-            elif 'application/vnd.api+json' in event['headers']['accept']:
-                return True
-            elif '*/*' in event['headers']['accept']:
-                # for clients that ask for html or xml by preference we'll send html
-                #    even if they technically could support json via the wildcard filter
-                if 'text/html' in event['headers']['accept']:
-                    return False
-                elif 'application/xhtml+xml' in event['headers']['accept']:
-                    return False
-                elif 'application/xml' in event['headers']['accept']:
-                    return False
-                return True
+    if 'headers' not in event:
+        return False
+    elif 'accept' not in event['headers']:
+        return False
+
+    if 'application/json' in event['headers']['accept']:
+        return True
+    elif 'text/json' in event['headers']['accept']:
+        return True
+    elif 'application/*+json' in event['headers']['accept']:
+        return True
+    elif 'application/vnd.api+json' in event['headers']['accept']:
+        return True
+    elif '*/*' in event['headers']['accept']:
+        # for clients that ask for html or xml by preference we'll send html
+        #    even if they technically could support json via the wildcard filter
+        if 'text/html' in event['headers']['accept']:
+            return False
+        elif 'application/xhtml+xml' in event['headers']['accept']:
+            return False
+        elif 'application/xml' in event['headers']['accept']:
+            return False
+        return True
 
     return False
 
@@ -317,6 +322,10 @@ def process_cors_preflight(event):
     Otherwise, returns None indicating that normal processing should continue.
     """
     if 'requestContext' not in event:
+        return None
+    elif 'http' not in event['requestContext']:
+        return None
+    elif 'method' not in event['requestContext']['http']:
         return None
 
     if event['requestContext']['http']['method'] == 'OPTIONS':
@@ -340,6 +349,10 @@ def handle_cors_response(response, event):
     If the incoming request has an ORIGIN header, we need to make sure the response
     includes the allow response.
     """
+
+    # only process responses that had CORS or similar headers
+    if 'headers' not in event:
+        return response
 
     # Check for Origin in the request headers
     origin = event['headers'].get('Origin', event['headers'].get('origin', '*'))
