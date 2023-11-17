@@ -3,6 +3,18 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 1.3.1: November 17th, 2023
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Fix prompt for code generation - was using language instead of targetLanguage for prompt paramater
+- Fix issue failing local testing without headers - failed trying to generate CORS header
+
 ## Version 1.3.0: November 13th, 2023
 
 ### New Features

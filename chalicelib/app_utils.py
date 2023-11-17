@@ -266,7 +266,7 @@ def is_browser_client(event):
 
     if 'headers' not in event:
         return False
-    
+
     if 'user-agent' in event['headers']:
         user_agent = event['headers']['user-agent']
         if 'Safari' in user_agent:
