@@ -20,7 +20,7 @@ def test_convert_code_function():
             'session': 'testemail: unittest@polytest.ai',
             'organization': 'polytest.ai',
             'version': client_version,
-            'output_language': output_language
+            'targetLanguage': output_language
         }
         response = client.lambda_.invoke(
             'convert_code', request_body)
