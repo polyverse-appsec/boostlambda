@@ -6,8 +6,14 @@ from typing import Tuple, List
 
 class OpenAIDefaults:
     boost_max_tokens_unlimited = 0
+
+    # 128k tokens
+    boost_max_tokens_gpt_4_turbo = 128000
+    boost_max_tokens_gpt_4_turbo_output = 4096
+
     boost_max_tokens_gpt_4 = 8192
     boost_max_tokens_gpt_4_32k = 32768
+
     boost_max_tokens_gpt_35 = 4096
 
     boost_max_tokens_default = boost_max_tokens_gpt_4  # 0 is disabled max, 32768 for gpt-4-32k, 4000 for gpt3.5 and 8192 for gpt4
@@ -17,6 +23,7 @@ class OpenAIDefaults:
     boost_tuned_max_tokens = boost_max_tokens_default  # could be 1000 based on OpenAI recommendation, no obvious response time difference
 
     # Models to choose from
+    boost_model_gpt4_turbo = "gpt-4-1106-preview"   # latest model as of November 2023 (trained to April 2023)
     boost_model_gpt4 = "gpt-4"                      # best overall model
     boost_model_gpt4_current = "gpt-4-0613"         # best overall model - date specific, expires
     boost_model_gpt4_32k = "gpt-4-32k"              # best overall model with 32k limit
@@ -26,7 +33,7 @@ class OpenAIDefaults:
     boost_model_codex = "code-davinci-002"
 
     # default model from above choices
-    boost_default_gpt_model = boost_model_gpt4_current
+    boost_default_gpt_model = boost_model_gpt4
 
     # tokenizer encodings
     encoding_gpt4_and_gpt35 = "cl100k_base"  # used for gpt4, 3.5 turbo
@@ -57,6 +64,8 @@ def max_tokens_for_model(model: str):
 
     if OpenAIDefaults.boost_model_gpt4_32k in model:
         return OpenAIDefaults.boost_max_tokens_gpt_4_32k
+    elif OpenAIDefaults.boost_model_gpt4_turbo in model:
+        return OpenAIDefaults.boost_max_tokens_gpt_4_turbo
     elif OpenAIDefaults.boost_model_gpt4 in model:
         return OpenAIDefaults.boost_max_tokens_gpt_4
     elif OpenAIDefaults.boost_model_gpt35_cheap_chat in model:
@@ -71,6 +80,7 @@ def max_tokens_for_model(model: str):
 # |--------------|---------------------|---------------------------|
 # | 8K context   | $0.03 / 1K tokens   | $0.06 / 1K tokens         |
 # | 32K context  | $0.06 / 1K tokens   | $0.12 / 1K tokens         |
+# | 128k context | $0.01 / 1K tokens   | $0.03 / 1K tokens         |
 
 
 boost_base_monthly_cost = 10.0
@@ -78,7 +88,11 @@ boost_base_monthly_cost = 10.0
 # Assuming the cost per kb is 0.06 cents
 boost_cost_per_kb = 0.06
 
-# Assuming the cost per token is 0.01 cents
+# input vs output costs for GPT4 Turbo
+cost_gpt4_turbo_per_token_input = 0.01 / 1000
+cost_gpt4_turbo_per_token_output = 0.03 / 1000
+
+# Assuming the cost per token is 0.03 cents (up to 8k tokens or double price for 32k tokens)
 cost_gpt4_per_prompt_token_lt_8000 = 0.03 / 1000
 cost_gpt4_per_prompt_token_lt_32000 = 0.06 / 1000
 
@@ -147,6 +161,7 @@ def num_tokens_from_string(string: str, model=OpenAIDefaults.boost_default_gpt_m
         encoding_calculated_variation_buffer = encoding_calculated_variation_buffer_gpt35
     else:
         if model not in [
+                OpenAIDefaults.boost_model_gpt4_turbo,
                 OpenAIDefaults.boost_model_gpt4,
                 OpenAIDefaults.boost_model_gpt4_current,
                 OpenAIDefaults.boost_model_gpt35_cheap_chat,
@@ -194,6 +209,7 @@ def decode_string_from_input(input: list[int], model=OpenAIDefaults.boost_defaul
         return output
 
     if model not in [
+            OpenAIDefaults.boost_model_gpt4_turbo,
             OpenAIDefaults.boost_model_gpt4,
             OpenAIDefaults.boost_model_gpt4_current,
             OpenAIDefaults.boost_model_gpt35_cheap_chat,
@@ -217,7 +233,7 @@ def get_openai_usage_per_string(payload: str, input: bool, model=OpenAIDefaults.
 
 def get_openai_usage_per_token(num_tokens: int, input: bool, model=OpenAIDefaults.boost_default_gpt_model) -> Tuple[int, float]:
 
-    if model in [OpenAIDefaults.boost_model_gpt4, OpenAIDefaults.boost_model_gpt4_current]:
+    if model in [OpenAIDefaults.boost_model_gpt4, OpenAIDefaults.boost_model_gpt4_32k, OpenAIDefaults.boost_model_gpt4_current]:
         if (input):
             if (num_tokens < OpenAIDefaults.boost_max_tokens_gpt_4):
                 cost_per_token = cost_gpt4_per_prompt_token_lt_8000
@@ -228,6 +244,13 @@ def get_openai_usage_per_token(num_tokens: int, input: bool, model=OpenAIDefault
                 cost_per_token = cost_gpt4_per_completion_token_lt_8000
             else:
                 cost_per_token = cost_gpt4_per_completion_token_lt_32000
+
+    elif model == OpenAIDefaults.boost_max_tokens_gpt_4_turbo:
+        if (input):
+            cost_per_token = cost_gpt4_turbo_per_token_input
+        else:
+            cost_per_token = cost_gpt4_turbo_per_token_output
+
     elif model == OpenAIDefaults.boost_model_gpt35_generic:
         cost_per_token = cost_codex_per_token
     elif model == OpenAIDefaults.boost_model_gpt35_cheap_chat:

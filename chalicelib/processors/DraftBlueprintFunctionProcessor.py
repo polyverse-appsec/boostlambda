@@ -5,6 +5,7 @@ import math
 
 from chalicelib.processors.FunctionGenericProcessor import FunctionGenericProcessor
 from chalicelib.version import API_VERSION
+from chalicelib.usage import OpenAIDefaults
 
 build_draft_blueprint = {
     "name": "build_draft_blueprint",
@@ -51,7 +52,9 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
                          [['main', 'draft-blueprint-function.prompt'],
                           ['system', 'draft-blueprint-function-role-system.prompt']],
                          'build_draft_blueprint',
-                         build_draft_blueprint)
+                         build_draft_blueprint,
+                         {'model': OpenAIDefaults.boost_default_gpt_model,
+                          'temperature': OpenAIDefaults.temperature_terse_and_accurate})
 
     def get_chunkable_input(self) -> str:
         return "filelist"
@@ -66,7 +69,7 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
         #       the input and output buffers (e.g. the same rough filelist exists in the source and result)
         return math.floor(total_max * 0.50)
 
-    def calculate_output_token_buffer(self, input_buffer_size, output_buffer_size, total_max, enforce_max=True) -> int:
+    def calculate_output_token_buffer(self, data, input_buffer_size, output_buffer_size, total_max, enforce_max=True) -> int:
 
         # we want the output buffer to be at least 20% of the max tokens
         # but no more than 50% of the max tokens, and ideally, the same as
@@ -74,6 +77,10 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
         output_buffer_size = int(max(0.2 * total_max,
                                  min(input_buffer_size,
                                      math.floor(total_max * 0.5))))
+
+        if data.get('model') == OpenAIDefaults.boost_model_gpt4_turbo:
+            if output_buffer_size > OpenAIDefaults.boost_max_tokens_gpt_4_turbo_output:
+                output_buffer_size = OpenAIDefaults.boost_max_tokens_gpt_4_turbo_output
 
         return output_buffer_size
 
