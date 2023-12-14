@@ -156,22 +156,24 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
 
                     total_usage_kb += usageInKb
 
-                    customers_list.append([f"{account_status['org']}",
-                                           f"{account_status['owner']}",
-                                           f"{invoice_data.price.metadata.email if invoice_data.price.metadata.get('email') else customer.email}",
-                                           f"{account_status['created']}",
-                                           f"{account_status['status']}",
-                                           f"{account_status['credit_card_linked']}",
-                                           f"{plan_name}",
-                                           f"{invoice_end}",
-                                           f"{invoice_status}",
-                                           f"{usageInKb}",
-                                           f"${invoice_data.amount / 100:.2f}",
-                                           f"${account_status['balance_due']:.2f}",
-                                           f"${account_status['usage_this_month']:.2f}",
-                                           f"${account_status['trial_remaining']:.2f}",
-                                           f"${customer_discounts / 100:.2f}",
-                                           f"${customer_paid_invoices / 100:.2f}"])
+                    customers_list.append([
+                        f"{account_status['org']}",
+                        f"{account_status['owner']}",
+                        f"{invoice_data.price.metadata.email if invoice_data.price.metadata.get('email') else customer.email}",
+                        f"{account_status['created']}",
+                        f"{account_status['status']}",
+                        f"{account_status['credit_card_linked']}",
+                        f"{plan_name}",
+                        f"{invoice_end}",
+                        f"{invoice_status}",
+                        f"{usageInKb}",
+                        f"${invoice_data.amount / 100:.2f}",  # This seems to be 'percent' in the unpacking
+                        f"${account_status['balance_due']:.2f}",
+                        f"${account_status['usage_this_month']:.2f}",
+                        f"${account_status['trial_remaining']:.2f}",
+                        f"${customer_discounts / 100:.2f}",
+                        f"${customer_paid_invoices / 100:.2f}"
+                    ])
 
             if thisCustomerUsage > 0:
                 total_active_users += 1
