@@ -8,6 +8,7 @@ from chalicelib.user_organizations import user_organizations_handler
 
 from chalicelib.processors.FlowDiagramProcessor import FlowDiagramProcessor
 from chalicelib.processors.SummaryProcessor import SummarizeProcessor
+from chalicelib.processors.CodeSummarizerProcessor import CodeSummarizerProcessor
 from chalicelib.processors.ExplainProcessor import ExplainProcessor
 from chalicelib.processors.CustomProcessor import CustomProcessor
 from chalicelib.processors.GenerateProcessor import GenerateProcessor
@@ -52,6 +53,12 @@ def flowdiagram(event, _):
 def summarize(event, _):
     summarizeProcessor = SummarizeProcessor()
     return process_request(event, summarizeProcessor.summarize_inputs, summarizeProcessor.api_version)
+
+
+@app.lambda_function(name='codesummarizer')
+def codesummarizer(event, _):
+    codeSummarizerProcessor = CodeSummarizerProcessor()
+    return process_request(event, codeSummarizerProcessor.summarize_code, codeSummarizerProcessor.api_version)
 
 
 @app.lambda_function(name='explain')

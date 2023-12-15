@@ -3,6 +3,17 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 1.4.0: December 14th, 2023
+
+### New Features
+- Code Summarizer Service - quickly summarizes a code file into 500 tokens or less
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Fix duplication of main prompt if there is no system prompt
+
 ## Version 1.3.1: November 17th, 2023
 
 ### New Features
