@@ -38,7 +38,7 @@ class CustomProcessor(GenericProcessor):
             if "{{code}}" in customprompt:
                 code = data['code'] if 'code' in data else None
                 if code is None:
-                    raise BadRequestError("Error: please provide a code fragment to analyze for custom processing")
+                    raise BadRequestError("Error: Please provide a code fragment to analyze for custom processing")
 
                 prompt = customprompt
                 prompt = super().safe_format(prompt, code=code, prompt=customprompt)
@@ -66,22 +66,22 @@ class CustomProcessor(GenericProcessor):
             code = None
             if ('code' in data and len(data['code']) > 0):
                 del data['code']
-                print("Warning: code was provided but is not used when messages are provided")
+                print("Warning: Code was provided but is not used when messages are provided")
 
             prompt = None
             if ('prompt' in data and len(data['prompt']) > 0):
                 del data['prompt']
-                print("Warning: prompt was provided but is not used when messages are provided")
+                print("Warning: Prompt was provided but is not used when messages are provided")
         else:
             # Extract the code from the json data
             code = data[self.get_chunkable_input()] if self.get_chunkable_input() in data else None
             if code is None:
-                raise BadRequestError("Error: please provide a code fragment to analyze for coding guidelines")
+                raise BadRequestError("Error: Please provide a code fragment to analyze for coding guidelines")
 
             # Extract the prompt from the json data
             prompt = data['prompt'] if 'prompt' in data else None
             if prompt is None:
-                raise BadRequestError("Error: please provide a custom prompt to run against the code fragment")
+                raise BadRequestError("Error: Please provide a custom prompt to run against the code fragment")
 
         result = self.process_input(data, account, function_name, correlation_id,
                                     {self.get_chunkable_input(): code,
