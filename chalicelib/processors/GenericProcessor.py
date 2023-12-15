@@ -362,8 +362,9 @@ class GenericProcessor:
                     this_messages[idx + 1]['content'] = modified_content_dict[idx + 1]
                 new_messages.append(this_messages[idx + 1])
 
-        # add the last message
-        new_messages.append(this_messages[-1])
+        # add the last message (as long as we have multiple messages)
+        if len(this_messages) > 1:
+            new_messages.append(this_messages[-1])
 
         if truncated_system_messages_count > 0:
             print(f"{self.__class__.__name__}:Content-Optimization:"
