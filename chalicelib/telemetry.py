@@ -60,6 +60,7 @@ highResolutionCloudWatchMetric = 1
 # unit: Seconds, Microseconds, Milliseconds, Bytes, Kilobytes, Megabytes, Gigabytes, Terabytes, Bits, Kilobits, Megabits, Gigabits, Terabits, Percent, Count, Count/Second, None
 def capture_metric(customer, email, function_name: "capture_metric", correlation_id, *metrics):
     try:
+        email = email if not None else 'Unknown'
         # log all metrics no matter what
         for metric in metrics:
             if isinstance(metric['value'], float) or isinstance(metric['value'], decimal.Decimal):
