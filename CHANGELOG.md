@@ -3,6 +3,18 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
+## Version 1.4.1: January 9th, 2024
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Fix CloudWatch metric logging crash - when no GitHub email can be determined during authentication
+- Better handling for missing GitHub email scope in OAuth authentication
+
 ## Version 1.4.0: December 14th, 2023
 
 ### New Features

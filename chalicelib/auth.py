@@ -49,7 +49,7 @@ def fetch_email(access_token):
     if access_token in token_2_email_cache:
         return token_2_email_cache[access_token]
     else:
-        print("Refreshing Org Cache: *access token hidden*")
+        print("Refreshing Email Cache: *access token hidden*")
 
     headers = {
         'Authorization': f'token {access_token}',
@@ -68,6 +68,12 @@ def fetch_email(access_token):
                 token_2_email_cache[access_token] = email['email']
                 return email['email']
     else:
+        response_json = response.json()
+        if 'message' in response_json and response_json['message'] == 'Not Found':
+            error_message = "GitHub email query failed: OAuth token may lack 'read:email' scope or be invalid."
+            print(f"ERROR: {error_message}")
+            return None
+
         email_pattern = r'testemail:\s*([\w.-]+@[\w.-]+\.\w+)'
         match = re.search(email_pattern, access_token)
 
@@ -78,8 +84,7 @@ def fetch_email(access_token):
             token_2_email_cache[access_token] = email
             return email
 
-        print(f"ERROR: GitHub email query failure: {response.json()}")
-
+        print(f"ERROR: GitHub email query failure: {response_json}")
         return None
 
 
