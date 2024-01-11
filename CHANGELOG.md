@@ -8,9 +8,12 @@ Polyverse Boost Cloud Service
 ### New Features
 - Support for Signed Authentication Headers (Sara SaaS clients)
 - Support for Free/Trial, Paid/Premium Account Types
+    - Customer Portal API returns SaaS/Sara and Plan status
+    - User Organizations API only works with GitHub Session token
+    - All other APIs succeed for all SaaS/Sara accounts
 
 ### Enhancements
-- N/A
+- For API calls made by signed header callers, the operation expense will be returned in the account field
 
 ### Bug Fixes
 - Fix CloudWatch metric logging crash - when no GitHub email can be determined during authentication

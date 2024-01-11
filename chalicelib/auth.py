@@ -334,9 +334,6 @@ def validate_request_lambda(request_json, headers, function_name, correlation_id
     # if we got this far, we got a valid email. now check that the email is subscribed
     account = check_valid_subscriber(signed_user, email, organization, correlation_id, not raiseOnError)
 
-    if signed_user:
-        account['signed_user'] = signed_user
-
     # if not validated, we need to see if we have a billing error, or if the user is not subscribed
     if not account['enabled']:
         if account and account['status'] == 'suspended':
@@ -374,6 +371,7 @@ def clean_account(account, email=None, organization=None):
         'enabled': account['enabled'],
         'status': account['status'],
         'operation_cost': account['operation_cost'] if 'operation_cost' in account else 0.00,
+        'operation_expense': account['operation_expense'] if 'operation_expense' in account else 0.00,
         'org': account['org'] if 'org' in account else organization if organization is not None else 'unknown',
         'email': account['email'] if 'email' in account else email if email is not None else 'unknown',
     }

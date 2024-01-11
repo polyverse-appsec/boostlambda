@@ -5,6 +5,7 @@ import random
 import os
 
 from .test_utils import warn
+from .test_customer_portal import get_signed_headers
 
 # load the data files into a string, relative to the root directory
 with open('./tests/data/quick-blueprint/package.json', 'r') as file:
@@ -18,7 +19,21 @@ from .test_version import client_version
 use_simulated_service_responses = False
 
 
-def test_quick_blueprint():
+def test_quick_blueprint_signed_auth():
+    base_headers = get_signed_headers("unittest@polytest.ai", "polytest.ai")
+
+    base_test_quick_blueprint(base_headers)
+
+
+def test_quick_blueprint_github_auth():
+    base_headers = {'session': 'testemail: unittest@polytest.ai',
+                    'organization': 'polytest.ai',
+                    'version': client_version
+                    }
+    base_test_quick_blueprint(base_headers)
+
+
+def base_test_quick_blueprint(base_auth_headers):
     with Client(app) as client:
 
         # set the CHALICE_STAGE to dev so that we can test Cloud-based files
@@ -50,10 +65,8 @@ def test_quick_blueprint():
         request_body = {
             'filelist': projectFileList,
             'projectName': 'typescript-sample-extension',
-            'session': 'testemail: unittest@polytest.ai',
-            'organization': 'polytest.ai',
-            'version': client_version
         }
+        request_body.update(base_auth_headers)
 
         draft_request_body = request_body.copy()
         response = client.lambda_.invoke(
@@ -65,6 +78,8 @@ def test_quick_blueprint():
 
         # function creates details from an embedded JSON string
         details = json.loads(response.payload['body'])['details']
+
+        expense = json.loads(response.payload['body'])['account']['operation_expense']
 
         print(details)
 
@@ -119,6 +134,9 @@ def test_quick_blueprint():
                 'quick-blueprint', request_body)
 
         assert response.payload['statusCode'] == 200
+
+        expense += json.loads(response.payload['body'])['account']['operation_expense']
+        assert expense > 0.0
 
         # body is a JSON string, so parse it into a JSON object
         blueprint = json.loads(response.payload['body'])['blueprint']

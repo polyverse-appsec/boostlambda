@@ -1,6 +1,5 @@
 from chalice.test import Client
 import jwt
-import requests
 import time
 import boto3
 from app import app
@@ -31,30 +30,38 @@ def get_private_key():
     return private_key
 
 
-def test_strong_authn():
-    email = "unittest@polytest.ai"
-
-    print("Running test: Strong authentication")
+def get_signed_headers(email, org):
 
     private_key = get_private_key()
 
-    # create an unsigned object that expires in 60 seconds from now (unix system time + 60 seconds)
-    expiration_unix_time = int(time.time()) + 60
+    # create an unsigned object that expires in 2 mins to allow for tests to run seconds from now (unix system time + 60 seconds)
+    expiration_unix_time = int(time.time()) + 120
 
     # create an unsigned object that expires in 15 seconds from now (unix system time + 15 seconds)
-    unsigedIdentity = {
+    unsigned_identity = {
         "email": email,
-        "organization": "polytest.ai",
+        "organization": org,
         "expires": expiration_unix_time
     }
 
     # Create the JWT token
-    signedIdentity = jwt.encode(unsigedIdentity, private_key, algorithm='RS256')
+    signed_identity = jwt.encode(unsigned_identity, private_key, algorithm='RS256')
 
-    signedHeaders = {'x-signed-identity': signedIdentity}
+    signed_headers = {'x-signed-identity': signed_identity}
+
+    return signed_headers
+
+
+def test_strong_authn():
+    email = "unittest@polytest.ai"
+    org = "polytest.ai"
+
+    print("Running test: Strong authentication")
+
+    signed_headers = get_signed_headers(email, org)
 
     with Client(app) as client:
-        request_body = signedHeaders
+        request_body = signed_headers
 
         response = client.lambda_.invoke(
             'customer_portal', request_body)

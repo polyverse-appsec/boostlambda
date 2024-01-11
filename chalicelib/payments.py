@@ -245,6 +245,8 @@ def update_usage_for_text(account, bytes_of_text, usage_type, chargeToCustomer=T
 
         # update the usage
         cost = update_usage(subscription_item, bytes_of_text, chargeToCustomer)
+    else:
+        cost = 0.0
 
     # store the operation cost for the caller
     account['operation_cost'] = cost
@@ -306,6 +308,7 @@ def check_customer_account_status(signed, customer, deep=False):
         account_status['org'] = customer.metadata.org
         account_status['owner'] = customer.email
         del account_status['billing_threshold']
+        account_status['saas_client'] = True
 
         return account_status
 

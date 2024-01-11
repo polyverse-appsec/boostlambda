@@ -1553,8 +1553,11 @@ class GenericProcessor:
                     #
                     # This can all be overridden per processor
                     billed_cost = self.report_usage_cost(account, function_name,
-                                                         (not account.get('sara_saas', False)) and success,
+                                                         (not account.get('plan', False)) and success,
                                                          billing_metrics)
+
+                    if account.get('saas_client', False):
+                        account['operation_expense'] = boost_cost
 
                     boostAiCostMargin = -100.0  # negative 100% margin means complete loss
 
