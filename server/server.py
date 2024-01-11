@@ -30,7 +30,7 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
         verb = parsed_url.path.strip('/').split('/')[0]
 
         # Read and parse the JSON data from the request body.
-        content_length = int(self.headers['Content-Length'])
+        content_length = int(self.headers.get('Content-Length', 0))
         request_body = self.rfile.read(content_length)
         json_data = json.loads(request_body) if request_body else {}
 
