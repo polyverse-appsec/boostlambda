@@ -259,12 +259,14 @@ def validate_request_lambda(request_json, headers, function_name, correlation_id
     organization = request_json.get('organization')
     version = request_json.get('version')
 
-    # Check for x-signed-identity header
-    signed_identity = headers.get('x-signed-identity')
+    # Check for x-signed-identity header (or any casing variation)
+    signed_identity = next((value for key, value in headers.items() if key.lower() == 'x-signed-identity'), None)
     if signed_identity:
         try:
             signing_key = get_jwt_signing_key()  # Function to retrieve the public key
-            signing_algorithm = headers.get('x-signing-algorithm', 'RS256')
+
+            # look for signing algorithm out of headers using same case invariant approach, defaulting to RS256
+            signing_algorithm = next((value for key, value in headers.items() if key.lower() == 'x-signing-algorithm'), 'RS256')
 
             # Decode and verify JWT
             identity = jwt.decode(signed_identity, signing_key, algorithms=[signing_algorithm])
