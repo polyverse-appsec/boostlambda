@@ -8,6 +8,10 @@ from chalicelib.version import API_VERSION
 from chalicelib.log import mins_and_secs
 from cachetools import TTLCache
 import random
+import jwt
+from datetime import datetime
+from requests.exceptions import ConnectionError
+from chalicelib.pvsecret import get_jwt_signing_key
 
 userorganizations_api_version = API_VERSION  # API version is global for now, not service specific
 print("userorganizations_api_version: ", userorganizations_api_version)
@@ -250,52 +254,88 @@ def validate_github_session(access_token, organization, correlation_id, raiseOnE
 # function to validate that the request came from a github logged in user or we are running on localhost
 # or that the session token is valid github oauth token for a subscribed email. This version is for the
 # raw lambda function and so has the session key passed in as a string
-def validate_request_lambda(request_json, function_name, correlation_id, raiseOnError=True):
-
+def validate_request_lambda(request_json, headers, function_name, correlation_id, raiseOnError=True):
     session = request_json.get('session')
     organization = request_json.get('organization')
     version = request_json.get('version')
 
-    # if session is missing, the client isn't authorized
-    if session is None:
-        raise ExtendedUnauthorizedError("Invalid authentication/authorization", reason="InvalidSession")
+    # Check for x-signed-identity header
+    signed_identity = headers.get('x-signed-identity')
+    if signed_identity:
+        try:
+            signing_key = get_jwt_signing_key()  # Function to retrieve the public key
+            signing_algorithm = headers.get('x-signing-algorithm', 'RS256')
 
-    if version is None:
-        if raiseOnError:
-            raise ExtendedUnauthorizedError("Please upgrade your client software to use Boost service", reason="UpgradeRequired")
-        else:
-            print('Error: Please upgrade your client software to use Boost service')
-            return {'enabled': False, 'status': 'unregistered'}
+            # Decode and verify JWT
+            identity = jwt.decode(signed_identity, signing_key, algorithms=[signing_algorithm])
 
-    elif organization is None:
-        if raiseOnError:
-            raise ExtendedUnauthorizedError("Missing account organization from client request", reason="MissingOrganization")
-        else:
-            print('Error: Missing account organization from client request')
-            return {'enabled': False, 'status': 'unregistered'}
+            # Validate expiration time
+            if identity.get('expires') and identity['expires'] < datetime.now().timestamp():
+                raise jwt.ExpiredSignatureError("Signed identity expired")
 
-    # otherwise check to see if we have a valid github session token
-    # parse the request body as json
-    try:
-        # extract the code from the json data
-        validated, email = validate_github_session(session, organization, correlation_id, raiseOnError)
-    except ValueError:
-        pass
+            email = identity['email']
+            organization = identity['organization']
 
-    # if we did not get a valid email, send a cloudwatch alert and raise the error
-    if not validated:
-        capture_metric({"name": organization, "id": "UNKNOWN"}, email, function_name, correlation_id,
-                       {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
+        except jwt.ExpiredSignatureError as e:
+            if raiseOnError:
+                raise ExtendedUnauthorizedError(str(e))
+            else:
+                print(f'Error: {e}')
+                return {'enabled': False, 'status': 'unauthorized'}
 
-        if raiseOnError:
-            # if we got here, we failed, return an error
-            raise ExtendedUnauthorizedError("Error: Please login to GitHub and select an Organization to use this service", reason="GitHubAccessNotFound")
-        else:
-            print(f'Error:{email}: Please login to GitHub and select an Organization to use this service')
-            return {'enabled': False, 'status': 'unregistered'}
+        except Exception as e:
+            if raiseOnError:
+                raise ExtendedUnauthorizedError("Invalid signed identity")
+            else:
+                print(f'Error: Invalid signed identity: {e}')
+                return {'enabled': False, 'status': 'unauthorized'}
+
+    else:
+        # if session is missing, the client isn't authorized
+        if session is None:
+            raise ExtendedUnauthorizedError("Invalid authentication/authorization", reason="InvalidSession")
+
+        if version is None:
+            if raiseOnError:
+                raise ExtendedUnauthorizedError("Please upgrade your client software to use Boost service", reason="UpgradeRequired")
+            else:
+                print('Error: Please upgrade your client software to use Boost service')
+                return {'enabled': False, 'status': 'unregistered'}
+
+        elif organization is None:
+            if raiseOnError:
+                raise ExtendedUnauthorizedError("Missing account organization from client request", reason="MissingOrganization")
+            else:
+                print('Error: Missing account organization from client request')
+                return {'enabled': False, 'status': 'unregistered'}
+
+        # otherwise check to see if we have a valid github session token
+        # parse the request body as json
+        try:
+            # extract the code from the json data
+            validated, email = validate_github_session(session, organization, correlation_id, raiseOnError)
+        except ValueError:
+            pass
+
+        # if we did not get a valid email, send a cloudwatch alert and raise the error
+        if not validated:
+            capture_metric({"name": organization, "id": "UNKNOWN"}, email, function_name, correlation_id,
+                           {"name": InfoMetrics.GITHUB_ACCESS_NOT_FOUND, "value": 1, "unit": "None"})
+
+            if raiseOnError:
+                # if we got here, we failed, return an error
+                raise ExtendedUnauthorizedError("Error: Please login to GitHub and select an Organization to use this service", reason="GitHubAccessNotFound")
+            else:
+                print(f'Error:{email}: Please login to GitHub and select an Organization to use this service')
+                return {'enabled': False, 'status': 'unregistered'}
+
+    signed_user = signed_identity is not None
 
     # if we got this far, we got a valid email. now check that the email is subscribed
-    account = check_valid_subscriber(email, organization, correlation_id, not raiseOnError)
+    account = check_valid_subscriber(signed_user, email, organization, correlation_id, not raiseOnError)
+
+    if signed_user:
+        account['signed_user'] = signed_user
 
     # if not validated, we need to see if we have a billing error, or if the user is not subscribed
     if not account['enabled']:

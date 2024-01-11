@@ -3,10 +3,11 @@ Polyverse Boost Cloud Service
 
 # Release Notes
 
-## Version 1.4.1: January 9th, 2024
+## Version 1.5.0: January 9th, 2024
 
 ### New Features
-- N/A
+- Support for Signed Authentication Headers (Sara SaaS clients)
+- Support for Free/Trial, Paid/Premium Account Types
 
 ### Enhancements
 - N/A

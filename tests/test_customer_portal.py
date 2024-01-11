@@ -1,8 +1,70 @@
 from chalice.test import Client
+import jwt
+import requests
+import time
+import boto3
 from app import app
 import json
 from .test_version import client_version
 from . import test_utils  # noqa pylint: disable=unused-import
+
+
+def get_private_key():
+
+    secret_name = "boost-sara/sara-client-private-key"
+    region_name = "us-west-2"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    get_secret_value_response = client.get_secret_value(
+        SecretId=secret_name
+    )
+
+    # Decrypts secret using the associated KMS key.
+    private_key = get_secret_value_response['SecretString']
+
+    return private_key
+
+
+def test_strong_authn():
+    email = "unittest@polytest.ai"
+
+    print("Running test: Strong authentication")
+
+    private_key = get_private_key()
+
+    # create an unsigned object that expires in 60 seconds from now (unix system time + 60 seconds)
+    expiration_unix_time = int(time.time()) + 60
+
+    # create an unsigned object that expires in 15 seconds from now (unix system time + 15 seconds)
+    unsigedIdentity = {
+        "email": email,
+        "organization": "polytest.ai",
+        "expires": expiration_unix_time
+    }
+
+    # Create the JWT token
+    signedIdentity = jwt.encode(unsigedIdentity, private_key, algorithm='RS256')
+
+    signedHeaders = {'x-signed-identity': signedIdentity}
+
+    with Client(app) as client:
+        request_body = signedHeaders
+
+        response = client.lambda_.invoke(
+            'customer_portal', request_body)
+
+        assert response.payload['statusCode'] == 200
+
+        body = json.loads(response.payload['body'])
+        assert body['status'] == 'premium'
+        assert body['portal_url'] is not None
+        assert body['enabled'] is True
 
 
 # test the customer portal with a valid email address

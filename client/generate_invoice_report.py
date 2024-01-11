@@ -112,7 +112,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                 print("-", end="")
                 continue
 
-            account_status = check_customer_account_status(customer, True)
+            account_status = check_customer_account_status(False, customer, True)
 
             print(".", end="")
 

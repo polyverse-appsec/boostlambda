@@ -87,6 +87,10 @@ def process_request(event, function, api_version):
             json_data = json.loads(event['body'])
         else:
             json_data = event
+        if 'headers' in event:
+            headers = event['headers']
+        else:
+            headers = event  # we're going to use the same event/body structure if running locally to get the headers
 
         client_version = extract_client_version(event)
         if ('version' not in json_data):
@@ -100,7 +104,7 @@ def process_request(event, function, api_version):
         if cloudwatch is not None:
             with xray_recorder.capture('validate_request_lambda'):
                 # first we check if the account is enabled
-                account = validate_request_lambda(json_data, function.__name__, correlation_id, False)
+                account = validate_request_lambda(json_data, headers, function.__name__, correlation_id, False)
 
                 email = account['email'] if 'email' in account else email
 
@@ -108,10 +112,10 @@ def process_request(event, function, api_version):
                 # note: we could return the error in the account object and save
                 # calling validate again, but for now, we're going to keep it simple
                 if not (account['enabled'] if 'enabled' in account else False):
-                    validate_request_lambda(json_data, function.__name__, correlation_id, True)
+                    validate_request_lambda(json_data, headers, function.__name__, correlation_id, True)
         else:
             start_time = time.monotonic()
-            account = validate_request_lambda(json_data, function.__name__, correlation_id, False)
+            account = validate_request_lambda(json_data, headers, function.__name__, correlation_id, False)
 
             email = account['email'] if 'email' in account else email
 

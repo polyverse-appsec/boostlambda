@@ -79,7 +79,7 @@ def test_check_create_subscription():
     customer = check_create_customer(email=email, org=org)
 
     # Call the checkCreateSubscription function with the test inputs
-    result = check_create_subscription(customer=customer, email=email)
+    result = check_create_subscription(False, customer=customer, email=email)
 
     # Assert that the result is a customer object
     assert result is not None
@@ -96,7 +96,7 @@ def test_check_create_subscription_item():
     customer = check_create_customer(email=email, org=org)
 
     # Call the checkCreateSubscription function with the test inputs
-    subscription = check_create_subscription(customer=customer, email=email)
+    subscription = check_create_subscription(False, customer=customer, email=email)
 
     # Call the checkCreateSubscriptionItem function with the test inputs
     result = check_create_subscription_item(subscription=subscription, email=email)
@@ -105,6 +105,27 @@ def test_check_create_subscription_item():
     assert result is not None
     # Assert that there is a customer id
     assert result.id is not None
+
+
+def test_create_saas_subscription_customer():
+    # Define test inputs
+    org = generate_org()
+    email = generate_email("@" + org + ".com")
+
+    # Call the checkCreateCustomer function with the test inputs
+    customer = check_create_customer(email=email, org=org)
+
+    # Call the checkCreateSubscription function with the test inputs
+    subscription = check_create_subscription(True, customer=customer, email=email)
+    assert subscription is None
+
+    # Assert that there is a customer id
+    account = check_customer_account_status(True, customer=customer)
+    assert account['enabled'] is True
+    assert account['status'] == 'trial'
+    assert account['org'] == org
+    assert account['email'] == email
+    assert account['plan'] == account['trial']
 
 
 def test_update_usage_base():
@@ -116,7 +137,7 @@ def test_update_usage_base():
     customer = check_create_customer(email=email, org=org)
 
     # Call the checkCreateSubscription function with the test inputs
-    subscription = check_create_subscription(customer=customer, email=email)
+    subscription = check_create_subscription(False, customer=customer, email=email)
 
     # Call the checkCreateSubscriptionItem function with the test inputs
     subscription_item = check_create_subscription_item(subscription=subscription, email=email)
@@ -128,7 +149,7 @@ def test_update_usage_base():
     assert cost != 0
 
     # Assert that there is a customer id
-    account = check_customer_account_status(customer=customer)
+    account = check_customer_account_status(False, customer=customer)
     assert account['enabled'] is True
     assert account['status'] == 'trial'
     assert account['usage_this_month'] == boost_base_monthly_cost  # first 1 unit is $10 / month
@@ -143,7 +164,7 @@ def test_update_usage_base_plus_extra():
     customer = check_create_customer(email=email, org=org)
 
     # Call the checkCreateSubscription function with the test inputs
-    subscription = check_create_subscription(customer=customer, email=email)
+    subscription = check_create_subscription(False, customer=customer, email=email)
 
     # Call the checkCreateSubscriptionItem function with the test inputs
     subscription_item = check_create_subscription_item(subscription=subscription, email=email)
@@ -156,7 +177,7 @@ def test_update_usage_base_plus_extra():
     assert cost != 0
 
     # Assert that there is a customer id
-    account = check_customer_account_status(customer=customer)
+    account = check_customer_account_status(False, customer=customer)
     assert account['enabled'] is True
     assert account['status'] == 'trial'
     assert account['usage_this_month'] == boost_base_monthly_cost + (extra_units * boost_cost_per_kb)
@@ -171,7 +192,7 @@ def test_update_multiple_usage():
     first_item_id = None
 
     for i in range(0, 10):
-        account = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+        account = check_valid_subscriber(False, email=email, organization=org, correlation_id="test")
 
         if first_sub_id is None:
             assert account['usage_this_month'] == 0
@@ -181,7 +202,7 @@ def test_update_multiple_usage():
         # Call the updateUsage function with the test inputs
         cost = update_usage(subscription_item=account['subscription_item'], bytes=0)
 
-        account = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+        account = check_valid_subscriber(False, email=email, organization=org, correlation_id="test")
 
         if first_sub_id is None:
             assert account['usage_this_month'] == 0
@@ -201,7 +222,7 @@ def test_update_multiple_usage():
         assert cost != 0
 
         # simulate a 2nd inbound request
-        next_account = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+        next_account = check_valid_subscriber(False, email=email, organization=org, correlation_id="test")
 
         # assert that we have a combined usage of both costs
         assert next_account['usage_this_month'] > cost
@@ -219,7 +240,7 @@ def test_update_usage_large():
     customer = check_create_customer(email=email, org=org)
 
     # Call the checkCreateSubscription function with the test inputs
-    subscription = check_create_subscription(customer=customer, email=email)
+    subscription = check_create_subscription(False, customer=customer, email=email)
 
     # Call the checkCreateSubscriptionItem function with the test inputs
     subscription_item = check_create_subscription_item(subscription=subscription, email=email)
@@ -230,14 +251,14 @@ def test_update_usage_large():
     trialNinetyNineDollars = 99 * oneDollarInData
 
     # now check that we correctly flag the customer as active (new account)
-    account_status = check_customer_account_status(customer=customer)
+    account_status = check_customer_account_status(False, customer=customer)
     assert account_status['enabled'] is True
     assert account_status['status'] == 'active'
     # Call the updateUsage function with the test inputs
     cost = update_usage(subscription_item=subscription_item, bytes=oneDollarInData)  # small amount of data
 
     # now check that we correctly flag the customer as in a trial
-    account_status = check_customer_account_status(customer=customer)
+    account_status = check_customer_account_status(False, customer=customer)
     assert account_status['enabled'] is True
     assert account_status['status'] == 'trial'
     # Call the updateUsage function with the test inputs
@@ -258,7 +279,7 @@ def test_update_usage_large():
     assert customer.balance is not None
 
     # now check that we correctly flag the customer as needing to be charged
-    account_status = check_customer_account_status(customer=customer)
+    account_status = check_customer_account_status(False, customer=customer)
     assert account_status['enabled'] is False
     assert account_status['status'] == 'expired'
 
@@ -288,7 +309,7 @@ def test_update_usage_large():
     )
 
     # now check that we correctly flag the customer as needing to be charged
-    account_status = check_customer_account_status(customer=customer)
+    account_status = check_customer_account_status(False, customer=customer)
     if not account_status['enabled']:
         payment_method = stripe.PaymentMethod.create(
             type='card',
@@ -308,7 +329,7 @@ def test_update_usage_large():
         )
 
         # now check that we correctly flag the customer as needing to be charged
-        account_status = check_customer_account_status(customer=customer)
+        account_status = check_customer_account_status(False, customer=customer)
         assert account_status['enabled'] is True
 
     assert account_status['status'] == 'paid'
@@ -323,7 +344,7 @@ def test_update_usage_large():
     customer = stripe.Customer.retrieve(customer.id)
 
     # now check that we correctly flag the customer as needing to be charged
-    account_status = check_customer_account_status(customer=customer)
+    account_status = check_customer_account_status(False, customer=customer)
     assert account_status['enabled'] is False
     assert account_status['status'] == 'expired'
 
@@ -333,7 +354,7 @@ def test_check_valid_subscriber():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+    sub = check_valid_subscriber(False, email=email, organization=org, correlation_id="test")
     assert sub['enabled'] is True
 
 
@@ -342,18 +363,18 @@ def test_multiple_emails_per_org():
     org = generate_org()
     email = generate_email("@" + org + ".com")
 
-    sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+    sub = check_valid_subscriber(False, email=email, organization=org, correlation_id="test")
     assert sub['enabled'] is True
 
     email = generate_email("@" + org + ".com")
 
-    sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+    sub = check_valid_subscriber(False, email=email, organization=org, correlation_id="test")
     assert sub['enabled'] is True
 
     # test a third email
     email = generate_email("@" + org + ".com")
 
-    sub = check_valid_subscriber(email=email, organization=org, correlation_id="test")
+    sub = check_valid_subscriber(False, email=email, organization=org, correlation_id="test")
     assert sub['enabled'] is True
 
 

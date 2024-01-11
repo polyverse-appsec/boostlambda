@@ -11,12 +11,13 @@ def customer_portal_handler(event, context):
     def handler(event, correlation_id):
         # Extract parameters from the event object
         json_data = json.loads(event['body']) if 'body' in event else event
+        headers = json.loads(event['headers']) if 'headers' in event else event
         client_version = extract_client_version(event)
         json_data['version'] = json_data.get('version', client_version)
         organization = json_data.get('organization')
 
         # Validate request lambda
-        account = validate_request_lambda(json_data, context.function_name, correlation_id, False)
+        account = validate_request_lambda(json_data, headers, context.function_name, correlation_id, False)
 
         # Specific logic for customer_portal
         email = account['email'] if 'email' in account else None

@@ -41,6 +41,9 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
                     if key == 'User-Agent':
                         user_agent = value
                         break
+                    if key == 'x-user-identity':
+                        json_data['x-user-identity'] = value
+                        break
                 json_data['version'] = user_agent
 
                 response = client.lambda_.invoke(verb, json_data)

@@ -166,10 +166,14 @@ def check_create_customer(email, org, correlation_id=0):
     return customer
 
 
-def check_create_subscription(customer, email):
+def check_create_subscription(signed, customer, email):
 
     if (email is None):
         raise Exception("Email is required to create a payment account")
+
+    if signed:
+        print(f"CHECK_CREATE_SUBSCRIPTION:SKIPPED:: email:{email}, Signed Sara subscription skipped")
+        return None
 
     # check if the customer has an active subscription
     active_subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id, status='active')
@@ -236,11 +240,11 @@ def update_usage(subscription_item, bytes, chargeToCustomer=True):
 
 
 def update_usage_for_text(account, bytes_of_text, usage_type, chargeToCustomer=True):
-    # get the subscription item
-    subscription_item = account['subscription_item']
+    if 'subscription_item' in account:
+        subscription_item = account['subscription_item']
 
-    # update the usage
-    cost = update_usage(subscription_item, bytes_of_text, chargeToCustomer)
+        # update the usage
+        cost = update_usage(subscription_item, bytes_of_text, chargeToCustomer)
 
     # store the operation cost for the caller
     account['operation_cost'] = cost
@@ -261,7 +265,7 @@ def update_usage_for_text(account, bytes_of_text, usage_type, chargeToCustomer=T
 #   - trial: the customer does not have a payment method, and has pending invoice = 0
 #   - paid: the customer has a payment method
 #   - active: the customer has no usage, no invoice, no balance, no payment method
-def check_customer_account_status(customer, deep=False):
+def check_customer_account_status(signed, customer, deep=False):
     account_status = {
         'enabled': False,
         'status': 'active',
@@ -276,6 +280,34 @@ def check_customer_account_status(customer, deep=False):
         'billing_threshold': 0.00,
         'plan': 'None',
     }
+
+    if signed:
+
+        # We're going to treat polyverse accounts as paid, even if no credit card on file
+        if customer['email'].endswith(("@polyverse.io", "@polytest.ai", "@polyverse.com")):
+            account_status['status'] = 'paid'
+            account_status['plan'] = 'premium'
+
+        # we may want to add a Basic paid level as well
+        #    account_status['status'] = 'paid'
+        #    account_status['plan'] = 'basic'
+
+        else:
+            account_status['status'] = 'trial'
+            account_status['plan'] = 'trial'
+
+        account_status['enabled'] = True
+        del account_status['trial_remaining']
+        del account_status['usage_this_month']
+        del account_status['balance_due']
+        del account_status['coupon_type']
+        del account_status['credit_card_linked']
+        del account_status['created']
+        account_status['org'] = customer.metadata.org
+        account_status['owner'] = customer.email
+        del account_status['billing_threshold']
+
+        return account_status
 
     # balance starts at the customer's balance before the current invoice
     account_status['balance_due'] = round(float(customer['balance']) / 100, 2) if 'balance' in customer else 0.00
@@ -416,7 +448,7 @@ def check_customer_account_status(customer, deep=False):
 
 
 # if we fail validation, caller can stop call. if we pass validation, caller can continue
-def check_valid_subscriber(email, organization, correlation_id, deep=False):
+def check_valid_subscriber(signed, email, organization, correlation_id, deep=False):
 
     if (email is None):
         raise Exception("Email is required to create a subscription account")
@@ -424,18 +456,23 @@ def check_valid_subscriber(email, organization, correlation_id, deep=False):
     customer = check_create_customer(email=email, org=organization, correlation_id=correlation_id)
     if not customer:
         return {'enabled': False, 'status': 'unregistered'}
-    subscription = check_create_subscription(customer=customer, email=email)
-    if not subscription:
-        return {'enabled': False, 'status': 'unregistered'}
-    subscription_item = check_create_subscription_item(subscription=subscription, email=email)
-    if not subscription_item:
-        return {'enabled': False, 'status': 'unregistered'}
+    subscription = check_create_subscription(signed, customer=customer, email=email)
+
+    # if its a signed Sara user/subscription, we don't yet have the subscription backend setup, so just
+    #     return the customer info and no subscription info
+    if not signed:
+        if not subscription:
+            return {'enabled': False, 'status': 'unregistered'}
+        subscription_item = check_create_subscription_item(subscription=subscription, email=email)
+        if not subscription_item:
+            return {'enabled': False, 'status': 'unregistered'}
 
     # return a dict with the customer, subscription, and subscription_item
-    account_status = check_customer_account_status(customer=customer, deep=deep)
+    account_status = check_customer_account_status(signed, customer=customer, deep=deep)
     account_status["customer"] = customer
-    account_status["subscription"] = subscription
-    account_status["subscription_item"] = subscription_item
+    if subscription:
+        account_status["subscription"] = subscription
+        account_status["subscription_item"] = subscription_item
     account_status["email"] = email
 
     return account_status
