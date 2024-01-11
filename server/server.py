@@ -16,6 +16,15 @@ from app import app # noqa
 
 class MyRequestHandler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
+        self.http_handler()
+
+    def do_GET(self):
+        self.http_handler()
+
+    def do_PUT(self):
+        self.http_handler()
+
+    def http_handler(self):
         # Parse the URL to extract the verb.
         parsed_url = urlparse(self.path)
         verb = parsed_url.path.strip('/').split('/')[0]
@@ -45,6 +54,7 @@ class MyRequestHandler(http.server.BaseHTTPRequestHandler):
                         json_data['x-user-identity'] = value
                         break
                 json_data['version'] = user_agent
+                json_data.update(self.headers)
 
                 response = client.lambda_.invoke(verb, json_data)
 
