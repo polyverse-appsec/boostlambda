@@ -3,7 +3,7 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
-## Version 1.5.0: January 9th, 2024
+## Version 1.5.0: January 11th, 2024
 
 ### New Features
 - Support for Signed Authentication Headers (Sara SaaS clients)
