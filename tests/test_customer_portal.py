@@ -69,7 +69,8 @@ def test_strong_authn():
         assert response.payload['statusCode'] == 200
 
         body = json.loads(response.payload['body'])
-        assert body['status'] == 'premium'
+        assert body['status'] == 'paid'
+        assert body['plan'] == 'premium'
         assert body['portal_url'] is not None
         assert body['enabled'] is True
 

@@ -3,6 +3,17 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
+## Version 1.5.1: January 11th, 2024
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Fix regression crash in header parsing for customer_portal API
+
 ## Version 1.5.0: January 11th, 2024
 
 ### New Features

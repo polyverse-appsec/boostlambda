@@ -11,7 +11,9 @@ def customer_portal_handler(event, context):
     def handler(event, correlation_id):
         # Extract parameters from the event object
         json_data = json.loads(event['body']) if 'body' in event else event
-        headers = json.loads(event['headers']) if 'headers' in event else event
+
+        headers = event['headers'] if 'headers' in event else event
+
         client_version = extract_client_version(event)
         json_data['version'] = json_data.get('version', client_version)
         organization = json_data.get('organization')
