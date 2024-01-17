@@ -3,6 +3,17 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
+## Version 1.5.2: January 17th, 2024
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Fix missing crypto library for RS256 algorithm - blocking Boost REST API client access with signed headers
+
 ## Version 1.5.1: January 11th, 2024
 
 ### New Features
