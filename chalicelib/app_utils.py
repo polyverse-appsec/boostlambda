@@ -124,7 +124,7 @@ def process_request(event, function, api_version):
             # calling validate again, but for now, we're going to keep it simple
             if not (account['enabled'] if 'enabled' in account else False):
                 try:
-                    validate_request_lambda(json_data, function.__name__, correlation_id, True)
+                    validate_request_lambda(json_data, headers, function.__name__, correlation_id, True)
                 finally:
                     end_time = time.monotonic()
                     print(f'Execution time {correlation_id} validate_request FAILED: {mins_and_secs(end_time - start_time)}')
