@@ -3,13 +3,24 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
+## Version 1.5.3: January 18th, 2024
+
+### New Features
+- N/A
+
+### Enhancements
+- Disable EMAIL notifications for new customers or first usage UNLESS EMAIL_NOTIFICATIONS env variable is set (not set by default)
+
+### Bug Fixes
+- N/A
+
 ## Version 1.5.2: January 17th, 2024
 
 ### New Features
 - N/A
 
 ### Enhancements
-- N/A
+- Enable Polyverse* related accounts Test and Dev to ignore Delinquent payment status checks
 
 ### Bug Fixes
 - Fix missing crypto library for RS256 algorithm - blocking Boost REST API client access with signed headers

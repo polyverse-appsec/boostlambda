@@ -350,7 +350,7 @@ def check_customer_account_status(signed, customer, deep=False):
     subscriptions = stripe_retry(stripe.Subscription.list, customer=customer.id, status='active')
 
     # if stripe thinks the customer is delinquent (e.g. didn't pay a bill), then we will suspend them
-    if customer['delinquent']:
+    if customer['delinquent'] and not customer['email'].endswith(("@polyverse.io", "@polytest.ai", "@polyverse.com")):
         account_status['status'] = 'suspended'
 
     # if no active subscriptions, its a suspended account
