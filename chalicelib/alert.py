@@ -22,9 +22,18 @@ else:
     # otherwise, we'll get buried on test emails from test automation
     notify_recipients = test_email if service_stage != 'local' else ""
 
+# only send email if EMAIL_NOTIFICATIONS is set in env variable - otherwise, clear notify_recipients and log
+if 'EMAIL_NOTIFICATIONS' not in os.environ:
+    notify_recipients = ""
+    print("NOT sending alert email (EMAIL_NOTIFICATIONS not set in env variable)")
+
 
 def notify_email(email, org, subject, body=""):
     alert_bypassed = (alert_bypass_domain in org or alert_bypass_domain in email)
+
+    if not notify_recipients or notify_recipients == "":
+        print(f"NOT sending alert email for {subject} to {email} for {org} (notification email not set)")
+        return
 
     if body:
         body = f"\n\n{body}"
