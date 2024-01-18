@@ -155,7 +155,7 @@ def fetch_email_and_username(access_token, raiseOnError=True):
 token_2_org_cache = TTLCache(maxsize=100, ttl=300)
 
 
-def fetch_orgs(access_token):
+def fetch_orgs(access_token, requested_organization=None):
     headers = {
         'Authorization': f'token {access_token}',
         'Accept': 'application/vnd.github+json',
@@ -190,7 +190,7 @@ def fetch_orgs(access_token):
 
         if match:
             email = match.group(1)
-            org = get_domain(email)
+            org = get_domain(email) if requested_organization is None else requested_organization
             orgs = [org]
 
             # Cache the orgs for future use
@@ -227,10 +227,10 @@ def validate_github_session(access_token, organization, correlation_id, raiseOnE
     # otherwise, we validate the user's requested organization against their GitHub org list
     if cloudwatch is not None:
         with xray_recorder.capture('fetch_orgs'):
-            orgs = fetch_orgs(access_token)
+            orgs = fetch_orgs(access_token, organization)
     else:
         start_time = time.monotonic()
-        orgs = fetch_orgs(access_token)
+        orgs = fetch_orgs(access_token, organization)
         end_time = time.monotonic()
         print(f'Execution time {correlation_id} fetch_orgs: {mins_and_secs(end_time - start_time)}')
 
@@ -260,7 +260,7 @@ def validate_request_lambda(request_json, headers, function_name, correlation_id
     version = request_json.get('version')
 
     # Check for x-signed-identity header (or any casing variation)
-    signed_identity = next((value for key, value in headers.items() if key.lower() == 'x-signed-identity'), None)
+    signed_identity = next((value for key, value in headers.items() if key.lower() == 'x-signed-identity'), None) if headers is not None else None
     if signed_identity:
         try:
             signing_key = get_jwt_signing_key()  # Function to retrieve the public key
