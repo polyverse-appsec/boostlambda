@@ -1553,7 +1553,7 @@ class GenericProcessor:
                     #
                     # This can all be overridden per processor
                     billed_cost = self.report_usage_cost(account, function_name,
-                                                         (not account.get('plan', False)) and success,
+                                                         (not account.get('saas_client', False)) and success,
                                                          billing_metrics)
 
                     if account.get('saas_client', False):

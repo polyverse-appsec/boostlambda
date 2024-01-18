@@ -12,7 +12,7 @@ Polyverse Boost Cloud AI Service
 - Disable EMAIL notifications for new customers or first usage UNLESS EMAIL_NOTIFICATIONS env variable is set (not set by default)
 
 ### Bug Fixes
-- N/A
+- Fix usage chargeback to only apply to Boost VSC users and skip Sara SaaS clients
 
 ## Version 1.5.2: January 17th, 2024
 
