@@ -343,6 +343,7 @@ def check_customer_account_status(signed, customer, deep=False):
         elif not premiumEnabled and customer['email'].endswith(("@polyverse.io", "@polytest.ai", "@polyverse.com")):
             account_status['status'] = 'paid'
             account_status['plan'] = 'premium'
+            account_status['plan_name'] = 'Polyverse Employee Premium Free Subscription'
 
         # any free account is a free trial account with public access
         # in the future, we may want to block / restrict some accounts that are suspended
