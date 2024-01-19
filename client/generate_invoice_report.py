@@ -56,7 +56,10 @@ def split_leading_number_from_description(description):
     return number, plan
 
 
-def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sort):
+SaraPremium_Subscription_ProductId = 'prod_POWlNodbOA6mWx'
+
+
+def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, searchLegacyBoost, sort):
 
     if not dev:
         os.environ['CHALICE_STAGE'] = 'prod'
@@ -85,16 +88,35 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
 
     print("Processing customer data")
     for customer in customer_iter:
+        customer_discounts = 0  # Initialize discount for this customer
         try:
-            # if there is no metadata field or the field org does not exist, skip this customer
-            if 'metadata' not in customer or 'org' not in customer.metadata:
-                # if debug:
-                #     print(f"Non-Boost Customer: {customer.email}")
+            # We use customer (instead of account) since its a little faster for quick stripe lookups than a deep account lookup
+            if customer['email'] and user and user != "*" and user not in customer['email']:
+                if debug:
+                    print("-", end="")
                 continue
 
-            # We use customer (instead of account) since its a little faster for quick stripe lookups than a deep account lookup
-            if user and user != "*" and user not in customer['email']:
-                print("-", end="")
+            thisCustomersSubscriptions = stripe.Subscription.list(customer=customer.id)
+            if len(thisCustomersSubscriptions) == 0:
+                if debug:
+                    print(f"Customer {customer.id} has no subscriptions")
+                continue
+
+            product_ids = []
+            for subscription in thisCustomersSubscriptions.auto_paging_iter():
+                for item in subscription['items'].data:
+                    plan_id = item.plan.id  # Get the plan ID
+                    plan = stripe.Plan.retrieve(plan_id)  # Retrieve the plan
+                    product_ids.append(plan.product)  # Append the product ID
+
+            if SaraPremium_Subscription_ProductId not in product_ids and not searchLegacyBoost:
+                if debug:
+                    print(f"Customer {customer.id} has no Sara subscription")
+                continue
+
+            elif SaraPremium_Subscription_ProductId in product_ids and searchLegacyBoost:
+                if debug:
+                    print(f"Customer {customer.id} has no Legacy Boost subscription")
                 continue
 
             # exclude any customer with test email in email address, unless the command line argument "showTest" is specified
@@ -112,7 +134,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                 print("-", end="")
                 continue
 
-            account_status = check_customer_account_status(False, customer, True)
+            account_status = check_customer_account_status(not searchLegacyBoost, customer, True)
 
             print(".", end="")
 
@@ -130,8 +152,11 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                 print(f"{account_status['owner']} has {len(all_invoices)} invoices")
 
             customer_paid_invoices = sum([inv.amount_paid for inv in past_invoices])
+
             customer_discounts = sum(inv.total_discount_amounts[0].amount for inv in past_invoices if inv.total_discount_amounts)
             customer_discounts += upcoming_invoice.total_discount_amounts[0].amount if (upcoming_invoice and upcoming_invoice.total_discount_amounts) else 0
+
+            total_customer_discounts += customer_discounts
 
             if debug:
                 print(customer)
@@ -142,7 +167,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
 
             total_pending_invoices += upcoming_invoice.amount_due if upcoming_invoice else 0
             total_paid_invoices += customer_paid_invoices
-            total_customer_discounts += customer_discounts
+
             total_suspended_customers += 1 if account_status['status'] in ['suspended', 'canceled'] else 0
             if customer.invoice_settings.default_payment_method:
                 total_paying_customers += 1
@@ -152,9 +177,14 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                 invoice_status = invoice['status']
                 for invoice_data in invoice.lines.data:
                     usageInKb, plan_name = split_leading_number_from_description(invoice_data.description)
+
                     thisCustomerUsage += usageInKb
 
                     total_usage_kb += usageInKb
+
+                    if len(plan_name) > 40:
+                        # take the first 30 characters and last 10 characters
+                        plan_name = plan_name[:30] + "..." + plan_name[-10:]
 
                     customers_list.append([
                         f"{account_status['org']}",
@@ -169,8 +199,8 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                         f"{usageInKb}",
                         f"${invoice_data.amount / 100:.2f}",  # This seems to be 'percent' in the unpacking
                         f"${account_status['balance_due']:.2f}",
-                        f"${account_status['usage_this_month']:.2f}",
-                        f"${account_status['trial_remaining']:.2f}",
+                        f"${account_status['usage_this_month']:.2f}" if "usage_this_month" in account_status else "0.00",
+                        f"${account_status['trial_remaining']:.2f}" if "trial_remaining" in account_status else "0.00",
                         f"${customer_discounts / 100:.2f}",
                         f"${customer_paid_invoices / 100:.2f}"
                     ])
@@ -202,15 +232,15 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
         # If --csv switch is used, write data to CSV instead of table.
         with open(csvFile, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Organization', "Customer", 'Email', 'Created', 'Status', 'CCard', 'Plan', "Invoice", "Inv. Status", "Usage", 'Usage(%)', 'Cost', 'Due', 'New Usage', 'Trial Left', 'Discounted', 'Paid'])
-            for org, customer, email, created, status, cc, plan, invoice_end, invoice_status, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid in customers_list:
-                writer.writerow([org, customer, email, created, cc, plan, invoice_end, invoice_status, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid])
+            writer.writerow(['Organization', "Customer", 'Email', 'Created', 'Status', 'CCard', 'Plan', "Invoice", "Inv. Status", 'Cost', 'Due', 'Discounted', 'Paid'])
+            for org, customer, email, created, status, cc, plan, invoice_end, invoice_status, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid in customers_list:
+                writer.writerow([org, customer, email, created, cc, plan, invoice_end, invoice_status, pending_item_cost, due, customer_discounts, total_paid])
     else:
 
         # customers_list.sort()  # sort by org name
         total_coupons = 0
 
-        table = PrettyTable(['Organization', 'Customer', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Invoice", "Inv. Status", "Usage", 'Usage(%)', 'Cost', 'Due', 'New Usage', 'Trial Left', 'Discount', 'Paid'])
+        table = PrettyTable(['Organization', 'Customer', 'Email', 'Created', 'Status', 'CCard', 'Plan', "Invoice", "Inv. Status", 'Cost', 'Due', 'Discount', 'Paid'])
         lastUserEmail = ''
         lastCustomerEmail = ''
         lastOrg = ''
@@ -225,16 +255,17 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
             lastCustomerEmail = customer if customer != '"' else lastCustomerEmail
             percent = "{:.2f}%".format(((int(usageInMb) / total_usage_kb) if total_usage_kb > 0 else 0) * 100)  # usageInMb is Kb at this point
             percent = percent if percent != '0.00%' else '-'
+            percent = '-' if account_status['saas_client'] else percent
             # invoice_end = invoice_end
             # invoice_status = invoice_status
-            usageInMb = "{:.0f} Kb".format((int(usageInMb))) if usageInMb != '0' else '-'
+            usageInMb = "{:.0f}".format((int(usageInMb))) if usageInMb != '0' else '-'
             # usageInMb = "{:.3f} Mb".format((int(usageInMb) / 1024)) if usageInMb != '0' else '-'
             pending_item_cost = pending_item_cost if pending_item_cost != '$0.00' else '-'
             due = due if due != '$0.00' else '-'
             due = due if newOrg and due != '$0.00' else ''
             usage_this_month = usage_this_month if usage_this_month != 0.00 else '-'
             usage_this_month = usage_this_month if newOrg else '"'
-            total_coupons += float(customer_discounts[1:]) * 100 if (customer_discounts != "-" and customer_discounts != '"') else 0
+            total_coupons += float(customer_discounts[1:]) * 100 if newOrg else 0
             trial_left = trial_left if trial_left != '$0.00' else '-'
             trial_left = trial_left if newOrg else ''
             total_paid = total_paid if total_paid != '$0.00' else '-'
@@ -253,7 +284,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
                 shortOrg = org[:20] + "..."
             else:
                 shortOrg = org
-            table.add_row([shortOrg, customer, email, created, status, cc, plan, invoice_end, invoice_status, usageInMb, percent, pending_item_cost, due, usage_this_month, trial_left, customer_discounts, total_paid])
+            table.add_row([shortOrg, customer, email, created, status, cc, plan, invoice_end, invoice_status, pending_item_cost, due, customer_discounts, total_paid])
 
         # If --csv is not used, print the table.
         print(table)
@@ -302,7 +333,7 @@ def main(show_test, debug, dev, printall, exportcsv, user, includePolyverse, sor
         print(customerTable)
         print()
 
-        usageTable = PrettyTable(['Usage', 'Amount'])
+        usageTable = PrettyTable(['Units', 'Amount'])
         usageTable.add_row(["Total (MB)", f"{total_usage_kb / 1024:.2f}mb"])
         print(usageTable)
         print()
@@ -318,10 +349,11 @@ if __name__ == "__main__":
     parser.add_argument("--user", type=str, help="Show invoice data for a single user")
     parser.add_argument("--sort", type=str, help="Sort by type (user or org)")
     parser.add_argument("--includePolyverse", action='store_true', help="Include Polyverse account data")
+    parser.add_argument("--legacyBoostVSC", action='store_true', help="Include Legacy Boost Customers")
     args = parser.parse_args()
 
     try:
-        main(args.showTest, args.debug, args.dev, args.printAll, args.csv, args.user, args.includePolyverse, args.sort)
+        main(args.showTest, args.debug, args.dev, args.printAll, args.csv, args.user, args.includePolyverse, args.legacyBoostVSC, args.sort)
     except ClientError:
         print('Network connection error. Please check connection and try again')
         sys.exit(1)

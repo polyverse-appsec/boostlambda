@@ -3,6 +3,17 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
+## Version 1.6.0: January 18th, 2024
+
+### New Features
+- Enabled full support for Premium (and future Basic) Sara Subscription accounts - backed by Stripe billing
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- N/A
+
 ## Version 1.5.3: January 18th, 2024
 
 ### New Features

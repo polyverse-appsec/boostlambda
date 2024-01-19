@@ -258,6 +258,12 @@ def update_usage_for_text(account, bytes_of_text, usage_type, chargeToCustomer=T
     return cost
 
 
+SaraPremium_Subscription_ProductId = 'prod_POWlNodbOA6mWx'
+
+# this isn't implemented in Stripe backend yet - so we're coding it now, and will fill in id when ready
+SaraBasic_Subscription_ProductId = 'prod_xxxxxxxxxxxxxx'
+
+
 # Check if the customer has a non-zero balance and if they do NOT have a payment method
 # in this case, we know their trial has expired.
 # there are two ways to check balance, balance and a pending invoice. it's not clear which is the better way yet
@@ -277,7 +283,7 @@ def check_customer_account_status(signed, customer, deep=False):
         'coupon_type': 'None',
         'credit_card_linked': False,
         'created': "",
-        'org': customer.metadata.org,
+        'org': customer.metadata.org if 'org' in customer.metadata else None,
         'owner': customer.email,
         'billing_threshold': 0.00,
         'plan': 'None',
@@ -285,27 +291,75 @@ def check_customer_account_status(signed, customer, deep=False):
 
     if signed:
 
+        thisCustomersSubscriptions = stripe.Subscription.list(customer=customer.id)
+        premiumEnabled = False
+        basicEnabled = False
+
+        coupon_type = None
+
+        # find active subscriptions
+        for subscription in thisCustomersSubscriptions.auto_paging_iter():
+            for item in subscription['items'].data:
+                plan_id = item.plan.id
+                plan = stripe.Plan.retrieve(plan_id)
+                product = stripe.Product.retrieve(plan.product)
+
+                enabled = (subscription.status == 'active')
+
+                if product.id == SaraPremium_Subscription_ProductId:
+                    premiumEnabled = enabled
+
+                elif product.id == SaraBasic_Subscription_ProductId:
+                    if premiumEnabled:
+                        if enabled:
+                            print(f"WARNING: Customer {customer.email} has both premium and basic subscriptions")
+
+                        # if only premium is enabled, then skip basic
+                        else:
+                            continue
+
+                    basicEnabled = enabled
+
+                # otherwise, skip this subscription since we don't recognize it
+                else:
+                    print(f"WARNING: Unknown product {product.id} for customer {customer.email}")
+                    continue
+
+                if enabled:
+                    if subscription.discount and subscription.discount.coupon:
+                        coupon_type = f"${subscription.discount.coupon.amount_off} off" if subscription.discount.coupon.amount_off else f"{subscription.discount.coupon.percent_off}% off"
+                    account_status['plan_name'] = product.name  # Product name
+
+        account_status['enabled'] = True
+
+        if premiumEnabled:
+            account_status['status'] = 'paid'
+            account_status['plan'] = 'premium'
+        elif basicEnabled:
+            account_status['status'] = 'paid'
+            account_status['plan'] = 'basic'
+
         # We're going to treat polyverse accounts as paid, even if no credit card on file
-        if customer['email'].endswith(("@polyverse.io", "@polytest.ai", "@polyverse.com")):
+        elif not premiumEnabled and customer['email'].endswith(("@polyverse.io", "@polytest.ai", "@polyverse.com")):
             account_status['status'] = 'paid'
             account_status['plan'] = 'premium'
 
-        # we may want to add a Basic paid level as well
-        #    account_status['status'] = 'paid'
-        #    account_status['plan'] = 'basic'
-
+        # any free account is a free trial account with public access
+        # in the future, we may want to block / restrict some accounts that are suspended
         else:
             account_status['status'] = 'trial'
             account_status['plan'] = 'trial'
+            account_status['plan_name'] = 'Free Trial of Open Source Analysis by Sara the AI Architect with Polyverse Boost'
 
-        account_status['enabled'] = True
         del account_status['trial_remaining']
         del account_status['usage_this_month']
-        del account_status['balance_due']
-        del account_status['coupon_type']
-        del account_status['credit_card_linked']
-        del account_status['created']
-        account_status['org'] = customer.metadata.org
+        account_status['balance_due'] = round(float(customer['balance']) / 100, 2) if 'balance' in customer else 0.00
+
+        account_status['coupon_type'] = coupon_type if coupon_type is not None else 'none'
+
+        account_status['credit_card_linked'] = customer['invoice_settings']['default_payment_method'] or customer['default_source']
+        account_status['created'] = str(datetime.datetime.fromtimestamp(customer.created).date())
+        account_status['org'] = customer.metadata.org if 'org' in customer.metadata else None
         account_status['owner'] = customer.email
         del account_status['billing_threshold']
         account_status['saas_client'] = True
