@@ -51,15 +51,12 @@ Enter the Authentication Code, Secret Key, and Region in the AWS Toolkit for Vis
 ## Test Environment Setup
 
 You can use the "Local Lambda Server" Launch settings in Visual Studio Code to run the local server.
-This should also provide debugging inside the Visual Studio Code python debugger.
+This should also provide debugging inside the Visual Studio Code python debugger. This is useful for debugging and rapid development.
 
-In the tests directory, you can run 
-```
-python3 server.py
-```
-to run a local server that will run the lambda functions locally.  This is useful for debugging and rapid development.
+Then, run the pytests directly from inside Visual Studio Code in the Tests tab.
+Tests are located inside the tests directory.
 
-Note that this is NOT using "Chalice Local" which doesn't directly work with Lambda function entrypoints.
+NOTE that this is NOT using "Chalice Local" which doesn't directly work with Lambda function entrypoints.
 
 # lambda manual config
 
@@ -140,8 +137,8 @@ Create a new Chalice project: You can create a new Chalice project by running th
 ``` chalice new-project myapp ```
 
 This will create a new Chalice project in a directory named myapp.
-Run the Chalice application: You can run the Chalice application by navigating to the project directory and running the following command:
-``` chalice local ```
+Run the Chalice application: You can run the Chalice application by going to the Run & Debug tab and running
+"Local Lambda Server". If there is no dropdown in that tab simply go to Run -> Start Debugging
 
 This will start a local development server on your laptop that you can use to test your Chalice application.
 Once you have your Chalice application running, you can modify the app.py file in your project directory to define your application logic. You can also deploy your application to AWS Lambda and Amazon API Gateway by running the chalice deploy command.
