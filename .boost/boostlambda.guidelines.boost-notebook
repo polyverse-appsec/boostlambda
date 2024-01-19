@@ -1,0 +1,16 @@
+{
+  "cells": [
+    {
+      "outputs": [],
+      "languageId": "markdown",
+      "id": "f347d1bb-d2f7-43fe-8b5b-a4dbde3f77ae",
+      "value": "# Enter Your Project Guidelines Here\n\nYou can describe your goals, constraints, or hints for analysis",
+      "kind": 1,
+      "metadata": {
+        "id": "f347d1bb-d2f7-43fe-8b5b-a4dbde3f77ae",
+        "guidelineType": "Project"
+      }
+    }
+  ],
+  "metadata": {}
+}

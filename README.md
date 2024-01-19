@@ -9,9 +9,10 @@ https://polyverse.awsapps.com/start#/ Polyverse portal on AWS
 Implementation of Boost Service: https://github.com/polyverse-appsec/boostlambda
 
 ## Testing
-to test this, first start the Chalice Local Server
+to test this, first start the Local Lambda Server
 ```
-chalice local
+Go to Run & Debug tab and select "Local Lambda Server" to run locally.
+NOTE: chalice local is not going to run the server correctly, do not use chalice local to run the server
 ```
 
 Then go into the tests directory and run the tests
