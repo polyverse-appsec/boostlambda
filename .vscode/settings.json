@@ -14,7 +14,7 @@
     "python.pythonPath": "${env:VIRTUAL_ENV}/bin/python",
     "python.testing.cwd": "${workspaceFolder}",
     "python.testing.pytestArgs": [
-       "${workspaceFolder}/tests"
+      "tests"
     ]
   }
   

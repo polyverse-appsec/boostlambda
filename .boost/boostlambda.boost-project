@@ -1,0 +1,957 @@
+{
+  "dataFormatVersion": "1.9.0",
+  "summary": {
+    "projectName": "boostlambda",
+    "summaryUrl": ".boost\\boostlambda.summary.boost-notebook",
+    "filesToAnalyze": 100,
+    "filesAnalyzed": 0,
+    "issues": [
+      "No summary file found at .boost\\boostlambda.summary.boost-notebook"
+    ]
+  },
+  "sectionSummary": {
+    "summary": {
+      "analysisType": "summary",
+      "status": "not-started",
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "totalCells": 0,
+      "filesAnalyzed": 0
+    }
+  },
+  "files": {
+    "package.json": {
+      "sourceRelFile": "package.json",
+      "notebookRelFile": ".boost/package.json.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "package-lock.json": {
+      "sourceRelFile": "package-lock.json",
+      "notebookRelFile": ".boost/package-lock.json.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "documentation\\stopping_analysis.md": {
+      "sourceRelFile": "documentation\\stopping_analysis.md",
+      "notebookRelFile": ".boost/documentation/stopping_analysis.md.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "documentation\\selecting_source_files.md": {
+      "sourceRelFile": "documentation\\selecting_source_files.md",
+      "notebookRelFile": ".boost/documentation/selecting_source_files.md.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "documentation\\generating_docs.md": {
+      "sourceRelFile": "documentation\\generating_docs.md",
+      "notebookRelFile": ".boost/documentation/generating_docs.md.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\payments.py": {
+      "sourceRelFile": "chalicelib\\payments.py",
+      "notebookRelFile": ".boost/chalicelib/payments.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\__init__.py": {
+      "sourceRelFile": "client\\__init__.py",
+      "notebookRelFile": ".boost/client/__init__.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\sync-public-urls.py": {
+      "sourceRelFile": "client\\sync-public-urls.py",
+      "notebookRelFile": ".boost/client/sync-public-urls.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\openai_throttler.py": {
+      "sourceRelFile": "chalicelib\\openai_throttler.py",
+      "notebookRelFile": ".boost/chalicelib/openai_throttler.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\shrink_project_data.py": {
+      "sourceRelFile": "client\\shrink_project_data.py",
+      "notebookRelFile": ".boost/client/shrink_project_data.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\markdown.py": {
+      "sourceRelFile": "chalicelib\\markdown.py",
+      "notebookRelFile": ".boost/chalicelib/markdown.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\generate_product_docs.py": {
+      "sourceRelFile": "client\\generate_product_docs.py",
+      "notebookRelFile": ".boost/client/generate_product_docs.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\analyze-role-system.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\analyze-role-system.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/analyze-role-system.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\BugFunctionGenericProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\BugFunctionGenericProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/BugFunctionGenericProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\blueprint-seed.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\blueprint-seed.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/blueprint-seed.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\CodeSummarizerProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\CodeSummarizerProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/CodeSummarizerProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\blueprint-role-system.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\blueprint-role-system.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/blueprint-role-system.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\ChatProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\ChatProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/ChatProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\analyze.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\analyze.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/analyze.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\generate_invoice_report.py": {
+      "sourceRelFile": "client\\generate_invoice_report.py",
+      "notebookRelFile": ".boost/client/generate_invoice_report.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\file_cloud_upload.py": {
+      "sourceRelFile": "client\\file_cloud_upload.py",
+      "notebookRelFile": ".boost/client/file_cloud_upload.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\explain_client.py": {
+      "sourceRelFile": "client\\explain_client.py",
+      "notebookRelFile": ".boost/client/explain_client.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\explain_client.js": {
+      "sourceRelFile": "client\\explain_client.js",
+      "notebookRelFile": ".boost/client/explain_client.js.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\count_tokens.py": {
+      "sourceRelFile": "client\\count_tokens.py",
+      "notebookRelFile": ".boost/client/count_tokens.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\check_upcoming.py": {
+      "sourceRelFile": "client\\check_upcoming.py",
+      "notebookRelFile": ".boost/client/check_upcoming.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "client\\analyze_releases.py": {
+      "sourceRelFile": "client\\analyze_releases.py",
+      "notebookRelFile": ".boost/client/analyze_releases.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\storage.py": {
+      "sourceRelFile": "chalicelib\\storage.py",
+      "notebookRelFile": ".boost/chalicelib/storage.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\pvsecret.py": {
+      "sourceRelFile": "chalicelib\\pvsecret.py",
+      "notebookRelFile": ".boost/chalicelib/pvsecret.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\__init__.py": {
+      "sourceRelFile": "chalicelib\\__init__.py",
+      "notebookRelFile": ".boost/chalicelib/__init__.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\version.py": {
+      "sourceRelFile": "chalicelib\\version.py",
+      "notebookRelFile": ".boost/chalicelib/version.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\user_organizations.py": {
+      "sourceRelFile": "chalicelib\\user_organizations.py",
+      "notebookRelFile": ".boost/chalicelib/user_organizations.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\usage.py": {
+      "sourceRelFile": "chalicelib\\usage.py",
+      "notebookRelFile": ".boost/chalicelib/usage.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\telemetry.py": {
+      "sourceRelFile": "chalicelib\\telemetry.py",
+      "notebookRelFile": ".boost/chalicelib/telemetry.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\ChatDriver_FunctionProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\ChatDriver_FunctionProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/ChatDriver_FunctionProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\BlueprintProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\BlueprintProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/BlueprintProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\AnalyzeProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\AnalyzeProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/AnalyzeProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\log.py": {
+      "sourceRelFile": "chalicelib\\log.py",
+      "notebookRelFile": ".boost/chalicelib/log.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\email.py": {
+      "sourceRelFile": "chalicelib\\email.py",
+      "notebookRelFile": ".boost/chalicelib/email.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\customer_portal.py": {
+      "sourceRelFile": "chalicelib\\customer_portal.py",
+      "notebookRelFile": ".boost/chalicelib/customer_portal.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\aws.py": {
+      "sourceRelFile": "chalicelib\\aws.py",
+      "notebookRelFile": ".boost/chalicelib/aws.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\auth.py": {
+      "sourceRelFile": "chalicelib\\auth.py",
+      "notebookRelFile": ".boost/chalicelib/auth.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\app_utils.py": {
+      "sourceRelFile": "chalicelib\\app_utils.py",
+      "notebookRelFile": ".boost/chalicelib/app_utils.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\alert.py": {
+      "sourceRelFile": "chalicelib\\alert.py",
+      "notebookRelFile": ".boost/chalicelib/alert.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\chat-driver-function.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\chat-driver-function.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/chat-driver-function.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\chat-driver-function-role-system.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\chat-driver-function-role-system.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/chat-driver-function-role-system.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\chat-role-system.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\chat-role-system.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/chat-role-system.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\CodingGuidelinesProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\CodingGuidelinesProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/CodingGuidelinesProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\ExplainProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\ExplainProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/ExplainProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\compliance.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\compliance.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/compliance.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\DraftBlueprintFunctionProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\DraftBlueprintFunctionProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/DraftBlueprintFunctionProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\CustomProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\CustomProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/CustomProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\__init__.py": {
+      "sourceRelFile": "tests\\__init__.py",
+      "notebookRelFile": ".boost/tests/__init__.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_version.py": {
+      "sourceRelFile": "tests\\test_version.py",
+      "notebookRelFile": ".boost/tests/test_version.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_utils.py": {
+      "sourceRelFile": "tests\\test_utils.py",
+      "notebookRelFile": ".boost/tests/test_utils.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_ui_driver_function.py": {
+      "sourceRelFile": "tests\\test_ui_driver_function.py",
+      "notebookRelFile": ".boost/tests/test_ui_driver_function.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_truncation.py": {
+      "sourceRelFile": "tests\\test_truncation.py",
+      "notebookRelFile": ".boost/tests/test_truncation.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_storage.py": {
+      "sourceRelFile": "tests\\test_storage.py",
+      "notebookRelFile": ".boost/tests/test_storage.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_request_headers.py": {
+      "sourceRelFile": "tests\\test_request_headers.py",
+      "notebookRelFile": ".boost/tests/test_request_headers.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_quick_summary.py": {
+      "sourceRelFile": "tests\\test_quick_summary.py",
+      "notebookRelFile": ".boost/tests/test_quick_summary.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_quick_blueprint.py": {
+      "sourceRelFile": "tests\\test_quick_blueprint.py",
+      "notebookRelFile": ".boost/tests/test_quick_blueprint.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_performance.py": {
+      "sourceRelFile": "tests\\test_performance.py",
+      "notebookRelFile": ".boost/tests/test_performance.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_payments.py": {
+      "sourceRelFile": "tests\\test_payments.py",
+      "notebookRelFile": ".boost/tests/test_payments.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_message_optimization.py": {
+      "sourceRelFile": "tests\\test_message_optimization.py",
+      "notebookRelFile": ".boost/tests/test_message_optimization.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_generate_tests_function.py": {
+      "sourceRelFile": "tests\\test_generate_tests_function.py",
+      "notebookRelFile": ".boost/tests/test_generate_tests_function.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_flowdiagram.py": {
+      "sourceRelFile": "tests\\test_flowdiagram.py",
+      "notebookRelFile": ".boost/tests/test_flowdiagram.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_customscan_function.py": {
+      "sourceRelFile": "tests\\test_customscan_function.py",
+      "notebookRelFile": ".boost/tests/test_customscan_function.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_customer_portal.py": {
+      "sourceRelFile": "tests\\test_customer_portal.py",
+      "notebookRelFile": ".boost/tests/test_customer_portal.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_convert_code_function.py": {
+      "sourceRelFile": "tests\\test_convert_code_function.py",
+      "notebookRelFile": ".boost/tests/test_convert_code_function.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_compliance_function.py": {
+      "sourceRelFile": "tests\\test_compliance_function.py",
+      "notebookRelFile": ".boost/tests/test_compliance_function.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_compare_code.py": {
+      "sourceRelFile": "tests\\test_compare_code.py",
+      "notebookRelFile": ".boost/tests/test_compare_code.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_chat_driver_function.py": {
+      "sourceRelFile": "tests\\test_chat_driver_function.py",
+      "notebookRelFile": ".boost/tests/test_chat_driver_function.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_chat.py": {
+      "sourceRelFile": "tests\\test_chat.py",
+      "notebookRelFile": ".boost/tests/test_chat.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_app.py": {
+      "sourceRelFile": "tests\\test_app.py",
+      "notebookRelFile": ".boost/tests/test_app.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\test_analyze.py": {
+      "sourceRelFile": "tests\\test_analyze.py",
+      "notebookRelFile": ".boost/tests/test_analyze.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\conftest.py": {
+      "sourceRelFile": "tests\\conftest.py",
+      "notebookRelFile": ".boost/tests/conftest.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\sources.txt": {
+      "sourceRelFile": "tests\\data\\sources.txt",
+      "notebookRelFile": ".boost/tests/data/sources.txt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\simple-buf.c": {
+      "sourceRelFile": "tests\\data\\simple-buf.c",
+      "notebookRelFile": ".boost/tests/data/simple-buf.c.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\sha512.c": {
+      "sourceRelFile": "tests\\data\\sha512.c",
+      "notebookRelFile": ".boost/tests/data/sha512.c.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "server\\__init__.py": {
+      "sourceRelFile": "server\\__init__.py",
+      "notebookRelFile": ".boost/server/__init__.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\quick-compliance\\categorizations.json": {
+      "sourceRelFile": "tests\\data\\quick-compliance\\categorizations.json",
+      "notebookRelFile": ".boost/tests/data/quick-compliance/categorizations.json.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\quick-compliance\\severity_analysis.json": {
+      "sourceRelFile": "tests\\data\\quick-compliance\\severity_analysis.json",
+      "notebookRelFile": ".boost/tests/data/quick-compliance/severity_analysis.json.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\quick-blueprint\\package.json": {
+      "sourceRelFile": "tests\\data\\quick-blueprint\\package.json",
+      "notebookRelFile": ".boost/tests/data/quick-blueprint/package.json.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\quick-compliance\\files.json": {
+      "sourceRelFile": "tests\\data\\quick-compliance\\files.json",
+      "notebookRelFile": ".boost/tests/data/quick-compliance/files.json.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "server\\server.py": {
+      "sourceRelFile": "server\\server.py",
+      "notebookRelFile": ".boost/server/server.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\codesummarizer.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\codesummarizer.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/codesummarizer.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\chat.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\chat.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/chat.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\customScan\\missingAwait.ts": {
+      "sourceRelFile": "tests\\data\\customScan\\missingAwait.ts",
+      "notebookRelFile": ".boost/tests/data/customScan/missingAwait.ts.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\quick-blueprint\\sample.ts": {
+      "sourceRelFile": "tests\\data\\quick-blueprint\\sample.ts",
+      "notebookRelFile": ".boost/tests/data/quick-blueprint/sample.ts.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\codingguidelines.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\codingguidelines.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/codingguidelines.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\codingguidelines-role-system.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\codingguidelines-role-system.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/codingguidelines-role-system.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\compare-code-role-system.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\compare-code-role-system.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/compare-code-role-system.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\ConvertCodeFunctionProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\ConvertCodeFunctionProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/ConvertCodeFunctionProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\ComplianceProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\ComplianceProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/ComplianceProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\convert\\HelloWorld.java": {
+      "sourceRelFile": "tests\\data\\convert\\HelloWorld.java",
+      "notebookRelFile": ".boost/tests/data/convert/HelloWorld.java.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\ComplianceFunctionProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\ComplianceFunctionProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/ComplianceFunctionProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\processors\\CompareCodeProcessor.py": {
+      "sourceRelFile": "chalicelib\\processors\\CompareCodeProcessor.py",
+      "notebookRelFile": ".boost/chalicelib/processors/CompareCodeProcessor.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\performance\\constant_lookup.py": {
+      "sourceRelFile": "tests\\data\\performance\\constant_lookup.py",
+      "notebookRelFile": ".boost/tests/data/performance/constant_lookup.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\compare-code.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\compare-code.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/compare-code.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "chalicelib\\prompts\\compare-code-original-code-role-system.prompt": {
+      "sourceRelFile": "chalicelib\\prompts\\compare-code-original-code-role-system.prompt",
+      "notebookRelFile": ".boost/chalicelib/prompts/compare-code-original-code-role-system.prompt.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    },
+    "tests\\data\\comparison\\sync_urls_2.py": {
+      "sourceRelFile": "tests\\data\\comparison\\sync_urls_2.py",
+      "notebookRelFile": ".boost/tests/data/comparison/sync_urls_2.py.boost-notebook",
+      "totalCells": 0,
+      "completedCells": 0,
+      "errorCells": 0,
+      "issueCells": 0,
+      "sections": {}
+    }
+  },
+  "account": {
+    "refreshed": true,
+    "enabled": false,
+    "status": "expired",
+    "trialRemaining": 0,
+    "usageThisMonth": 0,
+    "discountedUsage": 0,
+    "lastOperationCost": 0,
+    "batchOperationCost": 0,
+    "balanceDue": 0,
+    "couponType": "None",
+    "org": "Dewey3K",
+    "owner": "airbear109@gmail.com",
+    "created": "2023-11-29",
+    "creditCardLinked": false
+  },
+  "uiState": {
+    "analysisState": "quiescent",
+    "activityBarState": {
+      "summaryViewState": {
+        "analysisMode": "process-next-5",
+        "analysisTypesState": {
+          "security": true,
+          "compliance": true,
+          "documentation": true
+        }
+      }
+    }
+  },
+  "settings": {
+    "fileLimit": 100
+  }
+}
