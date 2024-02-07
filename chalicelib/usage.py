@@ -23,7 +23,7 @@ class OpenAIDefaults:
     boost_tuned_max_tokens = boost_max_tokens_default  # could be 1000 based on OpenAI recommendation, no obvious response time difference
 
     # Models to choose from
-    boost_model_gpt4_turbo = "gpt-4-1106-preview"   # latest model as of November 2023 (trained to April 2023)
+    boost_model_gpt4_turbo = "gpt-4-turbo-preview"   # latest model as of November 2023 (trained to April 2023)
     boost_model_gpt4 = "gpt-4"                      # best overall model
     boost_model_gpt4_current = "gpt-4-0613"         # best overall model - date specific, expires
     boost_model_gpt4_32k = "gpt-4-32k"              # best overall model with 32k limit

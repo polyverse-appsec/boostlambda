@@ -3,6 +3,17 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
+## Version 1.6.1: February 7th, 2024
+
+### New Features
+- N/A
+
+### Enhancements
+- Switch Draft Blueprint to use GPT-4.0 Turbo Preview model for better and faster results
+
+### Bug Fixes
+- N/A
+
 ## Version 1.6.0: January 18th, 2024
 
 ### New Features

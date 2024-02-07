@@ -53,7 +53,7 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
                           ['system', 'draft-blueprint-function-role-system.prompt']],
                          'build_draft_blueprint',
                          build_draft_blueprint,
-                         {'model': OpenAIDefaults.boost_default_gpt_model,
+                         {'model': OpenAIDefaults.boost_model_gpt4_turbo,
                           'temperature': OpenAIDefaults.temperature_terse_and_accurate})
 
     def get_chunkable_input(self) -> str:
@@ -81,6 +81,9 @@ class DraftBlueprintFunctionProcessor(FunctionGenericProcessor):
         if data.get('model') == OpenAIDefaults.boost_model_gpt4_turbo:
             if output_buffer_size > OpenAIDefaults.boost_max_tokens_gpt_4_turbo_output:
                 output_buffer_size = OpenAIDefaults.boost_max_tokens_gpt_4_turbo_output
+        elif data.get('model') == OpenAIDefaults.boost_model_gpt4_turbo:
+            # for speed and terseness, we'll limit the entire blueprint to 1/4 of the Turbo output
+            output_buffer_size = 1000 if output_buffer_size > 1000 else output_buffer_size
 
         return output_buffer_size
 
