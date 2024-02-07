@@ -882,18 +882,18 @@ class GenericProcessor:
 
         due_time = datetime.datetime.now() + datetime.timedelta(seconds=timeBufferRemaining)
 
-        print(f"Thread-{threading.current_thread().ident}-{function_name}:Starting OpenAI API call attempt {attempt + 1},Time Allotted {mins_and_secs(timeBufferRemaining)}, Due By {due_time})")
+        print(f"Thread-{threading.current_thread().ident}-{function_name}:Starting OpenAI {params.get('model', 'unknown')} API call attempt {attempt + 1},Time Allotted {mins_and_secs(timeBufferRemaining)}, Due By {due_time})")
 
         start_time = time.time()
         try:
             response = openai.ChatCompletion.create(**params, timeout=timeBufferRemaining, request_timeout=timeBufferRemaining)
 
-            print(f"Thread-{threading.current_thread().ident}-{function_name}:SUCCESS:Finished OpenAI API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
+            print(f"Thread-{threading.current_thread().ident}-{function_name}:SUCCESS:Finished OpenAI {params.get('model', 'unknown')} API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
 
             return response
 
         except Exception as e:
-            print(f"Thread-{threading.current_thread().ident}-{function_name}:ERROR({str(e)}):Finished OpenAI API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
+            print(f"Thread-{threading.current_thread().ident}-{function_name}:ERROR({str(e)}):Finished OpenAI {params.get('model', 'unknown')} API call (Attempt {attempt + 1} in {mins_and_secs(time.time() - start_time)})")
             raise
 
     def runAnalysis(self, params, account, function_name, correlation_id) -> dict:
