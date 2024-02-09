@@ -74,6 +74,7 @@ def process_request(event, function, api_version):
     email = "unknown"  # in case we fail early and don't get the email address
     organization = "unknown"
     account = None
+    client_version = "unknown"
 
     print(f'Inbound request {correlation_id} {function.__name__}')
 

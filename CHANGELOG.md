@@ -3,6 +3,17 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
+## Version 1.6.2: February 8th, 2024
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Fix uninitialized client_version variable that blocked early exception logging
+
 ## Version 1.6.1: February 7th, 2024
 
 ### New Features
