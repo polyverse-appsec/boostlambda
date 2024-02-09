@@ -5,6 +5,8 @@ import uuid
 import time
 import os
 
+from json.decoder import JSONDecodeError
+
 from chalice import BadRequestError
 from chalicelib.log import mins_and_secs
 
@@ -85,7 +87,26 @@ def process_request(event, function, api_version):
     try:
         # Extract parameters from the event object
         if 'body' in event:
-            json_data = json.loads(event['body'])
+            try:
+                if not event.get('body', '').strip():
+                    # Handle the case where the body is empty or only contains whitespace
+                    raise ValueError("Request body is empty or invalid")
+
+                json_data = json.loads(event['body'])
+            except JSONDecodeError as e:
+                # dump the full event object (not just the body) to the log
+                print(f"Event is: {event}")
+                # Handle the case where the body is not valid JSON
+                print(f"JSON Decode Error: {e}")
+
+            except ValueError as e:
+                # dump the full event object (not just the body) to the log
+                print(f"Event is: {event}")
+
+                # Handle the case where the body is empty or not valid JSON
+                # Log the error or return a meaningful response
+                print(f"Error: {e}")
+
         else:
             json_data = event
         if 'headers' in event:

@@ -9,7 +9,7 @@ Polyverse Boost Cloud AI Service
 - N/A
 
 ### Enhancements
-- N/A
+- Improve handling of incorrect JSON payload in body of event handlers
 
 ### Bug Fixes
 - Fix uninitialized client_version variable that blocked early exception logging
