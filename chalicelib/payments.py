@@ -128,6 +128,10 @@ def check_create_customer(email, org, correlation_id=0):
     # so we will first search.
     # if we can't find it, then we look to the last hour of customers and see if we can find it there.
     # if we still can't find it, then we create it.
+    if (email is None):
+        raise Exception("Email is required to create a payment account")
+    if (org is None):
+        raise Exception("Organization is required to create a payment account")
 
     # first see if the customer already exists, we need to look at the org field in metadata
     customers = stripe_retry(stripe.Customer.search, query="metadata['org']:'{}'".format(org), expand=['data.subscriptions'])
@@ -352,6 +356,8 @@ def check_customer_account_status(signed, customer, deep=False):
             account_status['plan'] = 'trial'
             account_status['plan_name'] = 'Free Trial of Open Source Analysis by Sara the AI Architect with Polyverse Boost'
 
+        print(f"Account Status:: email:{customer.email}, status:{account_status['status']}, plan:{account_status['plan']}, plan_name:{account_status['plan_name']}")
+
         del account_status['trial_remaining']
         del account_status['usage_this_month']
         account_status['balance_due'] = round(float(customer['balance']) / 100, 2) if 'balance' in customer else 0.00
@@ -510,6 +516,8 @@ def check_valid_subscriber(signed, email, organization, correlation_id, deep=Fal
 
     if (email is None):
         raise Exception("Email is required to create a subscription account")
+    if (organization is None):
+        raise Exception("Organization is required to create a subscription account")
 
     customer = check_create_customer(email=email, org=organization, correlation_id=correlation_id)
     if not customer:

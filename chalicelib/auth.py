@@ -275,7 +275,12 @@ def validate_request_lambda(request_json, headers, function_name, correlation_id
             if identity.get('expires') and identity['expires'] < datetime.now().timestamp():
                 raise jwt.ExpiredSignatureError("Signed identity expired")
 
+            if 'email' not in identity:
+                raise jwt.InvalidTokenError("Invalid signed identity- missing email")
             email = identity['email']
+
+            if 'organization' not in identity:
+                raise jwt.InvalidTokenError("Invalid signed identity- missing organization")
             organization = identity['organization']
 
         except jwt.ExpiredSignatureError as e:

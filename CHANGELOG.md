@@ -3,6 +3,17 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
+## Version 1.6.3: April 9th, 2024
+
+### New Features
+- N/A
+
+### Enhancements
+- N/A
+
+### Bug Fixes
+- Improve verification that email and organization are included in signed header unpacking and account creation logic
+
 ## Version 1.6.2: February 8th, 2024
 
 ### New Features
