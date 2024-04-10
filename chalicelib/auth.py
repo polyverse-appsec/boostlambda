@@ -279,9 +279,10 @@ def validate_request_lambda(request_json, headers, function_name, correlation_id
                 raise jwt.InvalidTokenError("Invalid signed identity- missing email")
             email = identity['email']
 
-            if 'organization' not in identity:
+            if 'organization' in identity:
+                organization = identity['organization']
+            elif organization is None:
                 raise jwt.InvalidTokenError("Invalid signed identity- missing organization")
-            organization = identity['organization']
 
         except jwt.ExpiredSignatureError as e:
             if raiseOnError:

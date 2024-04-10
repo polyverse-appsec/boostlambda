@@ -13,6 +13,7 @@ Polyverse Boost Cloud AI Service
 
 ### Bug Fixes
 - Improve verification that email and organization are included in signed header unpacking and account creation logic
+- Ensure organizaion is set for Sara signed API calls, for billing and logging
 
 ## Version 1.6.2: February 8th, 2024
 

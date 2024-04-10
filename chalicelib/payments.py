@@ -545,6 +545,7 @@ def check_valid_subscriber(signed, email, organization, correlation_id, deep=Fal
         account_status["subscription"] = subscription
         account_status["subscription_item"] = subscription_item
     account_status["email"] = email
+    account_status["organization"] = organization
 
     return account_status
 

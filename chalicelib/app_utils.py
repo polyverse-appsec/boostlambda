@@ -129,6 +129,7 @@ def process_request(event, function, api_version):
                 account = validate_request_lambda(json_data, headers, function.__name__, correlation_id, False)
 
                 email = account['email'] if 'email' in account else email
+                organization = account['organization'] if 'organization' in account else organization
 
                 # if not enabled, then we're going to raise an error
                 # note: we could return the error in the account object and save
@@ -140,6 +141,7 @@ def process_request(event, function, api_version):
             account = validate_request_lambda(json_data, headers, function.__name__, correlation_id, False)
 
             email = account['email'] if 'email' in account else email
+            organization = account['organization'] if 'organization' in account else organization
 
             # if not enabled, then we're going to raise an error
             # note: we could return the error in the account object and save
