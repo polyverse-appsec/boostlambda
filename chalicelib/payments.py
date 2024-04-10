@@ -267,6 +267,8 @@ SaraPremium_Subscription_ProductId = 'prod_POWlNodbOA6mWx'
 # this isn't implemented in Stripe backend yet - so we're coding it now, and will fill in id when ready
 SaraBasic_Subscription_ProductId = 'prod_xxxxxxxxxxxxxx'
 
+VisualStudioCodeBoost_Subscription_ProductId = 'prod_Np7PkkO9dDn4Cs'
+
 
 # Check if the customer has a non-zero balance and if they do NOT have a payment method
 # in this case, we know their trial has expired.
@@ -324,9 +326,12 @@ def check_customer_account_status(signed, customer, deep=False):
 
                     basicEnabled = enabled
 
+                elif product.id == VisualStudioCodeBoost_Subscription_ProductId:
+                    print(f"{customer.email} has Visual Studio Code Boost subscription")
+
                 # otherwise, skip this subscription since we don't recognize it
                 else:
-                    print(f"WARNING: Unknown product {product.id} for customer {customer.email}")
+                    print(f"WARNING: Unknown product {product.id}:{product.name} for customer {customer.email}")
                     continue
 
                 if enabled:

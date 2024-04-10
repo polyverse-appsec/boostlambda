@@ -47,7 +47,7 @@
         "cwd": "${workspaceFolder}",
         "args": [
             "--user",
-            "stephen@polyverse.com",
+            "*",
             "--includePolyverse"
         ],
         "console": "integratedTerminal",
