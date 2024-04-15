@@ -3,6 +3,17 @@ Polyverse Boost Cloud AI Service
 
 # Release Notes
 
+## Version 1.6.4: April 15th, 2024
+
+### New Features
+- N/A
+
+### Enhancements
+- Disable all CloudWatch metrics by default (for cost controls) - re-enable via environment variable: CLOUD_WATCH_METRICS_ENABLED
+
+### Bug Fixes
+- N/A
+
 ## Version 1.6.3: April 9th, 2024
 
 ### New Features
