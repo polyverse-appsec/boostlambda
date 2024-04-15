@@ -108,7 +108,7 @@ def capture_metric(customer, email, function_name: "capture_metric", correlation
 
         if os.environ.get('CLOUD_WATCH_METRICS_ENABLED') is None:
             return
-        
+
         cloudwatch.put_metric_data(Namespace='Boost/Lambda', MetricData=metric_data)
 
     # Never fail on metrics

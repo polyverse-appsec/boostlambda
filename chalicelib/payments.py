@@ -404,7 +404,7 @@ def check_customer_account_status(signed, customer, deep=False):
                     users.add(customer.email)
         account_status['users'] = list(users)
     else:
-        account_status['users']: []
+        account_status['users'] = []
 
     price_id = "boost_per_kb_launch"  # new Boost pricing on combined input+output only
     original_price = stripe_retry(stripe.Price.retrieve, price_id, expand=['tiers'])
