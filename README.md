@@ -62,23 +62,7 @@ NOTE that this is NOT using "Chalice Local" which doesn't directly work with Lam
 
 for right now, the lambda function urls must be set manually for each api. this is what it is currently set to.
 
-explain
-https://jorsb57zbzwcxcjzl2xwvah45i0mjuxs.lambda-url.us-west-2.on.aws/
 
-analyze
-https://iyn66vkb6lmlcb4log6d3ah7d40axgqu.lambda-url.us-west-2.on.aws/
-
-testgen
-https://gylbelpkobvont6vpxp4ihw5fm0iwnto.lambda-url.us-west-2.on.aws/
-
-generate:
-https://ukkqda6zl22nd752blcqlv3rum0ziwnq.lambda-url.us-west-2.on.aws/
-
-compliance:
-https://q57gtrfpkuzquelgqtnncpjwta0nngfx.lambda-url.us-west-2.on.aws/
-
-codeguidelines:
-https://4govp5ze7uyio3kjehtarpv24u0nabhw.lambda-url.us-west-2.on.aws/
 
 Also, ensure that the IAM permissions are set to allow access to secrets manager:
 
@@ -283,8 +267,7 @@ aws configure
 You'll want to answer prompts with something like this:
 ```
  ~ % aws configure
-AWS Access Key ID [****************5V3M]: 
-AWS Secret Access Key [****************J7Tk]: 
+
 Default region name [us-west-2]: 
 Default output format [None]: 
 ```
@@ -296,9 +279,7 @@ Chalice local example local console
 ```
 boostlambda % chalice local
 Found credentials in shared credentials file: ~/.aws/credentials
-openai key  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
-openai key  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
-openai key  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
+
 Serving on http://127.0.0.1:8000
 ```
 
